@@ -44,5 +44,5 @@ externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "cd EphorArbitrage && npm run start"]
+run = ["bash", "-c", "NODE_ENV=production node EphorArbitrage/dist/index.cjs"]
 build = ["bash", "-c", "cd EphorArbitrage && npm run build"]
