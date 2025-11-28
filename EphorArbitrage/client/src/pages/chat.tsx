@@ -803,10 +803,22 @@ export default function ChatPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-green-700 font-bold text-lg">★ Recommended: {getModelForColumn(recommendedModel)?.name}</span>
                       <span className="text-gray-500">({recommendedModel})</span>
+                      {getModelForColumn(recommendedModel) && (
+                        <span className={`text-xs px-2 py-0.5 rounded ${getCapabilityColor(getModelForColumn(recommendedModel)!.expectedAccuracy)}`}>
+                          {getCapabilityLabel(getModelForColumn(recommendedModel)!.expectedAccuracy)}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-green-800">
+                    <p className="text-sm text-green-800 mb-2">
                       {getRecommendationReason(recommendedModel)}
                     </p>
+                    {getModelForColumn(recommendedModel) && (
+                      <div className="text-xs text-green-700 flex items-center gap-4 pt-2 border-t border-green-200">
+                        <span>Estimated Capability: <strong>{getCapabilityLabel(getModelForColumn(recommendedModel)!.expectedAccuracy)}</strong></span>
+                        <span>Cost: <strong>${estimateCost(getModelForColumn(recommendedModel)!).toFixed(4)}</strong></span>
+                        <span>Latency: <strong>{getLatencyLabel(getModelForColumn(recommendedModel)!.expectedLatency)}</strong></span>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="space-y-3">
