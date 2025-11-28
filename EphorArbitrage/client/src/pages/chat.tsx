@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Play, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -120,31 +119,25 @@ export default function ChatPage() {
     setIsRunning(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleRunAll();
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">EPHOR WIND TUNNEL</h1>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-900">EPHOR WIND TUNNEL</h1>
+      </header>
 
-        <div className="mb-6 flex gap-4">
-          <Input
+      <div className="flex h-[calc(100vh-65px)]">
+        <div className="w-[30%] border-r border-gray-200 bg-white p-4 flex flex-col">
+          <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder="Enter your prompt..."
-            className="flex-1 text-lg py-6"
+            className="flex-1 resize-none text-sm mb-3"
             disabled={isRunning}
           />
           <Button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
-            className="px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700"
+            className="w-full py-5 text-base bg-blue-600 hover:bg-blue-700"
           >
             {isRunning ? (
               <>
@@ -160,87 +153,89 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-5 gap-3 mb-4">
-          {CATEGORIES.map((category) => (
-            <Select
-              key={category}
-              value={selectedModels[category]}
-              onValueChange={(value) => handleModelChange(category, value)}
-              disabled={isRunning}
-            >
-              <SelectTrigger className="bg-gray-800 text-white border-gray-700 font-semibold">
-                <span>{category}</span>
-              </SelectTrigger>
-              <SelectContent>
-                {MODELS_BY_CATEGORY[category].map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.name}
-                    {model.isReasoning && (
-                      <span className="ml-2 text-orange-500 text-xs">(reasoning)</span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-5 gap-3">
-          {CATEGORIES.map((category) => {
-            const model = getSelectedModel(category);
-            const response = responses[category];
-            const isEmpty = !response;
-            const isLoading = response?.loading;
-            const hasError = response?.error;
-            const hasContent = response?.content;
-
-            return (
-              <div
+        <div className="w-[70%] p-4 overflow-auto">
+          <div className="grid grid-cols-5 gap-2 mb-1">
+            {CATEGORIES.map((category) => (
+              <Select
                 key={category}
-                className={`
-                  rounded-lg border p-4 min-h-[150px]
-                  ${isEmpty ? "bg-gray-100 border-gray-200" : ""}
-                  ${isLoading ? "bg-blue-50 border-blue-300" : ""}
-                  ${hasError ? "bg-red-50 border-red-300" : ""}
-                  ${hasContent ? "bg-white border-green-300" : ""}
-                `}
+                value={selectedModels[category]}
+                onValueChange={(value) => handleModelChange(category, value)}
+                disabled={isRunning}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-gray-900 text-sm">
-                    {model?.name}
-                  </span>
-                  {model?.isReasoning && (
-                    <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-medium">
-                      reasoning
+                <SelectTrigger className="bg-gray-800 text-white border-gray-700 font-semibold h-9 text-sm">
+                  <span>{category}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {MODELS_BY_CATEGORY[category].map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.name}
+                      {model.isReasoning && (
+                        <span className="ml-2 text-orange-500 text-xs">(reasoning)</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-5 gap-2">
+            {CATEGORIES.map((category) => {
+              const model = getSelectedModel(category);
+              const response = responses[category];
+              const isEmpty = !response;
+              const isLoading = response?.loading;
+              const hasError = response?.error;
+              const hasContent = response?.content;
+
+              return (
+                <div
+                  key={category}
+                  className={`
+                    rounded-b-lg border border-t-0 p-3 min-h-[100px]
+                    ${isEmpty ? "bg-gray-50 border-gray-200" : ""}
+                    ${isLoading ? "bg-blue-50 border-blue-200" : ""}
+                    ${hasError ? "bg-red-50 border-red-200" : ""}
+                    ${hasContent ? "bg-white border-green-200" : ""}
+                  `}
+                >
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="font-medium text-gray-900 text-xs truncate">
+                      {model?.name}
                     </span>
+                    {model?.isReasoning && (
+                      <span className="text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded-full font-medium shrink-0">
+                        R
+                      </span>
+                    )}
+                  </div>
+
+                  {isEmpty && (
+                    <div className="text-gray-400 text-[11px]">
+                      Waiting...
+                    </div>
+                  )}
+
+                  {isLoading && (
+                    <div className="flex items-center gap-1 text-blue-600 text-[11px]">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Generating...
+                    </div>
+                  )}
+
+                  {hasError && (
+                    <div className="text-red-600 text-[11px]">{response.error}</div>
+                  )}
+
+                  {hasContent && (
+                    <div className="text-gray-700 text-[11px] line-clamp-5 overflow-hidden leading-tight">
+                      {response.content}
+                    </div>
                   )}
                 </div>
-
-                {isEmpty && (
-                  <div className="text-gray-400 text-xs">
-                    Waiting for prompt...
-                  </div>
-                )}
-
-                {isLoading && (
-                  <div className="flex items-center gap-2 text-blue-600 text-xs">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Generating...
-                  </div>
-                )}
-
-                {hasError && (
-                  <div className="text-red-600 text-xs">{response.error}</div>
-                )}
-
-                {hasContent && (
-                  <div className="text-gray-700 text-xs line-clamp-6 overflow-hidden">
-                    {response.content}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
