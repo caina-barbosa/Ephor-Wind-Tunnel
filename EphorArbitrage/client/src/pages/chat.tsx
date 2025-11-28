@@ -166,140 +166,49 @@ export default function ChatPage() {
     const model = getModelForColumn(col);
     if (!model) return "";
     
-    const contextNote = inputPercentage > 50 
-      ? ` You're using ${inputPercentage.toFixed(0)}% of context—this justifies a stronger model.`
-      : "";
-    
     if (reasoningEnabled) {
       if (col === "70B") {
-        return `Best value for reasoning. DeepSeek R1 Distill gives deep chain-of-thought at ~65% less cost than full R1. Engineering insight: Reasoning requires 70B+ parameters to work reliably.`;
+        return `Cheapest reasoning-capable model. Reasoning mode requires 70B+ parameters. DeepSeek R1 Distill gives deep chain-of-thought at lower cost than Frontier.`;
       }
       if (col === "Frontier") {
-        return `Maximum reasoning capability. DeepSeek R1 has the deepest chain-of-thought. Use when accuracy on hard problems matters more than cost.`;
+        return `Only reasoning model within your budget. DeepSeek R1 has maximum reasoning depth. 70B was filtered out by your cost cap.`;
       }
     } else {
-      if (col === "3B") {
-        return `Perfect for simple queries. 3B models handle basic Q&A well—you save 99%+ vs larger models.${contextNote} Engineering insight: Don't overspend on capability you don't need!`;
-      }
-      if (col === "7B") {
-        return `Good match for simple questions. 7B handles everyday tasks at minimal cost.${contextNote} Engineering insight: Most questions humans ask don't need bigger models.`;
-      }
-      if (col === "14B") {
-        return `Sweet spot for moderate complexity. 14B is strong enough for analysis while staying cost-efficient.${contextNote} Engineering insight: Often the best value for real work.`;
-      }
-      if (col === "70B") {
-        return `Your query needs deeper reasoning. Words like "why", "explain", "analyze" require 70B+ for quality answers.${contextNote} Engineering insight: Complex reasoning needs more parameters.`;
-      }
-      if (col === "Frontier") {
-        return `Expert-level query detected. Code, research, or detailed analysis needs maximum capability.${contextNote} Engineering insight: Premium cost for premium quality.`;
-      }
+      const modelCosts: Record<string, string> = {
+        "3B": "$0.00006/1K tokens",
+        "7B": "$0.0001/1K tokens",
+        "14B": "$0.0002/1K tokens",
+        "70B": "$0.0006/1K tokens",
+        "Frontier": "$0.015/1K tokens"
+      };
+      return `Cheapest model that fits your constraints. At ${modelCosts[col] || "low cost"}, this is the most cost-efficient option. Run the test to compare quality across all models—upgrade if needed!`;
     }
     return "";
   };
 
-  // Analyze prompt complexity based on content, not just length
-  const promptComplexity = useMemo((): "trivial" | "simple" | "moderate" | "complex" | "expert" => {
-    const trimmed = prompt.trim();
-    if (!trimmed) return "trivial";
-    
-    const words = trimmed.toLowerCase().split(/\s+/);
-    const text = trimmed.toLowerCase();
-    const tokens = inputTokenEstimate;
-    
-    // Helper: check if any keyword exists in the text
-    const hasKeyword = (keywords: string[]) => keywords.some(kw => text.includes(kw));
-    const hasWord = (keywords: string[]) => keywords.some(kw => words.includes(kw));
-    
-    // Expert-level keywords (needs Frontier)
-    const expertKeywords = ["write code", "implement", "debug", "refactor", "algorithm", 
-                           "analyze data", "statistical", "regression", "thesis", "dissertation",
-                           "legal analysis", "medical", "scientific"];
-    
-    // Complex keywords (needs 70B) 
-    const complexWords = ["why", "explain", "analyze", "evaluate", "compare", "contrast"];
-    const complexPhrases = ["pros and cons", "advantages and disadvantages", "step by step", 
-                           "in detail", "reasoning", "logic"];
-    
-    // Moderate keywords (needs 14B)
-    const moderateWords = ["describe", "outline", "summarize", "translate", "convert", "rewrite"];
-    const moderatePhrases = ["how to", "what is the best", "list and explain"];
-    
-    // Check for expert level
-    if (hasKeyword(expertKeywords) || tokens > 1000) {
-      return "expert";
-    }
-    
-    // Check for complex level
-    if (hasWord(complexWords) || hasKeyword(complexPhrases) || tokens > 500) {
-      return "complex";
-    }
-    
-    // Check for moderate level
-    if (hasWord(moderateWords) || hasKeyword(moderatePhrases) || tokens > 200) {
-      return "moderate";
-    }
-    
-    // Simple: any non-trivial prompt with some content
-    if (tokens > 20 || words.length > 5) {
-      return "simple";
-    }
-    
-    return "trivial";
-  }, [prompt, inputTokenEstimate]);
-
+  // Simple recommendation logic: find the CHEAPEST model that fits all constraints
   const recommendedModel = useMemo(() => {
-    const available = COLUMNS.filter(col => !isModelDisabled(col).disabled);
+    // Model order from cheapest to most expensive
+    const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "14B", "70B", "Frontier"];
+    
+    // Filter models that fit all constraints
+    const available = modelOrder.filter(col => {
+      const { disabled } = isModelDisabled(col);
+      return !disabled;
+    });
+    
     if (available.length === 0) return null;
     
-    // Reasoning mode: always prefer 70B (best value) over Frontier
+    // If Reasoning Mode is ON, only consider 70B and Frontier
     if (reasoningEnabled) {
-      if (available.includes("70B")) return "70B";
-      if (available.includes("Frontier")) return "Frontier";
-      return null;
+      const reasoningModels = available.filter(m => m === "70B" || m === "Frontier");
+      // Return cheapest reasoning model (70B is cheaper than Frontier)
+      return reasoningModels.length > 0 ? reasoningModels[0] : null;
     }
     
-    // Base recommendations by complexity ONLY
-    // Context window does NOT automatically boost - that's a user choice about capacity, not capability
-    const complexityToModel: Record<string, string> = {
-      "trivial": "3B",
-      "simple": "7B", 
-      "moderate": "14B",
-      "complex": "70B",
-      "expert": "Frontier"
-    };
-    
-    // Only boost for context if user is actually USING significant context (>50%)
-    // This teaches: "larger context = potential cost, not mandatory upgrade"
-    const contextUtilization = inputPercentage;
-    const needsContextBoost = contextUtilization > 50;
-    
-    const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "14B", "70B", "Frontier"];
-    const baseModel = complexityToModel[promptComplexity] || "3B";
-    let targetIndex = modelOrder.indexOf(baseModel as typeof COLUMNS[number]);
-    
-    // Only boost if actually using significant context
-    if (needsContextBoost) {
-      targetIndex = Math.min(targetIndex + 1, modelOrder.length - 1);
-    }
-    
-    // Find the target model or next available
-    for (let i = targetIndex; i < modelOrder.length; i++) {
-      const model = modelOrder[i];
-      if (available.includes(model)) {
-        return model;
-      }
-    }
-    
-    // Fallback: find largest available below target
-    for (let i = targetIndex - 1; i >= 0; i--) {
-      const model = modelOrder[i];
-      if (available.includes(model)) {
-        return model;
-      }
-    }
-    
+    // Return the cheapest available model
     return available[0];
-  }, [costCap, reasoningEnabled, promptComplexity, inputPercentage]);
+  }, [costCap, reasoningEnabled, contextSize, inputTokenEstimate]);
 
   const handleRunAll = async () => {
     if (!prompt.trim() || isRunning) return;
@@ -468,25 +377,13 @@ export default function ChatPage() {
                   <span className="font-mono text-gray-600">{selectedContextTokens.toLocaleString()}</span>
                   <span className="text-gray-500 text-xs">tokens</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                    promptComplexity === "expert" ? 'bg-purple-100 text-purple-600' :
-                    promptComplexity === "complex" ? 'bg-red-100 text-red-600' :
-                    promptComplexity === "moderate" ? 'bg-orange-100 text-orange-600' :
-                    promptComplexity === "simple" ? 'bg-blue-100 text-blue-600' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {promptComplexity === "trivial" ? "Empty" : 
-                     promptComplexity.charAt(0).toUpperCase() + promptComplexity.slice(1)} Query
-                  </span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                    inputPercentage > 80 ? 'bg-red-100 text-red-600' : 
-                    inputPercentage > 50 ? 'bg-yellow-100 text-yellow-600' : 
-                    'bg-green-100 text-green-600'
-                  }`}>
-                    {inputPercentage.toFixed(1)}% used
-                  </span>
-                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                  inputPercentage > 80 ? 'bg-red-100 text-red-600' : 
+                  inputPercentage > 50 ? 'bg-yellow-100 text-yellow-600' : 
+                  'bg-green-100 text-green-600'
+                }`}>
+                  {inputPercentage.toFixed(1)}% used
+                </span>
               </div>
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                 <div 
@@ -1023,12 +920,17 @@ export default function ChatPage() {
                 </>
               ) : (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-yellow-700 mb-2">
-                    No models available within your current cost cap of ${costCap.toFixed(2)}.
+                  <p className="text-yellow-700 font-medium mb-2">
+                    No models fit your current constraints
                   </p>
-                  <p className="text-sm text-gray-600">
-                    Try increasing the cost cap slider to enable more models, or disable reasoning mode to access cheaper options.
+                  <p className="text-sm text-gray-600 mb-3">
+                    Your settings have filtered out all available models. Try one of these:
                   </p>
+                  <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+                    <li>Increase the <strong>Max Cost Per Query</strong> slider</li>
+                    {reasoningEnabled && <li>Turn off <strong>Reasoning Mode</strong> to access cheaper models</li>}
+                    {inputPercentage > 100 && <li>Choose a larger <strong>Context Window</strong> or shorten your input</li>}
+                  </ul>
                 </div>
               )}
             </div>

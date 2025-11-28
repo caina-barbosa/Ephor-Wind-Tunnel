@@ -17,6 +17,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **2025-11-28**: Simplified recommendation logic for better education
+  - Recommendation now picks the CHEAPEST model that fits all constraints
+  - No more keyword/complexity detection - transparent filtering only
+  - Logic: (1) Filter by cost cap, (2) Filter by context window, (3) Filter by reasoning mode, (4) Pick cheapest
+  - Students learn by experimenting: start cheap, compare results, upgrade if needed
+  - Title changed to all caps: "EPHOR WIND TUNNEL"
 - **2025-11-28**: Renamed to "Ephor Wind Tunnel" with clean, minimal light theme
   - White/light gray background with black text
   - Simple gray borders, no gradients
@@ -25,7 +31,6 @@ Preferred communication style: Simple, everyday language.
   - Mobile-responsive design: stacked controls, horizontal scrolling grid, touch-friendly dialogs
   - Enhanced "Input vs Context Capacity" gauge with clear X/Y tokens display and percentage
   - Added "Capability" indicator per model (Basic → Good → Strong → Excellent) with tooltips explaining each level
-  - Smart recommendation logic that matches model capability to prompt complexity
   - Context window selector (8K/32K/128K/1M) with explanatory text
   - Cost cap slider ($0.00-$0.25) that disables expensive models
   - Reasoning mode toggle with 70B+ restriction
