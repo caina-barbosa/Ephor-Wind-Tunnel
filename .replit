@@ -35,14 +35,10 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 38589
-externalPort = 3001
-
-[[ports]]
 localPort = 39441
 externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "EphorArbitrage/dist/index.cjs"]
-build = ["bash", "-c", "cd EphorArbitrage && npm run build"]
+run = ["npm", "--prefix", "EphorArbitrage", "run", "start"]
+build = ["npm", "--prefix", "EphorArbitrage", "run", "build"]
