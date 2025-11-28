@@ -7,14 +7,13 @@ import { createCerebrasChatCompletion, CEREBRAS_MODEL_ID } from "./cerebras";
 import { createDeepSeekChatCompletion, DEEPSEEK_MODEL_ID } from "./deepseek";
 import { createMiniMaxChatCompletion, MINIMAX_MODEL_ID } from "./minimax";
 import { createAnthropicChatCompletion, ANTHROPIC_MODEL_ID } from "./anthropic";
-import { createOpenRouterChatCompletion, KIMI_K2_MODEL_ID } from "./openrouter";
+import { createOpenRouterChatCompletion, KIMI_K2_MODEL_ID, QWEN3_14B_MODEL_ID } from "./openrouter";
 import { 
   createTogetherChatCompletion, 
   TOGETHER_QWEN_MODEL_ID, 
   TOGETHER_GLM_MODEL_ID,
   TOGETHER_LLAMA_3B_MODEL_ID,
   TOGETHER_QWEN_7B_MODEL_ID,
-  TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_14B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_MODEL_ID,
   TOGETHER_QWQ_32B_MODEL_ID
@@ -33,7 +32,7 @@ const QWEN_72B_MODEL_SELECTOR_ID = "qwen/qwen-2.5-72b-instruct";
 const GLM_4_32B_MODEL_SELECTOR_ID = "z-ai/glm-4-32b";
 const TOGETHER_LLAMA_3B_SELECTOR_ID = "together/llama-3.2-3b-instruct-turbo";
 const TOGETHER_QWEN_7B_SELECTOR_ID = "together/qwen-2.5-7b-instruct-turbo";
-const TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_14B_SELECTOR_ID = "together/deepseek-r1-distill-qwen-14b";
+const OPENROUTER_QWEN3_14B_SELECTOR_ID = "openrouter/qwen3-14b";
 const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
 const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
 const TOGETHER_QWQ_32B_SELECTOR_ID = "together/qwq-32b";
@@ -146,10 +145,10 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
-  if (request.model === TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_14B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for DeepSeek R1 Distill Qwen 14B");
-    return createTogetherChatCompletion({
-      model: TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_14B_MODEL_ID,
+  if (request.model === OPENROUTER_QWEN3_14B_SELECTOR_ID) {
+    console.log("[API] Using OpenRouter for Qwen3 14B");
+    return createOpenRouterChatCompletion({
+      model: QWEN3_14B_MODEL_ID,
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,

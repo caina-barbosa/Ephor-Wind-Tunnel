@@ -83,3 +83,4 @@ export async function createOpenRouterChatCompletion(
 }
 
 export const KIMI_K2_MODEL_ID = "moonshotai/kimi-k2";
+export const QWEN3_14B_MODEL_ID = "qwen/qwen3-14b";
