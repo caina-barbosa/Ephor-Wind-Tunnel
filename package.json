@@ -1,0 +1,8 @@
+{
+  "name": "ephor-wind-tunnel",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd EphorArbitrage && npm install && npm run build",
+    "start": "cd EphorArbitrage && npm run start"
+  }
+}

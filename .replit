@@ -40,5 +40,5 @@ externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "cd EphorArbitrage && npm run start"]
-build = ["bash", "-c", "cd EphorArbitrage && npm install && npm run build"]
+run = ["npm", "run", "start"]
+build = ["npm", "run", "build"]
