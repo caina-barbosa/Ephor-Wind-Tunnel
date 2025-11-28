@@ -166,31 +166,32 @@ export default function ChatPage() {
     const model = getModelForColumn(col);
     if (!model) return "";
     
-    const contextNote = contextSize === "1m" ? " Your 1M context window requires more capable models." :
-                        contextSize === "128k" ? " Your large context window (128K) benefits from stronger models." : "";
+    const contextNote = inputPercentage > 50 
+      ? ` You're using ${inputPercentage.toFixed(0)}% of context—this justifies a stronger model.`
+      : "";
     
     if (reasoningEnabled) {
       if (col === "70B") {
-        return `Best value for reasoning tasks.${contextNote} DeepSeek R1 Distill gives deep chain-of-thought at ~65% less cost than full R1. Engineering insight: Reasoning requires 70B+ parameters to work reliably.`;
+        return `Best value for reasoning. DeepSeek R1 Distill gives deep chain-of-thought at ~65% less cost than full R1. Engineering insight: Reasoning requires 70B+ parameters to work reliably.`;
       }
       if (col === "Frontier") {
-        return `Most capable reasoning model.${contextNote} DeepSeek R1 has the deepest chain-of-thought. Use when accuracy on hard problems matters more than cost.`;
+        return `Maximum reasoning capability. DeepSeek R1 has the deepest chain-of-thought. Use when accuracy on hard problems matters more than cost.`;
       }
     } else {
       if (col === "3B") {
-        return `Your query is simple enough for a 3B model.${contextNote} Basic capability handles straightforward Q&A well—you save 99%+ on cost vs larger models. Engineering insight: Don't overspend on capability you don't need.`;
+        return `Perfect for simple queries. 3B models handle basic Q&A well—you save 99%+ vs larger models.${contextNote} Engineering insight: Don't overspend on capability you don't need!`;
       }
       if (col === "7B") {
-        return `Your query matches 7B capability.${contextNote} Good for everyday questions with minimal cost. 7B models handle most tasks humans ask—coding questions, explanations, summaries.`;
+        return `Good match for simple questions. 7B handles everyday tasks at minimal cost.${contextNote} Engineering insight: Most questions humans ask don't need bigger models.`;
       }
       if (col === "14B") {
-        return `Your query needs 14B capability.${contextNote} The sweet spot for nuanced work—strong enough for analysis while staying cost-efficient. Engineering insight: 14B is often the best value.`;
+        return `Sweet spot for moderate complexity. 14B is strong enough for analysis while staying cost-efficient.${contextNote} Engineering insight: Often the best value for real work.`;
       }
       if (col === "70B") {
-        return `Your query requires 70B capability.${contextNote} Complex reasoning, multi-step analysis, and nuanced understanding need this scale. Cost is higher but accuracy matters here.`;
+        return `Your query needs deeper reasoning. Words like "why", "explain", "analyze" require 70B+ for quality answers.${contextNote} Engineering insight: Complex reasoning needs more parameters.`;
       }
       if (col === "Frontier") {
-        return `Your query needs maximum capability.${contextNote} Claude Sonnet 4.5 excels at the hardest problems—coding, deep analysis, creative work. Premium cost for premium quality.`;
+        return `Expert-level query detected. Code, research, or detailed analysis needs maximum capability.${contextNote} Engineering insight: Premium cost for premium quality.`;
       }
     }
     return "";
@@ -257,11 +258,8 @@ export default function ChatPage() {
       return null;
     }
     
-    // Map complexity to recommended model
-    // Context window boosts the recommendation by 1 tier
-    const contextBoost = contextSize === "1m" ? 2 : contextSize === "128k" ? 1 : 0;
-    
-    // Base recommendations by complexity
+    // Base recommendations by complexity ONLY
+    // Context window does NOT automatically boost - that's a user choice about capacity, not capability
     const complexityToModel: Record<string, string> = {
       "trivial": "3B",
       "simple": "7B", 
@@ -270,14 +268,22 @@ export default function ChatPage() {
       "expert": "Frontier"
     };
     
+    // Only boost for context if user is actually USING significant context (>50%)
+    // This teaches: "larger context = potential cost, not mandatory upgrade"
+    const contextUtilization = inputPercentage;
+    const needsContextBoost = contextUtilization > 50;
+    
     const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "14B", "70B", "Frontier"];
     const baseModel = complexityToModel[promptComplexity] || "3B";
-    const baseIndex = modelOrder.indexOf(baseModel as typeof COLUMNS[number]);
-    const boostedIndex = Math.min(baseIndex + contextBoost, modelOrder.length - 1);
-    const targetModel = modelOrder[boostedIndex];
+    let targetIndex = modelOrder.indexOf(baseModel as typeof COLUMNS[number]);
+    
+    // Only boost if actually using significant context
+    if (needsContextBoost) {
+      targetIndex = Math.min(targetIndex + 1, modelOrder.length - 1);
+    }
     
     // Find the target model or next available
-    for (let i = boostedIndex; i < modelOrder.length; i++) {
+    for (let i = targetIndex; i < modelOrder.length; i++) {
       const model = modelOrder[i];
       if (available.includes(model)) {
         return model;
@@ -285,7 +291,7 @@ export default function ChatPage() {
     }
     
     // Fallback: find largest available below target
-    for (let i = boostedIndex - 1; i >= 0; i--) {
+    for (let i = targetIndex - 1; i >= 0; i--) {
       const model = modelOrder[i];
       if (available.includes(model)) {
         return model;
@@ -293,7 +299,7 @@ export default function ChatPage() {
     }
     
     return available[0];
-  }, [costCap, reasoningEnabled, promptComplexity, contextSize]);
+  }, [costCap, reasoningEnabled, promptComplexity, inputPercentage]);
 
   const handleRunAll = async () => {
     if (!prompt.trim() || isRunning) return;
