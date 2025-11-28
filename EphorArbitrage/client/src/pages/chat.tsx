@@ -247,47 +247,72 @@ export default function ChatPage() {
     setResponses(initialResponses);
 
     const runModel = async (col: string, model: Model) => {
-      const progressInterval = setInterval(() => {
-        setResponses((prev) => {
-          const current = prev[col];
-          if (current && current.loading && current.progress < 90) {
-            return {
-              ...prev,
-              [col]: { ...current, progress: current.progress + Math.random() * 15 }
-            };
-          }
-          return prev;
-        });
-      }, 300);
-
       try {
-        const response = await apiRequest("POST", "/api/wind-tunnel/run", {
-          modelId: model.id,
-          prompt: prompt,
+        const response = await fetch("/api/wind-tunnel/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ modelId: model.id, prompt: prompt }),
         });
-
-        clearInterval(progressInterval);
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Request failed");
+          throw new Error("Request failed");
         }
 
-        const data = await response.json();
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("No reader available");
 
-        setResponses((prev) => ({
-          ...prev,
-          [col]: {
-            content: data.content || "",
-            loading: false,
-            error: null,
-            latency: data.latency,
-            cost: data.cost,
-            progress: 100,
-          },
-        }));
+        const decoder = new TextDecoder();
+        let accumulatedContent = "";
+        let tokenCount = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n\n");
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === "token") {
+                accumulatedContent += data.content;
+                tokenCount = data.tokenCount;
+                
+                const estimatedProgress = Math.min((tokenCount / 100) * 100, 95);
+                
+                setResponses((prev) => ({
+                  ...prev,
+                  [col]: {
+                    ...prev[col],
+                    content: accumulatedContent,
+                    progress: estimatedProgress,
+                  },
+                }));
+              } else if (data.type === "complete") {
+                setResponses((prev) => ({
+                  ...prev,
+                  [col]: {
+                    content: data.content,
+                    loading: false,
+                    error: null,
+                    latency: data.latency,
+                    cost: data.cost,
+                    progress: 100,
+                  },
+                }));
+              } else if (data.type === "error") {
+                throw new Error(data.error);
+              }
+            } catch (parseErr) {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
       } catch (err: any) {
-        clearInterval(progressInterval);
         setResponses((prev) => ({
           ...prev,
           [col]: {

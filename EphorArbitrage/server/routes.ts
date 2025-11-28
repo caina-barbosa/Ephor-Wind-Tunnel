@@ -210,6 +210,51 @@ function getModelDisplayName(modelId: string): string {
   return MODEL_DISPLAY_NAMES[modelId] || modelId;
 }
 
+// Helper to get streaming client for a model
+function getStreamingClient(modelId: string): OpenAI {
+  if (modelId === "anthropic/claude-sonnet-4.5") {
+    return new OpenAI({
+      baseURL: "https://api.anthropic.com/v1",
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      defaultHeaders: { "anthropic-version": "2023-06-01" },
+    });
+  }
+  
+  if (modelId === "meta-llama/llama-3.3-70b-instruct:cerebras") {
+    return new OpenAI({
+      baseURL: "https://api.cerebras.ai/v1",
+      apiKey: process.env.CEREBRAS_API_KEY,
+    });
+  }
+  
+  if (modelId.startsWith("openrouter/")) {
+    return new OpenAI({
+      baseURL: process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
+      apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY,
+    });
+  }
+  
+  // Default: Together AI
+  return new OpenAI({
+    baseURL: "https://api.together.xyz/v1",
+    apiKey: process.env.TOGETHER_API_KEY,
+  });
+}
+
+// Get the actual model ID to send to the provider
+function getActualModelId(modelId: string): string {
+  const modelMap: Record<string, string> = {
+    "anthropic/claude-sonnet-4.5": "claude-sonnet-4-20250514",
+    "meta-llama/llama-3.3-70b-instruct:cerebras": "llama-3.3-70b",
+    "together/llama-3.2-3b-instruct-turbo": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+    "together/qwen-2.5-7b-instruct-turbo": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+    "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
+    "openrouter/qwen3-14b": "qwen/qwen3-14b",
+  };
+  return modelMap[modelId] || modelId;
+}
+
 // Token estimation: rough approximation of ~4 characters = 1 token
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
@@ -957,7 +1002,90 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
     }
   });
 
-  // Wind Tunnel: Run a single model
+  // Wind Tunnel: Run a single model with streaming
+  app.post("/api/wind-tunnel/stream", async (req, res) => {
+    const { modelId, prompt } = req.body;
+
+    if (!modelId || typeof modelId !== "string") {
+      return res.status(400).json({ error: "Model ID is required" });
+    }
+    if (!prompt || typeof prompt !== "string") {
+      return res.status(400).json({ error: "Prompt is required" });
+    }
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    console.log(`[Wind Tunnel Stream] Running model: ${modelId}`);
+
+    try {
+      const messages: ChatMessage[] = [{ role: "user", content: prompt }];
+      const startTime = Date.now();
+      
+      // Stream directly using OpenAI-compatible clients
+      const client = getStreamingClient(modelId);
+      const actualModelId = getActualModelId(modelId);
+      
+      const stream = await client.chat.completions.create({
+        model: actualModelId,
+        messages,
+        max_tokens: 1024,
+        stream: true,
+      });
+
+      let content = "";
+      let tokenCount = 0;
+      let firstTokenTime = 0;
+      
+      for await (const chunk of stream) {
+        if (firstTokenTime === 0) {
+          firstTokenTime = Date.now() - startTime;
+        }
+        
+        const delta = chunk.choices[0]?.delta?.content || "";
+        if (delta) {
+          content += delta;
+          tokenCount += 1; // Rough estimate: each chunk is ~1 token
+          
+          // Send progress update
+          res.write(`data: ${JSON.stringify({ 
+            type: 'token', 
+            content: delta,
+            tokenCount,
+            elapsed: Date.now() - startTime
+          })}\n\n`);
+        }
+      }
+
+      const latency = Date.now() - startTime;
+      const inputTokens = Math.ceil(prompt.length / 4);
+      const outputTokens = Math.ceil(content.length / 4);
+      const cost = calculateCost(modelId, inputTokens, outputTokens);
+
+      // Send final complete message
+      res.write(`data: ${JSON.stringify({ 
+        type: 'complete',
+        content,
+        inputTokens,
+        outputTokens,
+        latency,
+        cost
+      })}\n\n`);
+      
+      res.end();
+      console.log(`[Wind Tunnel Stream] ${modelId} completed in ${latency}ms`);
+      
+    } catch (error: any) {
+      console.error(`[Wind Tunnel Stream] Error:`, error);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+      res.end();
+    }
+  });
+
+  // Wind Tunnel: Run a single model (non-streaming fallback)
   app.post("/api/wind-tunnel/run", async (req, res) => {
     try {
       const { modelId, prompt } = req.body;
