@@ -169,7 +169,7 @@ export default function ChatPage() {
               disabled={isRunning}
             >
               <SelectTrigger className="bg-gray-800 text-white border-gray-700 font-semibold">
-                <SelectValue placeholder={category} />
+                <span>{category}</span>
               </SelectTrigger>
               <SelectContent>
                 {MODELS_BY_CATEGORY[category].map((model) => (
