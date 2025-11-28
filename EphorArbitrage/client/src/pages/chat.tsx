@@ -554,14 +554,14 @@ export default function ChatPage() {
                     return (
                       <div 
                         key={col} 
-                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-[#1b7340]/10' : ''} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        className={`p-2 sm:p-3 text-center bg-white ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
                         <div className="font-black text-[#1a3a8f] text-sm sm:text-base">{col}</div>
                         <div className="text-xs text-gray-500">
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
-                          <div className="mt-1 text-xs font-bold text-[#1b7340]">★ Recommended</div>
+                          <div className="mt-1 text-xs font-black text-[#1b7340]">★ Recommended</div>
                         )}
                       </div>
                     );
@@ -612,7 +612,7 @@ export default function ChatPage() {
                         className={`
                           p-3 sm:p-4 min-h-[160px] sm:min-h-[180px] transition-all
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
-                          ${isRecommended ? 'bg-[#1b7340]/10' : 'bg-white'}
+                          ${isRecommended ? 'bg-white border-l-4 border-l-[#1b7340]' : 'bg-white'}
                           ${isLoading ? 'bg-[#3fb4e5]/10' : ''}
                           ${hasError ? 'bg-[#c41c6a]/10' : ''}
                           ${hasContent ? 'cursor-pointer hover:bg-gray-50' : ''}
