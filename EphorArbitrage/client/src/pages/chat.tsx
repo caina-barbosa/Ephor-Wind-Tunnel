@@ -71,9 +71,9 @@ const CONTEXT_SIZES = [
 
 const getLatencyColor = (latency: "fast" | "medium" | "slow") => {
   switch (latency) {
-    case "fast": return "text-green-600 bg-green-100";
-    case "medium": return "text-yellow-600 bg-yellow-100";
-    case "slow": return "text-red-600 bg-red-100";
+    case "fast": return "text-[#166534] bg-[#166534]/10";
+    case "medium": return "text-[#F59E0B] bg-[#F59E0B]/10";
+    case "slow": return "text-[#BE185D] bg-[#BE185D]/10";
   }
 };
 
@@ -93,10 +93,10 @@ const getLatencyCategory = (latency: number): "fast" | "medium" | "slow" => {
 
 const getCapabilityColor = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "basic": return "text-gray-600 bg-gray-100";
-    case "good": return "text-blue-600 bg-blue-100";
-    case "strong": return "text-green-600 bg-green-100";
-    case "excellent": return "text-purple-600 bg-purple-100";
+    case "basic": return "text-[#9a3412] bg-[#FED7AA]";
+    case "good": return "text-[#0369a1] bg-[#38BDF8]/30";
+    case "strong": return "text-white bg-[#166534]";
+    case "excellent": return "text-white bg-[#1E3A8A]";
   }
 };
 
@@ -337,10 +337,10 @@ export default function ChatPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="min-h-screen bg-[#FAF5F0] text-gray-900">
         <div className="max-w-7xl mx-auto p-3 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-wide">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] tracking-wide">
               EPHOR WIND TUNNEL
             </h1>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -348,7 +348,7 @@ export default function ChatPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowWhyModal(true)}
-                className="border-gray-300 text-gray-600 hover:bg-gray-100 flex-1 sm:flex-none"
+                className="border-[#1E3A8A]/30 text-[#1E3A8A] hover:bg-[#1E3A8A]/5 flex-1 sm:flex-none"
               >
                 <Info className="w-4 h-4 mr-2" />
                 Why This Model?
@@ -357,7 +357,7 @@ export default function ChatPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowParetoModal(true)}
-                className="border-purple-300 text-purple-600 hover:bg-purple-50 flex-1 sm:flex-none"
+                className="border-[#38BDF8] text-[#0369a1] hover:bg-[#38BDF8]/10 flex-1 sm:flex-none"
               >
                 <TrendingUp className="w-4 h-4 mr-2" />
                 Cost Curve
@@ -365,7 +365,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-gray-200">
+          <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-gray-200 shadow-sm">
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -376,15 +376,15 @@ export default function ChatPage() {
             
             <div className={`mt-3 p-3 sm:p-4 rounded-lg border-2 ${
               inputTokenEstimate > selectedContextTokens 
-                ? 'bg-red-50 border-red-400' 
-                : 'bg-blue-50 border-blue-200'
+                ? 'bg-[#BE185D]/10 border-[#BE185D]' 
+                : 'bg-[#38BDF8]/10 border-[#38BDF8]'
             }`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`font-semibold text-sm ${
-                  inputTokenEstimate > selectedContextTokens ? 'text-red-700' : 'text-blue-700'
+                  inputTokenEstimate > selectedContextTokens ? 'text-[#BE185D]' : 'text-[#1E3A8A]'
                 }`}>INPUT GAUGE</span>
                 {inputTokenEstimate > selectedContextTokens && (
-                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded font-bold">
+                  <span className="text-xs bg-[#BE185D] text-white px-2 py-0.5 rounded font-bold">
                     OVERFLOW - All models disabled
                   </span>
                 )}
@@ -392,17 +392,17 @@ export default function ChatPage() {
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm mb-2">
                 <div className="flex items-center gap-2">
                   <span className={`font-mono text-xl font-bold ${
-                    inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
+                    inputTokenEstimate > selectedContextTokens ? 'text-[#BE185D]' : 'text-gray-900'
                   }`}>{inputTokenEstimate.toLocaleString()}</span>
                   <span className="text-gray-400 text-lg">/</span>
                   <span className="font-mono text-lg text-gray-600">{selectedContextTokens.toLocaleString()}</span>
                   <span className="text-gray-500">tokens</span>
                 </div>
                 <span className={`text-sm font-bold px-3 py-1 rounded ${
-                  inputTokenEstimate > selectedContextTokens ? 'bg-red-600 text-white' :
-                  inputPercentage > 80 ? 'bg-red-500 text-white' : 
-                  inputPercentage > 50 ? 'bg-yellow-500 text-white' : 
-                  'bg-green-500 text-white'
+                  inputTokenEstimate > selectedContextTokens ? 'bg-[#BE185D] text-white' :
+                  inputPercentage > 80 ? 'bg-[#BE185D] text-white' : 
+                  inputPercentage > 50 ? 'bg-[#F59E0B] text-white' : 
+                  'bg-[#166534] text-white'
                 }`}>
                   {inputTokenEstimate > selectedContextTokens ? 'OVERFLOW!' : `${inputPercentage.toFixed(1)}% used`}
                 </span>
@@ -410,15 +410,15 @@ export default function ChatPage() {
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all ${
-                    inputTokenEstimate > selectedContextTokens ? 'bg-red-600' :
-                    inputPercentage > 80 ? 'bg-red-500' : 
-                    inputPercentage > 50 ? 'bg-yellow-500' : 'bg-blue-500'
+                    inputTokenEstimate > selectedContextTokens ? 'bg-[#BE185D]' :
+                    inputPercentage > 80 ? 'bg-[#BE185D]' : 
+                    inputPercentage > 50 ? 'bg-[#F59E0B]' : 'bg-[#38BDF8]'
                   }`}
                   style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
                 />
               </div>
               <div className={`text-xs mt-2 ${
-                inputTokenEstimate > selectedContextTokens ? 'text-red-600 font-medium' : 'text-blue-600'
+                inputTokenEstimate > selectedContextTokens ? 'text-[#BE185D] font-medium' : 'text-[#1E3A8A]'
               }`}>
                 {inputTokenEstimate > selectedContextTokens 
                   ? `Your input exceeds the ${contextSize.toUpperCase()} context window. Increase the context size or shorten your prompt.`
@@ -429,27 +429,27 @@ export default function ChatPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className={`bg-white rounded-lg p-3 sm:p-4 border ${
-              contextSize === "1m" ? "border-red-300 bg-red-50" : 
-              contextSize === "128k" ? "border-orange-300 bg-orange-50" : "border-gray-200"
+            <div className={`bg-white rounded-lg p-3 sm:p-4 border shadow-sm ${
+              contextSize === "1m" ? "border-[#BE185D] bg-[#BE185D]/5" : 
+              contextSize === "128k" ? "border-[#F59E0B] bg-[#F59E0B]/5" : "border-gray-200"
             }`}>
               <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <div className="flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-gray-500" />
-                  <span className="font-medium text-gray-700 text-sm sm:text-base">Context Window</span>
+                  <Brain className="w-4 h-4 text-[#1E3A8A]" />
+                  <span className="font-medium text-[#1E3A8A] text-sm sm:text-base">Context Window</span>
                 </div>
                 {(contextSize === "128k" || contextSize === "1m") && (
                   <span className={`text-xs px-2 py-0.5 rounded ${
-                    contextSize === "1m" ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600"
+                    contextSize === "1m" ? "bg-[#BE185D]/10 text-[#BE185D]" : "bg-[#F59E0B]/10 text-[#F59E0B]"
                   }`}>
-                    {contextSize === "1m" ? "⚠️ Max Cost" : "↑ Higher Cost"}
+                    {contextSize === "1m" ? "Max Cost" : "↑ Higher Cost"}
                   </span>
                 )}
               </div>
               <Select value={contextSize} onValueChange={setContextSize} disabled={isRunning}>
                 <SelectTrigger className={`bg-white text-gray-900 ${
-                  contextSize === "1m" ? "border-red-300" : 
-                  contextSize === "128k" ? "border-orange-300" : "border-gray-300"
+                  contextSize === "1m" ? "border-[#BE185D]" : 
+                  contextSize === "128k" ? "border-[#F59E0B]" : "border-gray-300"
                 }`}>
                   <SelectValue />
                 </SelectTrigger>
@@ -462,19 +462,19 @@ export default function ChatPage() {
                 </SelectContent>
               </Select>
               <p className={`text-xs mt-2 hidden sm:block ${
-                contextSize === "1m" ? "text-red-500" : 
-                contextSize === "128k" ? "text-orange-500" : "text-gray-400"
+                contextSize === "1m" ? "text-[#BE185D]" : 
+                contextSize === "128k" ? "text-[#F59E0B]" : "text-gray-400"
               }`}>
-                {contextSize === "1m" ? "⚠️ Maximum memory = Maximum cost!" :
+                {contextSize === "1m" ? "Maximum memory = Maximum cost!" :
                  contextSize === "128k" ? "Large context increases cost significantly." :
                  "Memory = Cost. Bigger context = more expensive."}
               </p>
             </div>
 
-            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
+            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <DollarSign className="w-4 h-4 text-gray-500" />
-                <span className="font-medium text-gray-700 text-sm sm:text-base">Max Cost Per Query</span>
+                <DollarSign className="w-4 h-4 text-[#1E3A8A]" />
+                <span className="font-medium text-[#1E3A8A] text-sm sm:text-base">Max Cost Per Query</span>
               </div>
               <div className="flex items-center gap-3">
                 <Slider
@@ -493,17 +493,17 @@ export default function ChatPage() {
               <p className="text-xs text-gray-400 mt-2 hidden sm:block">Models exceeding this cap will be disabled.</p>
             </div>
 
-            <div className={`bg-white rounded-lg p-3 sm:p-4 border ${
-              reasoningEnabled ? "border-orange-300 bg-orange-50" : "border-gray-200"
+            <div className={`bg-white rounded-lg p-3 sm:p-4 border shadow-sm ${
+              reasoningEnabled ? "border-[#F59E0B] bg-[#F59E0B]/5" : "border-gray-200"
             }`}>
               <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <div className="flex items-center gap-2">
-                  <Zap className={`w-4 h-4 ${reasoningEnabled ? 'text-orange-500' : 'text-gray-500'}`} />
-                  <span className="font-medium text-gray-700 text-sm sm:text-base">Reasoning Mode</span>
+                  <Zap className={`w-4 h-4 ${reasoningEnabled ? 'text-[#F59E0B]' : 'text-[#1E3A8A]'}`} />
+                  <span className="font-medium text-[#1E3A8A] text-sm sm:text-base">Reasoning Mode</span>
                 </div>
                 {reasoningEnabled && (
-                  <span className="text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-600">
-                    ⚠️ 3-5x Cost
+                  <span className="text-xs px-2 py-0.5 rounded bg-[#F59E0B]/10 text-[#F59E0B]">
+                    3-5x Cost
                   </span>
                 )}
               </div>
@@ -513,13 +513,13 @@ export default function ChatPage() {
                   onCheckedChange={setReasoningEnabled}
                   disabled={isRunning}
                 />
-                <span className={`font-medium ${reasoningEnabled ? 'text-orange-600' : 'text-gray-400'}`}>
+                <span className={`font-medium ${reasoningEnabled ? 'text-[#F59E0B]' : 'text-gray-400'}`}>
                   {reasoningEnabled ? 'ENABLED' : 'DISABLED'}
                 </span>
               </div>
-              <p className={`text-xs mt-2 hidden sm:block ${reasoningEnabled ? 'text-orange-500' : 'text-gray-400'}`}>
+              <p className={`text-xs mt-2 hidden sm:block ${reasoningEnabled ? 'text-[#F59E0B]' : 'text-gray-400'}`}>
                 {reasoningEnabled 
-                  ? "⚠️ Deep reasoning = 3-5x cost. Only 70B+ models. Use for complex tasks."
+                  ? "Deep reasoning = 3-5x cost. Only 70B+ models. Use for complex tasks."
                   : "Standard mode. Fast responses, no chain-of-thought."}
               </p>
             </div>
@@ -528,7 +528,7 @@ export default function ChatPage() {
           <Button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
-            className="w-full py-4 sm:py-6 text-base sm:text-lg bg-blue-600 hover:bg-blue-700 text-white mb-4 sm:mb-6"
+            className="w-full py-4 sm:py-6 text-base sm:text-lg bg-[#1E3A8A] hover:bg-[#1E3A8A]/90 text-white mb-4 sm:mb-6"
           >
             {isRunning ? (
               <>
@@ -543,7 +543,7 @@ export default function ChatPage() {
             )}
           </Button>
 
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <div className="min-w-[700px] sm:min-w-0">
                 <div className="grid grid-cols-5 border-b border-gray-200">
@@ -553,14 +553,14 @@ export default function ChatPage() {
                     return (
                       <div 
                         key={col} 
-                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-green-50' : ''} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-[#166534]/10' : ''} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
-                        <div className="font-bold text-gray-900 text-sm sm:text-base">{col}</div>
+                        <div className="font-bold text-[#1E3A8A] text-sm sm:text-base">{col}</div>
                         <div className="text-xs text-gray-500">
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
-                          <div className="mt-1 text-xs font-medium text-green-600">★ Recommended</div>
+                          <div className="mt-1 text-xs font-medium text-[#166534]">★ Recommended</div>
                         )}
                       </div>
                     );
@@ -611,9 +611,9 @@ export default function ChatPage() {
                         className={`
                           p-3 sm:p-4 min-h-[160px] sm:min-h-[180px] transition-all
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
-                          ${isRecommended ? 'bg-green-50' : 'bg-white'}
-                          ${isLoading ? 'bg-blue-50' : ''}
-                          ${hasError ? 'bg-red-50' : ''}
+                          ${isRecommended ? 'bg-[#166534]/10' : 'bg-white'}
+                          ${isLoading ? 'bg-[#38BDF8]/10' : ''}
+                          ${hasError ? 'bg-[#BE185D]/10' : ''}
                           ${hasContent ? 'cursor-pointer hover:bg-gray-50' : ''}
                         `}
                       >
@@ -702,11 +702,11 @@ export default function ChatPage() {
                                   fill="none"
                                   strokeDasharray={175.9}
                                   strokeDashoffset={175.9 - (response.progress / 100) * 175.9}
-                                  className="text-blue-500 transition-all duration-300"
+                                  className="text-[#38BDF8] transition-all duration-300"
                                 />
                               </svg>
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-mono text-blue-600">
+                                <span className="text-xs font-mono text-[#1E3A8A]">
                                   {Math.round(response.progress)}%
                                 </span>
                               </div>
@@ -717,8 +717,8 @@ export default function ChatPage() {
 
                     {hasError && (
                       <div className="text-center py-4">
-                        <XCircle className="w-10 h-10 mx-auto text-red-500 mb-2" />
-                        <p className="text-xs text-red-600">{response.error}</p>
+                        <XCircle className="w-10 h-10 mx-auto text-[#BE185D] mb-2" />
+                        <p className="text-xs text-[#BE185D]">{response.error}</p>
                       </div>
                     )}
 
