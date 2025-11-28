@@ -1,8 +1,8 @@
-# LLM WIND TUNNEL
+# EPHOR WIND TUNNEL
 
 ## Overview
 
-LLM WIND TUNNEL is an educational AI comparison tool designed to teach students about LLM engineering dimensions. The application enables users to send a single prompt to 5 AI models simultaneously, organized by model size (3B, 7B, 14B, 70B, Frontier), and compare responses in real-time.
+Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. The application enables users to send a single prompt to 5 AI models simultaneously, organized by model size (3B, 7B, 14B, 70B, Frontier), and compare responses in real-time.
 
 The system teaches key engineering concepts:
 - Model size vs capability tradeoffs
@@ -17,8 +17,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **2025-11-28**: Major UI redesign matching the "LLM Wind Tunnel" educational spec
-  - Dark theme with modern gradient styling
+- **2025-11-28**: Renamed to "Ephor Wind Tunnel" with clean, minimal light theme
+  - White/light gray background with black text
+  - Simple gray borders, no gradients
+  - Blue accent for "Run" button, green for "Recommended"
   - Input token gauge showing usage vs context capacity
   - Context window selector (8K/32K/128K/1M) with explanatory text
   - Cost cap slider ($0.00-$0.25) that disables expensive models
@@ -35,7 +37,7 @@ Preferred communication style: Simple, everyday language.
 
 **Framework**: React 18+ with TypeScript, built using Vite for fast development with Hot Module Replacement (HMR).
 
-**UI Component System**: The application uses shadcn/ui components built on Radix UI primitives, styled with Tailwind CSS. Dark theme with slate colors.
+**UI Component System**: The application uses shadcn/ui components built on Radix UI primitives, styled with Tailwind CSS. Clean light theme with white/gray colors.
 
 **Layout Structure**: Full-screen grid layout with:
 - Prompt input with token count gauge
