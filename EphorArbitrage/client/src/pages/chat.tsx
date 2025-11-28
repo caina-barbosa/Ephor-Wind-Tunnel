@@ -84,6 +84,12 @@ const getLatencyLabel = (latency: "fast" | "medium" | "slow") => {
   }
 };
 
+const getTtftLatencyCategory = (ttft: number): "fast" | "medium" | "slow" => {
+  if (ttft < 500) return "fast";
+  if (ttft < 2000) return "medium";
+  return "slow";
+};
+
 export default function ChatPage() {
   const [prompt, setPrompt] = useState("");
   const [responses, setResponses] = useState<Record<string, ModelResponse>>({});
@@ -127,26 +133,67 @@ export default function ChatPage() {
     return { disabled: false, reason: "" };
   };
 
+  const getRecommendationReason = (col: string): string => {
+    const model = getModelForColumn(col);
+    if (!model) return "";
+    
+    if (reasoningEnabled) {
+      if (col === "70B") {
+        return "Best balance of deep reasoning and cost. DeepSeek R1 Distill provides strong reasoning at lower cost than full R1.";
+      }
+      if (col === "Frontier") {
+        return "Most capable reasoning model (DeepSeek R1). Choose when accuracy matters more than cost.";
+      }
+    } else {
+      if (col === "3B") {
+        return "Fastest and cheapest option. Good for simple tasks where speed matters most.";
+      }
+      if (col === "7B") {
+        return "Slightly more capable than 3B with minimal cost increase. Better for moderately complex queries.";
+      }
+      if (col === "14B") {
+        return "Good middle ground between capability and cost. Handles nuanced queries better than smaller models.";
+      }
+      if (col === "70B") {
+        return "High capability for complex reasoning tasks. Worth the cost when accuracy is critical.";
+      }
+      if (col === "Frontier") {
+        return "Highest capability (Claude Sonnet 4.5). Premium cost but best for challenging, nuanced tasks.";
+      }
+    }
+    return "";
+  };
+
   const recommendedModel = useMemo(() => {
     const available = COLUMNS.filter(col => !isModelDisabled(col).disabled);
     if (available.length === 0) return null;
     
-    let best = available[0];
-    let bestScore = Infinity;
+    if (reasoningEnabled) {
+      if (available.includes("70B")) return "70B";
+      if (available.includes("Frontier")) return "Frontier";
+      return null;
+    }
     
-    available.forEach(col => {
-      const model = getModelForColumn(col);
-      if (!model) return;
-      const cost = estimateCost(model);
-      const latencyScore = model.expectedLatency === "fast" ? 1 : model.expectedLatency === "medium" ? 2 : 3;
-      const score = cost * 100 + latencyScore;
-      if (score < bestScore) {
-        bestScore = score;
-        best = col;
-      }
-    });
+    const inputComplexity = inputTokenEstimate > 500 ? "complex" : inputTokenEstimate > 100 ? "moderate" : "simple";
     
-    return best;
+    if (inputComplexity === "simple") {
+      if (available.includes("3B")) return "3B";
+      if (available.includes("7B")) return "7B";
+    }
+    
+    if (inputComplexity === "moderate") {
+      if (available.includes("7B")) return "7B";
+      if (available.includes("14B")) return "14B";
+      if (available.includes("3B")) return "3B";
+    }
+    
+    if (inputComplexity === "complex") {
+      if (available.includes("14B")) return "14B";
+      if (available.includes("70B")) return "70B";
+      if (available.includes("7B")) return "7B";
+    }
+    
+    return available[0];
   }, [costCap, reasoningEnabled, inputTokenEstimate]);
 
   const handleRunAll = async () => {
@@ -621,7 +668,7 @@ export default function ChatPage() {
         </Dialog>
 
         <Dialog open={showWhyModal} onOpenChange={setShowWhyModal}>
-          <DialogContent className="max-w-2xl bg-slate-900 border-slate-700 text-white">
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border-slate-700 text-white">
             <DialogHeader>
               <DialogTitle className="text-xl flex items-center gap-2">
                 <Info className="w-5 h-5 text-blue-400" />
@@ -633,54 +680,136 @@ export default function ChatPage() {
                 <>
                   <div className="p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-blue-400 font-bold">★ Recommended:</span>
-                      <span className="font-medium">{getModelForColumn(recommendedModel)?.name}</span>
+                      <span className="text-blue-400 font-bold text-lg">★ Recommended: {getModelForColumn(recommendedModel)?.name}</span>
                       <span className="text-slate-500">({recommendedModel})</span>
                     </div>
-                    <p className="text-sm text-slate-400">
-                      Based on your current constraints, this model offers the best balance of cost and performance.
+                    <p className="text-sm text-blue-200">
+                      {getRecommendationReason(recommendedModel)}
                     </p>
                   </div>
                   
                   <div className="space-y-3">
-                    <h4 className="font-medium text-slate-300">Selection Factors:</h4>
+                    <h4 className="font-medium text-slate-300">Your Current Settings:</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="p-3 bg-slate-800 rounded-lg">
-                        <div className="text-xs text-slate-500 mb-1">Cost Cap</div>
-                        <div className="font-mono text-green-400">${costCap.toFixed(2)}</div>
-                      </div>
-                      <div className="p-3 bg-slate-800 rounded-lg">
-                        <div className="text-xs text-slate-500 mb-1">Context Size</div>
-                        <div className="font-mono text-blue-400">{contextSize.toUpperCase()}</div>
-                      </div>
-                      <div className="p-3 bg-slate-800 rounded-lg">
-                        <div className="text-xs text-slate-500 mb-1">Reasoning Mode</div>
-                        <div className={reasoningEnabled ? 'text-orange-400' : 'text-slate-400'}>
-                          {reasoningEnabled ? 'Enabled (70B+ only)' : 'Disabled'}
+                        <div className="text-xs text-slate-500 mb-1">Budget Limit</div>
+                        <div className={`font-mono text-lg ${costCap < 0.05 ? 'text-green-400' : costCap < 0.15 ? 'text-yellow-400' : 'text-red-400'}`}>
+                          ${costCap.toFixed(2)}/query
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {costCap < 0.05 ? "Strict budget - smaller models only" : 
+                           costCap < 0.15 ? "Moderate budget - mid-tier models available" : 
+                           "High budget - all models available"}
                         </div>
                       </div>
                       <div className="p-3 bg-slate-800 rounded-lg">
-                        <div className="text-xs text-slate-500 mb-1">Est. Input Tokens</div>
-                        <div className="font-mono text-slate-300">{inputTokenEstimate.toLocaleString()}</div>
+                        <div className="text-xs text-slate-500 mb-1">Context Window</div>
+                        <div className="font-mono text-lg text-blue-400">{contextSize.toUpperCase()}</div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {contextSize === "8k" ? "Small context - cheaper but limited memory" :
+                           contextSize === "32k" ? "Medium context - good balance" :
+                           contextSize === "128k" ? "Large context - more memory, higher cost" :
+                           "Maximum context - highest cost"}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-slate-800 rounded-lg">
+                        <div className="text-xs text-slate-500 mb-1">Reasoning Mode</div>
+                        <div className={`text-lg ${reasoningEnabled ? 'text-orange-400' : 'text-slate-400'}`}>
+                          {reasoningEnabled ? '🧠 ENABLED' : 'OFF'}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {reasoningEnabled 
+                            ? "Deep thinking enabled. Only 70B+ models support this."
+                            : "Standard mode. All model sizes available."}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-slate-800 rounded-lg">
+                        <div className="text-xs text-slate-500 mb-1">Your Input Size</div>
+                        <div className="font-mono text-lg text-slate-300">{inputTokenEstimate.toLocaleString()} tokens</div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {inputTokenEstimate < 100 ? "Simple query - small models work well" :
+                           inputTokenEstimate < 500 ? "Moderate query - consider 7B-14B" :
+                           "Complex query - larger models recommended"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-lg border border-slate-700">
+                    <h4 className="font-medium text-slate-200 mb-3 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-purple-400" />
+                      Engineering Truths (What Students Must Learn)
+                    </h4>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex gap-3">
+                        <span className="text-green-400">●</span>
+                        <div>
+                          <strong className="text-slate-200">Bigger ≠ Always Better</strong>
+                          <p className="text-slate-400">Cost rises exponentially with model size. A 70B model costs ~10x more than 7B, but isn't 10x better.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="text-orange-400">●</span>
+                        <div>
+                          <strong className="text-slate-200">Reasoning Requires Scale</strong>
+                          <p className="text-slate-400">Small models (3B-14B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="text-blue-400">●</span>
+                        <div>
+                          <strong className="text-slate-200">Context = Memory = Cost</strong>
+                          <p className="text-slate-400">Longer context windows use more GPU memory. Processing 1M tokens costs much more than 8K tokens.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="text-yellow-400">●</span>
+                        <div>
+                          <strong className="text-slate-200">Speed vs Accuracy Tradeoff</strong>
+                          <p className="text-slate-400">Fast models (3B-7B) respond quickly but make more mistakes. Slow models (70B+) are more accurate but take longer.</p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="p-4 bg-slate-800 rounded-lg">
-                    <h4 className="font-medium text-slate-300 mb-2">Engineering Truth:</h4>
-                    <ul className="text-sm text-slate-400 space-y-1">
-                      <li>• <strong>Bigger ≠ Always Better:</strong> Cost rises faster than quality gains</li>
-                      <li>• <strong>Reasoning is Expensive:</strong> Deep thinking requires more compute</li>
-                      <li>• <strong>Context = Memory = Cost:</strong> Long context uses more resources</li>
-                      <li>• <strong>Speed vs Accuracy:</strong> Faster models sacrifice some quality</li>
-                    </ul>
+                    <h4 className="font-medium text-slate-300 mb-2">Available Models Right Now:</h4>
+                    <div className="space-y-2">
+                      {COLUMNS.map(col => {
+                        const model = getModelForColumn(col);
+                        const { disabled, reason } = isModelDisabled(col);
+                        return (
+                          <div key={col} className={`flex items-center justify-between p-2 rounded ${
+                            col === recommendedModel ? 'bg-blue-900/30 border border-blue-700' : 
+                            disabled ? 'bg-slate-900/50 opacity-50' : 'bg-slate-900'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              {col === recommendedModel && <span className="text-blue-400">★</span>}
+                              {disabled && <Lock className="w-3 h-3 text-slate-500" />}
+                              <span className={disabled ? 'text-slate-500' : 'text-slate-200'}>
+                                {model?.name || `${col} (disabled)`}
+                              </span>
+                            </div>
+                            <div className="text-xs">
+                              {disabled ? (
+                                <span className="text-red-400">{reason}</span>
+                              ) : (
+                                <span className="text-green-400">${estimateCost(model!).toFixed(4)}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </>
               ) : (
                 <div className="p-4 bg-yellow-900/20 border border-yellow-800 rounded-lg">
-                  <p className="text-yellow-400">
+                  <p className="text-yellow-400 mb-2">
                     No models available within your current cost cap of ${costCap.toFixed(2)}.
-                    Try increasing the cost cap slider.
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Try increasing the cost cap slider to enable more models, or disable reasoning mode to access cheaper options.
                   </p>
                 </div>
               )}
