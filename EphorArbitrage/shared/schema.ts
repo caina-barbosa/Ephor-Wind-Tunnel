@@ -83,6 +83,12 @@ export const AVAILABLE_MODELS = [
   { id: "moonshotai/kimi-k2", name: "Kimi K2 (Moonshot)" },
   { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B (Alibaba)" },
   { id: "z-ai/glm-4-32b", name: "GLM-4.6 (Zhipu)" },
+  { id: "together/qwen-2.5-3b-instruct", name: "Qwen 2.5 3B (3B)" },
+  { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B Turbo (7B)" },
+  { id: "together/qwen-2.5-14b-instruct", name: "Qwen 2.5 14B (14B)" },
+  { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B (70B, reasoning)" },
+  { id: "together/deepseek-r1", name: "DeepSeek R1 (Frontier, reasoning)" },
+  { id: "together/qwq-32b", name: "QwQ 32B (Frontier, reasoning)" },
 ] as const;
 
 export const INDIVIDUAL_MODELS = [
@@ -94,6 +100,12 @@ export const INDIVIDUAL_MODELS = [
   { id: "moonshotai/kimi-k2", name: "Kimi K2 (Moonshot)" },
   { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B (Alibaba)" },
   { id: "z-ai/glm-4-32b", name: "GLM-4.6 (Zhipu)" },
+  { id: "together/qwen-2.5-3b-instruct", name: "Qwen 2.5 3B (3B)" },
+  { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B Turbo (7B)" },
+  { id: "together/qwen-2.5-14b-instruct", name: "Qwen 2.5 14B (14B)" },
+  { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B (70B, reasoning)" },
+  { id: "together/deepseek-r1", name: "DeepSeek R1 (Frontier, reasoning)" },
+  { id: "together/qwq-32b", name: "QwQ 32B (Frontier, reasoning)" },
 ] as const;
 
 // Model pricing per 1M tokens (USD)
@@ -106,6 +118,12 @@ export const MODEL_PRICING: Record<string, { input: number; output: number }> = 
   "moonshotai/kimi-k2": { input: 0.14, output: 2.49 },
   "qwen/qwen-2.5-72b-instruct": { input: 0.27, output: 0.27 },
   "z-ai/glm-4-32b": { input: 0.10, output: 0.10 },
+  "together/qwen-2.5-3b-instruct": { input: 0.06, output: 0.06 },
+  "together/qwen-2.5-7b-instruct-turbo": { input: 0.30, output: 0.30 },
+  "together/qwen-2.5-14b-instruct": { input: 0.18, output: 0.18 },
+  "together/deepseek-r1-distill-llama-70b": { input: 2.00, output: 2.00 },
+  "together/deepseek-r1": { input: 3.00, output: 7.00 },
+  "together/qwq-32b": { input: 1.20, output: 1.20 },
 };
 
 // Helper to calculate cost from token counts

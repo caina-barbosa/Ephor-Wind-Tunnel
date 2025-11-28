@@ -8,7 +8,17 @@ import { createDeepSeekChatCompletion, DEEPSEEK_MODEL_ID } from "./deepseek";
 import { createMiniMaxChatCompletion, MINIMAX_MODEL_ID } from "./minimax";
 import { createAnthropicChatCompletion, ANTHROPIC_MODEL_ID } from "./anthropic";
 import { createOpenRouterChatCompletion, KIMI_K2_MODEL_ID } from "./openrouter";
-import { createTogetherChatCompletion, TOGETHER_QWEN_MODEL_ID, TOGETHER_GLM_MODEL_ID } from "./together";
+import { 
+  createTogetherChatCompletion, 
+  TOGETHER_QWEN_MODEL_ID, 
+  TOGETHER_GLM_MODEL_ID,
+  TOGETHER_QWEN_3B_MODEL_ID,
+  TOGETHER_QWEN_7B_MODEL_ID,
+  TOGETHER_QWEN_14B_MODEL_ID,
+  TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID,
+  TOGETHER_DEEPSEEK_R1_MODEL_ID,
+  TOGETHER_QWQ_32B_MODEL_ID
+} from "./together";
 import { insertChatSchema, insertMessageSchema, calculateCost, calculateClaudeCost } from "@shared/schema";
 import { routeQuery, logRoutingDecision, type RoutingDecision } from "./auto-router";
 import OpenAI from "openai";
@@ -21,6 +31,12 @@ const MINIMAX_MODEL_SELECTOR_ID = "minimax/minimax-m2";
 const KIMI_K2_MODEL_SELECTOR_ID = "moonshotai/kimi-k2";
 const QWEN_72B_MODEL_SELECTOR_ID = "qwen/qwen-2.5-72b-instruct";
 const GLM_4_32B_MODEL_SELECTOR_ID = "z-ai/glm-4-32b";
+const TOGETHER_QWEN_3B_SELECTOR_ID = "together/qwen-2.5-3b-instruct";
+const TOGETHER_QWEN_7B_SELECTOR_ID = "together/qwen-2.5-7b-instruct-turbo";
+const TOGETHER_QWEN_14B_SELECTOR_ID = "together/qwen-2.5-14b-instruct";
+const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
+const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
+const TOGETHER_QWQ_32B_SELECTOR_ID = "together/qwq-32b";
 
 interface UnifiedChatRequest {
   model: string;
@@ -110,6 +126,66 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
+  if (request.model === TOGETHER_QWEN_3B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen 2.5 3B");
+    return createTogetherChatCompletion({
+      model: TOGETHER_QWEN_3B_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
+  if (request.model === TOGETHER_QWEN_7B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen 2.5 7B Turbo");
+    return createTogetherChatCompletion({
+      model: TOGETHER_QWEN_7B_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
+  if (request.model === TOGETHER_QWEN_14B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen 2.5 14B");
+    return createTogetherChatCompletion({
+      model: TOGETHER_QWEN_14B_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
+  if (request.model === TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for DeepSeek R1 Distill 70B");
+    return createTogetherChatCompletion({
+      model: TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
+  if (request.model === TOGETHER_DEEPSEEK_R1_SELECTOR_ID) {
+    console.log("[API] Using Together AI for DeepSeek R1");
+    return createTogetherChatCompletion({
+      model: TOGETHER_DEEPSEEK_R1_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
+  if (request.model === TOGETHER_QWQ_32B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for QwQ 32B");
+    return createTogetherChatCompletion({
+      model: TOGETHER_QWQ_32B_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
   throw new Error(`Unknown model: ${request.model}`);
 }
 
@@ -123,6 +199,12 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   "moonshotai/kimi-k2": "Kimi K2 (Moonshot)",
   "qwen/qwen-2.5-72b-instruct": "Qwen 2.5 72B (Alibaba)",
   "z-ai/glm-4-32b": "GLM-4.6 (Zhipu)",
+  "together/qwen-2.5-3b-instruct": "Qwen 2.5 3B (3B)",
+  "together/qwen-2.5-7b-instruct-turbo": "Qwen 2.5 7B Turbo (7B)",
+  "together/qwen-2.5-14b-instruct": "Qwen 2.5 14B (14B)",
+  "together/deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill 70B (70B, reasoning)",
+  "together/deepseek-r1": "DeepSeek R1 (Frontier, reasoning)",
+  "together/qwq-32b": "QwQ 32B (Frontier, reasoning)",
 };
 
 function getModelDisplayName(modelId: string): string {

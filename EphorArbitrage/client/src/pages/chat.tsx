@@ -189,6 +189,12 @@ export default function ChatPage() {
       { id: "moonshotai/kimi-k2", name: "Kimi K2 (Moonshot)" },
       { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B (Alibaba)" },
       { id: "z-ai/glm-4-32b", name: "GLM-4-32B (Zhipu)" },
+      { id: "together/qwen-2.5-3b-instruct", name: "Qwen 2.5 3B (3B)" },
+      { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B Turbo (7B)" },
+      { id: "together/qwen-2.5-14b-instruct", name: "Qwen 2.5 14B (14B)" },
+      { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B (70B, reasoning)" },
+      { id: "together/deepseek-r1", name: "DeepSeek R1 (Frontier, reasoning)" },
+      { id: "together/qwq-32b", name: "QwQ 32B (Frontier, reasoning)" },
     ];
     const model = allModels.find((m) => m.id === modelId);
     return model?.name || modelId;
