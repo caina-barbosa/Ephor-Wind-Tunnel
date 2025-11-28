@@ -38,7 +38,7 @@ interface ModelResponse {
   content: string;
   loading: boolean;
   error: string | null;
-  ttft: number | null;
+  latency: number | null;
   cost: number | null;
   progress: number;
 }
@@ -84,9 +84,9 @@ const getLatencyLabel = (latency: "fast" | "medium" | "slow") => {
   }
 };
 
-const getTtftLatencyCategory = (ttft: number): "fast" | "medium" | "slow" => {
-  if (ttft < 500) return "fast";
-  if (ttft < 2000) return "medium";
+const getLatencyCategory = (latency: number): "fast" | "medium" | "slow" => {
+  if (latency < 500) return "fast";
+  if (latency < 2000) return "medium";
   return "slow";
 };
 
@@ -212,7 +212,7 @@ export default function ChatPage() {
 
     const initialResponses: Record<string, ModelResponse> = {};
     modelsToRun.forEach(({ col }) => {
-      initialResponses[col] = { content: "", loading: true, error: null, ttft: null, cost: null, progress: 0 };
+      initialResponses[col] = { content: "", loading: true, error: null, latency: null, cost: null, progress: 0 };
     });
     setResponses(initialResponses);
 
@@ -251,7 +251,7 @@ export default function ChatPage() {
             content: data.content || "",
             loading: false,
             error: null,
-            ttft: data.ttft,
+            latency: data.latency,
             cost: data.cost,
             progress: 100,
           },
@@ -264,7 +264,7 @@ export default function ChatPage() {
             content: "",
             loading: false,
             error: err.message || "Failed",
-            ttft: null,
+            latency: null,
             cost: null,
             progress: 0,
           },
@@ -582,12 +582,12 @@ export default function ChatPage() {
                         <CheckCircle2 className="w-10 h-10 mx-auto text-green-500 mb-2" />
                         <div className="space-y-1">
                           <div className="text-xs">
-                            <span className="text-gray-500">TTFT:</span>{" "}
+                            <span className="text-gray-500">Latency:</span>{" "}
                             <span className={`font-mono font-bold ${
-                              response.ttft! < 500 ? 'text-green-600' : 
-                              response.ttft! < 2000 ? 'text-yellow-600' : 'text-red-600'
+                              response.latency! < 500 ? 'text-green-600' : 
+                              response.latency! < 2000 ? 'text-yellow-600' : 'text-red-600'
                             }`}>
-                              {response.ttft}ms
+                              {response.latency}ms
                             </span>
                           </div>
                           <div className="text-xs">
@@ -627,15 +627,15 @@ export default function ChatPage() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {selectedModel?.response.ttft && (
+              {selectedModel?.response.latency && (
                 <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="text-center">
-                    <div className="text-gray-500 text-xs mb-1">Time to First Token</div>
+                    <div className="text-gray-500 text-xs mb-1">Response Time</div>
                     <div className={`font-mono text-lg font-bold ${
-                      selectedModel.response.ttft < 500 ? 'text-green-600' : 
-                      selectedModel.response.ttft < 2000 ? 'text-yellow-600' : 'text-red-600'
+                      selectedModel.response.latency < 500 ? 'text-green-600' : 
+                      selectedModel.response.latency < 2000 ? 'text-yellow-600' : 'text-red-600'
                     }`}>
-                      {selectedModel.response.ttft}ms
+                      {selectedModel.response.latency}ms
                     </div>
                   </div>
                   <div className="text-center">

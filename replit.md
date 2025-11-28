@@ -21,6 +21,7 @@ Preferred communication style: Simple, everyday language.
   - White/light gray background with black text
   - Simple gray borders, no gradients
   - Blue accent for "Run" button, green for "Recommended"
+  - Changed latency metric from TTFT to Total Latency (full response time)
   - Input token gauge showing usage vs context capacity
   - Context window selector (8K/32K/128K/1M) with explanatory text
   - Cost cap slider ($0.00-$0.25) that disables expensive models

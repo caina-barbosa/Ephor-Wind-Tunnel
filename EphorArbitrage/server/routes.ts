@@ -982,19 +982,19 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         maxTokens: 1024,
         timeoutMs: 60000,
       });
-      const ttft = Date.now() - startTime;
+      const latency = Date.now() - startTime;
 
       // Calculate cost
       const cost = calculateCost(modelId, result.inputTokens, result.outputTokens);
 
-      console.log(`[Wind Tunnel] Model ${modelId} responded in ${ttft}ms, cost: $${cost.toFixed(6)}`);
+      console.log(`[Wind Tunnel] Model ${modelId} responded in ${latency}ms, cost: $${cost.toFixed(6)}`);
 
       res.json({
         content: result.content,
         modelId,
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,
-        ttft,
+        latency,
         cost,
       });
     } catch (error: any) {
