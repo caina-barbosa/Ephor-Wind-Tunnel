@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Model {
@@ -125,6 +125,7 @@ export default function ChatPage() {
   const [showResults, setShowResults] = useState(false);
   const [selectedModel, setSelectedModel] = useState<{ col: string; model: Model; response: ModelResponse } | null>(null);
   const [showWhyModal, setShowWhyModal] = useState(false);
+  const [showParetoModal, setShowParetoModal] = useState(false);
 
   const [contextSize, setContextSize] = useState<string>("128k");
   const [costCap, setCostCap] = useState<number>(0.25);
@@ -353,15 +354,26 @@ export default function ChatPage() {
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
               Ephor Wind Tunnel
             </h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowWhyModal(true)}
-              className="border-gray-300 text-gray-600 hover:bg-gray-100 w-full sm:w-auto"
-            >
-              <Info className="w-4 h-4 mr-2" />
-              Why This Model?
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowWhyModal(true)}
+                className="border-gray-300 text-gray-600 hover:bg-gray-100 flex-1 sm:flex-none"
+              >
+                <Info className="w-4 h-4 mr-2" />
+                Why This Model?
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowParetoModal(true)}
+                className="border-purple-300 text-purple-600 hover:bg-purple-50 flex-1 sm:flex-none"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Cost Curve
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-gray-200">
@@ -400,13 +412,28 @@ export default function ChatPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
-              <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <Brain className="w-4 h-4 text-gray-500" />
-                <span className="font-medium text-gray-700 text-sm sm:text-base">Context Window</span>
+            <div className={`bg-white rounded-lg p-3 sm:p-4 border ${
+              contextSize === "1m" ? "border-red-300 bg-red-50" : 
+              contextSize === "128k" ? "border-orange-300 bg-orange-50" : "border-gray-200"
+            }`}>
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-gray-500" />
+                  <span className="font-medium text-gray-700 text-sm sm:text-base">Context Window</span>
+                </div>
+                {(contextSize === "128k" || contextSize === "1m") && (
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    contextSize === "1m" ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600"
+                  }`}>
+                    {contextSize === "1m" ? "⚠️ Max Cost" : "↑ Higher Cost"}
+                  </span>
+                )}
               </div>
               <Select value={contextSize} onValueChange={setContextSize} disabled={isRunning}>
-                <SelectTrigger className="bg-white border-gray-300 text-gray-900">
+                <SelectTrigger className={`bg-white text-gray-900 ${
+                  contextSize === "1m" ? "border-red-300" : 
+                  contextSize === "128k" ? "border-orange-300" : "border-gray-300"
+                }`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
@@ -417,7 +444,14 @@ export default function ChatPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-400 mt-2 hidden sm:block">Memory = Cost. Bigger context = more expensive.</p>
+              <p className={`text-xs mt-2 hidden sm:block ${
+                contextSize === "1m" ? "text-red-500" : 
+                contextSize === "128k" ? "text-orange-500" : "text-gray-400"
+              }`}>
+                {contextSize === "1m" ? "⚠️ Maximum memory = Maximum cost!" :
+                 contextSize === "128k" ? "Large context increases cost significantly." :
+                 "Memory = Cost. Bigger context = more expensive."}
+              </p>
             </div>
 
             <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
@@ -442,10 +476,19 @@ export default function ChatPage() {
               <p className="text-xs text-gray-400 mt-2 hidden sm:block">Models exceeding this cap will be disabled.</p>
             </div>
 
-            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
-              <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <Zap className="w-4 h-4 text-gray-500" />
-                <span className="font-medium text-gray-700 text-sm sm:text-base">Reasoning Mode</span>
+            <div className={`bg-white rounded-lg p-3 sm:p-4 border ${
+              reasoningEnabled ? "border-orange-300 bg-orange-50" : "border-gray-200"
+            }`}>
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className={`w-4 h-4 ${reasoningEnabled ? 'text-orange-500' : 'text-gray-500'}`} />
+                  <span className="font-medium text-gray-700 text-sm sm:text-base">Reasoning Mode</span>
+                </div>
+                {reasoningEnabled && (
+                  <span className="text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-600">
+                    ⚠️ 3-5x Cost
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <Switch
@@ -453,13 +496,13 @@ export default function ChatPage() {
                   onCheckedChange={setReasoningEnabled}
                   disabled={isRunning}
                 />
-                <span className={`font-medium ${reasoningEnabled ? 'text-gray-900' : 'text-gray-400'}`}>
+                <span className={`font-medium ${reasoningEnabled ? 'text-orange-600' : 'text-gray-400'}`}>
                   {reasoningEnabled ? 'ENABLED' : 'DISABLED'}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-2 hidden sm:block">
+              <p className={`text-xs mt-2 hidden sm:block ${reasoningEnabled ? 'text-orange-500' : 'text-gray-400'}`}>
                 {reasoningEnabled 
-                  ? "Deep reasoning enabled on 70B+ only. Slower but more accurate."
+                  ? "⚠️ Deep reasoning = 3-5x cost. Only 70B+ models. Use for complex tasks."
                   : "Standard mode. Fast responses, no chain-of-thought."}
               </p>
             </div>
@@ -902,6 +945,186 @@ export default function ChatPage() {
                   </p>
                 </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Pareto Frontier / Cost vs Accuracy Curve Modal */}
+        <Dialog open={showParetoModal} onOpenChange={setShowParetoModal}>
+          <DialogContent className="max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+                Cost vs Capability Tradeoff (Pareto Frontier)
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <p className="text-sm text-purple-800">
+                  <strong>The Pareto Frontier:</strong> Every AI system lives on a tradeoff curve. 
+                  You can't get maximum capability at minimum cost—you must choose where on the curve you want to be.
+                </p>
+              </div>
+
+              {/* Visual Chart */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-sm font-medium text-gray-700 mb-3">Cost vs Capability Curve</div>
+                <div className="relative h-64 border-l-2 border-b-2 border-gray-300">
+                  {/* Y-axis label */}
+                  <div className="absolute -left-12 top-1/2 -rotate-90 text-xs text-gray-500 whitespace-nowrap">
+                    Capability →
+                  </div>
+                  {/* X-axis label */}
+                  <div className="absolute bottom-[-24px] left-1/2 text-xs text-gray-500">
+                    Cost per Query →
+                  </div>
+                  
+                  {/* Plot points for each model */}
+                  {COLUMNS.map((col, index) => {
+                    const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
+                    if (!model) return null;
+                    
+                    const capabilityY = { basic: 20, good: 40, strong: 70, excellent: 95 }[model.expectedAccuracy];
+                    const maxCost = reasoningEnabled ? 0.01 : 0.05;
+                    const costX = Math.min((estimateCost(model) / maxCost) * 90, 95);
+                    const { disabled } = isModelDisabled(col);
+                    const isRecommended = col === recommendedModel;
+                    
+                    return (
+                      <TooltipProvider key={col}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`absolute w-4 h-4 rounded-full transform -translate-x-1/2 translate-y-1/2 cursor-pointer transition-all ${
+                                isRecommended ? 'w-6 h-6 bg-green-500 ring-4 ring-green-200' :
+                                disabled ? 'bg-gray-300' : 'bg-blue-500 hover:bg-blue-600'
+                              }`}
+                              style={{
+                                left: `${Math.max(costX, 5)}%`,
+                                bottom: `${capabilityY}%`,
+                              }}
+                            >
+                              {isRecommended && (
+                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-green-600 whitespace-nowrap">
+                                  ★ Best
+                                </span>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-sm">
+                              <div className="font-bold">{model.name}</div>
+                              <div>Size: {col}</div>
+                              <div>Cost: ${estimateCost(model).toFixed(4)}</div>
+                              <div>Capability: {getCapabilityLabel(model.expectedAccuracy)}</div>
+                              {disabled && <div className="text-red-400">Disabled (exceeds budget)</div>}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
+
+                  {/* Pareto curve line (connecting the points) */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                    <path
+                      d="M 5,80 Q 20,60 35,50 T 60,35 T 90,10"
+                      fill="none"
+                      stroke="#9333ea"
+                      strokeWidth="2"
+                      strokeDasharray="4,4"
+                      opacity="0.5"
+                    />
+                  </svg>
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 mt-4 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-green-500 ring-2 ring-green-200"></div>
+                    <span>Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span>Available</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+                    <span>Over Budget</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-6 h-0.5 bg-purple-500" style={{borderStyle: 'dashed'}}></div>
+                    <span>Pareto Frontier</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cost comparison table */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-sm font-medium text-gray-700 mb-3">
+                  {reasoningEnabled ? "Reasoning Mode: Cost rises dramatically" : "Standard Mode: Cost Comparison"}
+                </div>
+                <div className="space-y-2">
+                  {COLUMNS.map(col => {
+                    const model = getModelForColumn(col);
+                    if (!model) return (
+                      <div key={col} className="flex items-center justify-between p-2 bg-gray-100 rounded text-gray-400">
+                        <span>{col}</span>
+                        <span className="text-xs">Reasoning not available</span>
+                      </div>
+                    );
+                    
+                    const cost = estimateCost(model);
+                    const baseCost = estimateCost(NON_REASONING_MODELS["3B"]);
+                    const multiplier = cost / baseCost;
+                    const { disabled } = isModelDisabled(col);
+                    
+                    return (
+                      <div key={col} className={`flex items-center justify-between p-2 rounded border ${
+                        col === recommendedModel ? 'bg-green-50 border-green-300' : 
+                        disabled ? 'bg-gray-100 border-gray-200 opacity-50' : 'bg-white border-gray-200'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-medium ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
+                            {col}: {model.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className={`text-xs px-2 py-0.5 rounded ${getCapabilityColor(model.expectedAccuracy)}`}>
+                            {getCapabilityLabel(model.expectedAccuracy)}
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-mono text-sm ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
+                              ${cost.toFixed(4)}
+                            </div>
+                            <div className={`text-xs ${multiplier > 100 ? 'text-red-500 font-bold' : multiplier > 10 ? 'text-orange-500' : 'text-gray-500'}`}>
+                              {multiplier.toFixed(0)}x base cost
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {reasoningEnabled && (
+                  <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-orange-700">
+                      <strong>Reasoning adds 3-5x cost!</strong> Deep chain-of-thought requires more compute. 
+                      Only use when complex multi-step reasoning is truly needed.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Key Insight:</strong> The "best" model depends on your constraints. 
+                  A 3B model at $0.0001 might be perfect for simple tasks, while a Frontier model at $0.01+ 
+                  is only worth it for the hardest problems. Learn to pick the right tool for the job!
+                </p>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
