@@ -41,10 +41,6 @@ export default function ChatPage() {
     return WIND_TUNNEL_MODELS.filter((m) => m.category === category);
   };
 
-  const maxModelsInColumn = Math.max(
-    ...CATEGORIES.map((cat) => getModelsByCategory(cat).length)
-  );
-
   const handleRunAll = async () => {
     if (!prompt.trim() || isRunning) return;
 
@@ -106,7 +102,7 @@ export default function ChatPage() {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">EPHOR WIND TUNNEL</h1>
 
-        <div className="mb-8 flex gap-4">
+        <div className="mb-6 flex gap-4">
           <Input
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -134,10 +130,10 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-5 gap-3 items-start">
           {CATEGORIES.map((category) => (
-            <div key={category} className="space-y-4">
-              <div className="text-center py-3 bg-gray-800 text-white font-bold rounded-t-lg">
+            <div key={category} className="flex flex-col gap-2">
+              <div className="text-center py-2 bg-gray-800 text-white font-bold rounded-lg text-sm">
                 {category}
               </div>
 
@@ -152,58 +148,49 @@ export default function ChatPage() {
                   <div
                     key={model.id}
                     className={`
-                      rounded-lg border-2 p-4 min-h-[120px]
+                      rounded-lg border p-3
                       ${isEmpty ? "bg-gray-100 border-gray-200" : ""}
-                      ${isLoading ? "bg-blue-50 border-blue-200" : ""}
-                      ${hasError ? "bg-red-50 border-red-200" : ""}
-                      ${hasContent ? "bg-white border-green-200" : ""}
+                      ${isLoading ? "bg-blue-50 border-blue-300" : ""}
+                      ${hasError ? "bg-red-50 border-red-300" : ""}
+                      ${hasContent ? "bg-white border-green-300" : ""}
                     `}
                   >
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-gray-900 text-sm">
                         {model.name}
                       </span>
                       {model.isReasoning && (
-                        <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-medium">
                           reasoning
                         </span>
                       )}
                     </div>
 
                     {isEmpty && (
-                      <div className="text-gray-400 text-sm">
+                      <div className="text-gray-400 text-xs">
                         Waiting for prompt...
                       </div>
                     )}
 
                     {isLoading && (
-                      <div className="flex items-center gap-2 text-blue-600 text-sm">
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                      <div className="flex items-center gap-2 text-blue-600 text-xs">
+                        <Loader2 className="w-3 h-3 animate-spin" />
                         Generating...
                       </div>
                     )}
 
                     {hasError && (
-                      <div className="text-red-600 text-sm">{response.error}</div>
+                      <div className="text-red-600 text-xs">{response.error}</div>
                     )}
 
                     {hasContent && (
-                      <div className="text-gray-700 text-sm line-clamp-4 overflow-hidden">
+                      <div className="text-gray-700 text-xs line-clamp-3 overflow-hidden">
                         {response.content}
                       </div>
                     )}
                   </div>
                 );
               })}
-
-              {Array.from({
-                length: maxModelsInColumn - getModelsByCategory(category).length,
-              }).map((_, i) => (
-                <div
-                  key={`empty-${category}-${i}`}
-                  className="rounded-lg border-2 border-dashed border-gray-200 p-4 min-h-[120px]"
-                />
-              ))}
             </div>
           ))}
         </div>
