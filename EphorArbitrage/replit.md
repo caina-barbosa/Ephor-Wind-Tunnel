@@ -1,7 +1,7 @@
-# EPHOR ARBITRAGE
+# EPHOR WIND TUNNEL
 
 ## Overview
-EPHOR ARBITRAGE is a clean, minimal multi-model AI chat interface focused on demonstrating **Speed Arbitrage** - comparing fast, budget-friendly AI models while tracking performance versus the premium Claude baseline. The application uses direct API integrations with 5 speed-optimized providers plus Together AI for 2 additional models (8 total). The interface emphasizes performance metrics, real-time cost tracking, and competitive analysis between models.
+EPHOR WIND TUNNEL is a clean, minimal multi-model AI chat interface focused on demonstrating **Speed Arbitrage** - comparing fast, budget-friendly AI models while tracking performance versus the premium Claude baseline. The application uses direct API integrations with 5 speed-optimized providers plus Together AI for 2 additional models (8 total). The interface emphasizes performance metrics, real-time cost tracking, and competitive analysis between models.
 
 ## Model Lineup (14 Models Total)
 

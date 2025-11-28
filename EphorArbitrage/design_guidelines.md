@@ -45,7 +45,7 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
 
 **Hierarchy**:
 - App Title "EPHOR": text-xl font-semibold
-- Main Heading "Welcome to EPHOR ARBITRAGE": text-3xl font-medium, mb-2
+- Main Heading "Welcome to EPHOR WIND TUNNEL": text-3xl font-medium, mb-2
 - Subtitle: text-base text-gray-500
 - Chat Messages: text-base leading-relaxed
 - Button Text: text-sm font-medium
@@ -71,7 +71,7 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
 
 ### Empty State
 - Centered vertically and horizontally
-- "Welcome to EPHOR ARBITRAGE" heading
+- "Welcome to EPHOR WIND TUNNEL" heading
 - Speed Arbitrage focus subtitle below in gray
 - Model selector positioned in top-right corner of container
 

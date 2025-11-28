@@ -714,7 +714,7 @@ export default function ChatPage() {
             <div className="text-center max-w-3xl mx-auto px-8">
               <div className="mb-8">
                 <h2 className="text-3xl font-medium mb-2 text-foreground" data-testid="text-welcome-heading">
-                  Welcome to EPHOR ARBITRAGE
+                  Welcome to EPHOR WIND TUNNEL
                 </h2>
               </div>
 
@@ -1094,7 +1094,7 @@ export default function ChatPage() {
                                       return (
                                         <Card className="p-6 bg-gray-900 border-gray-700" data-testid="speed-arbitrage-analysis">
                                           <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
-                                            ⚡ SPEED ARBITRAGE ANALYSIS
+                                            ⚡ SPEED WIND TUNNEL ANALYSIS
                                           </h3>
                                           
                                           {/* Speed Rankings */}

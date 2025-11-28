@@ -27,7 +27,7 @@ export async function createOpenRouterChatCompletion(
       timeout: timeoutMs,
       defaultHeaders: {
         "HTTP-Referer": "https://ephor.replit.app",
-        "X-Title": "EPHOR ARBITRAGE",
+        "X-Title": "EPHOR WIND TUNNEL",
       },
     });
 
