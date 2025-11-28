@@ -123,19 +123,18 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">EPHOR WIND TUNNEL</h1>
-      </header>
+      <div className="max-w-6xl mx-auto p-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">EPHOR WIND TUNNEL</h1>
 
-      <div className="flex h-[calc(100vh-65px)]">
-        <div className="w-[30%] border-r border-gray-200 bg-white p-4 flex flex-col">
+        <div className="space-y-4">
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Enter your prompt..."
-            className="flex-1 resize-none text-sm mb-3"
+            className="w-full h-[120px] resize-none text-sm"
             disabled={isRunning}
           />
+
           <Button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
@@ -153,10 +152,8 @@ export default function ChatPage() {
               </>
             )}
           </Button>
-        </div>
 
-        <div className="w-[70%] p-4 overflow-auto">
-          <div className="grid grid-cols-5 gap-2 mb-1">
+          <div className="grid grid-cols-5 gap-2">
             {CATEGORIES.map((category) => (
               <Select
                 key={category}
@@ -164,7 +161,7 @@ export default function ChatPage() {
                 onValueChange={(value) => handleModelChange(category, value)}
                 disabled={isRunning}
               >
-                <SelectTrigger className="bg-gray-800 text-white border-gray-700 font-semibold h-9 text-sm">
+                <SelectTrigger className="bg-gray-800 text-white border-gray-700 font-semibold h-10">
                   <span>{category}</span>
                 </SelectTrigger>
                 <SelectContent>
@@ -194,10 +191,10 @@ export default function ChatPage() {
                   <div
                     key={category}
                     className={`
-                      rounded-b-lg border border-t-0 p-3 min-h-[100px]
+                      rounded-lg border p-3 min-h-[120px]
                       ${isLoading ? "bg-blue-50 border-blue-200" : ""}
                       ${hasError ? "bg-red-50 border-red-200" : ""}
-                      ${hasContent ? "bg-white border-green-200" : ""}
+                      ${hasContent ? "bg-white border-gray-200" : ""}
                       ${!isLoading && !hasError && !hasContent ? "bg-gray-50 border-gray-200" : ""}
                     `}
                   >
