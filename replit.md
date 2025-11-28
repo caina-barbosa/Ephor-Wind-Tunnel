@@ -17,6 +17,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **2025-11-28**: Complete Timeback Brand Rebrand
+  - Applied Timeback brand colors throughout:
+    - Deep Royal Blue (#1a3a8f): Primary text, buttons, headings
+    - Bright Orange (#f5a623): Warnings, "Higher Cost" badge, Medium latency
+    - Forest Green (#1b7340): "Recommended" highlight, Fast latency, success states
+    - Hot Magenta (#c41c6a): Slow latency, error states, disabled warnings
+    - Sky Blue (#3fb4e5): "Good" capability, Pareto curve line
+    - Cream (#f5e6d3): Background throughout the app
+  - Bold/heavy typography matching Timeback style
+  - Capability badges: Basic (peach), Good (sky blue), Strong (forest green), Excellent (deep blue)
+  - All modals updated with brand colors
+  - Pareto Frontier chart with brand-consistent point colors and curve
 - **2025-11-28**: Simplified recommendation logic for better education
   - Recommendation now picks the CHEAPEST model that fits all constraints
   - No more keyword/complexity detection - transparent filtering only
@@ -26,14 +38,11 @@ Preferred communication style: Simple, everyday language.
   - Enhanced INPUT GAUGE with prominent blue styling, large token display, and explanatory text
   - Added "Estimated Capability" display in "Why This Model?" modal
   - Added context overflow check: models disabled when input exceeds selected context window
-- **2025-11-28**: Renamed to "Ephor Wind Tunnel" with clean, minimal light theme
-  - White/light gray background with black text
-  - Simple gray borders, no gradients
-  - Blue accent for "Run" button, green for "Recommended"
+- **2025-11-28**: Renamed to "Ephor Wind Tunnel" with educational features
   - Changed latency metric from TTFT to Total Latency (full response time)
   - Mobile-responsive design: stacked controls, horizontal scrolling grid, touch-friendly dialogs
   - Enhanced "Input vs Context Capacity" gauge with clear X/Y tokens display and percentage
-  - Added "Capability" indicator per model (Basic → Good → Strong → Excellent) with tooltips explaining each level
+  - Added "Capability" indicator per model (Basic/Good/Strong/Excellent) with tooltips
   - Context window selector (8K/32K/128K/1M) with explanatory text
   - Cost cap slider ($0.00-$0.25) that disables expensive models
   - Reasoning mode toggle with 70B+ restriction
@@ -49,7 +58,7 @@ Preferred communication style: Simple, everyday language.
 
 **Framework**: React 18+ with TypeScript, built using Vite for fast development with Hot Module Replacement (HMR).
 
-**UI Component System**: The application uses shadcn/ui components built on Radix UI primitives, styled with Tailwind CSS. Clean light theme with white/gray colors.
+**UI Component System**: The application uses shadcn/ui components built on Radix UI primitives, styled with Tailwind CSS. Features Timeback brand styling with saturated colors (Deep Royal Blue, Bright Orange, Forest Green, Hot Magenta, Sky Blue) on a Cream background.
 
 **Layout Structure**: Full-screen grid layout with:
 - Prompt input with token count gauge

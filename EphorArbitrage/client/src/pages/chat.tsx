@@ -71,9 +71,9 @@ const CONTEXT_SIZES = [
 
 const getLatencyColor = (latency: "fast" | "medium" | "slow") => {
   switch (latency) {
-    case "fast": return "text-[#166534] bg-[#166534]/10";
-    case "medium": return "text-[#F59E0B] bg-[#F59E0B]/10";
-    case "slow": return "text-[#BE185D] bg-[#BE185D]/10";
+    case "fast": return "text-white bg-[#1b7340]";
+    case "medium": return "text-white bg-[#f5a623]";
+    case "slow": return "text-white bg-[#c41c6a]";
   }
 };
 
@@ -93,10 +93,10 @@ const getLatencyCategory = (latency: number): "fast" | "medium" | "slow" => {
 
 const getCapabilityColor = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "basic": return "text-[#9a3412] bg-[#FED7AA]";
-    case "good": return "text-[#0369a1] bg-[#38BDF8]/30";
-    case "strong": return "text-white bg-[#166534]";
-    case "excellent": return "text-white bg-[#1E3A8A]";
+    case "basic": return "text-[#1a3a8f] bg-[#f5e6d3]";
+    case "good": return "text-white bg-[#3fb4e5]";
+    case "strong": return "text-white bg-[#1b7340]";
+    case "excellent": return "text-white bg-[#1a3a8f]";
   }
 };
 
@@ -337,10 +337,10 @@ export default function ChatPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-[#FAF5F0] text-gray-900">
+      <div className="min-h-screen bg-[#f5e6d3] text-gray-900">
         <div className="max-w-7xl mx-auto p-3 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] tracking-wide">
+            <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
               EPHOR WIND TUNNEL
             </h1>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -348,7 +348,7 @@ export default function ChatPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowWhyModal(true)}
-                className="border-[#1E3A8A]/30 text-[#1E3A8A] hover:bg-[#1E3A8A]/5 flex-1 sm:flex-none"
+                className="border-[#1a3a8f] text-[#1a3a8f] hover:bg-[#1a3a8f]/10 font-semibold flex-1 sm:flex-none"
               >
                 <Info className="w-4 h-4 mr-2" />
                 Why This Model?
@@ -357,7 +357,7 @@ export default function ChatPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowParetoModal(true)}
-                className="border-[#38BDF8] text-[#0369a1] hover:bg-[#38BDF8]/10 flex-1 sm:flex-none"
+                className="border-[#3fb4e5] text-[#1a3a8f] hover:bg-[#3fb4e5]/20 font-semibold flex-1 sm:flex-none"
               >
                 <TrendingUp className="w-4 h-4 mr-2" />
                 Cost Curve
@@ -376,33 +376,33 @@ export default function ChatPage() {
             
             <div className={`mt-3 p-3 sm:p-4 rounded-lg border-2 ${
               inputTokenEstimate > selectedContextTokens 
-                ? 'bg-[#BE185D]/10 border-[#BE185D]' 
-                : 'bg-[#38BDF8]/10 border-[#38BDF8]'
+                ? 'bg-[#c41c6a]/10 border-[#c41c6a]' 
+                : 'bg-[#3fb4e5]/10 border-[#3fb4e5]'
             }`}>
               <div className="flex items-center gap-2 mb-2">
-                <span className={`font-semibold text-sm ${
-                  inputTokenEstimate > selectedContextTokens ? 'text-[#BE185D]' : 'text-[#1E3A8A]'
+                <span className={`font-bold text-sm ${
+                  inputTokenEstimate > selectedContextTokens ? 'text-[#c41c6a]' : 'text-[#1a3a8f]'
                 }`}>INPUT GAUGE</span>
                 {inputTokenEstimate > selectedContextTokens && (
-                  <span className="text-xs bg-[#BE185D] text-white px-2 py-0.5 rounded font-bold">
+                  <span className="text-xs bg-[#c41c6a] text-white px-2 py-0.5 rounded font-bold">
                     OVERFLOW - All models disabled
                   </span>
                 )}
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm mb-2">
                 <div className="flex items-center gap-2">
-                  <span className={`font-mono text-xl font-bold ${
-                    inputTokenEstimate > selectedContextTokens ? 'text-[#BE185D]' : 'text-gray-900'
+                  <span className={`font-mono text-xl font-black ${
+                    inputTokenEstimate > selectedContextTokens ? 'text-[#c41c6a]' : 'text-gray-900'
                   }`}>{inputTokenEstimate.toLocaleString()}</span>
                   <span className="text-gray-400 text-lg">/</span>
                   <span className="font-mono text-lg text-gray-600">{selectedContextTokens.toLocaleString()}</span>
                   <span className="text-gray-500">tokens</span>
                 </div>
                 <span className={`text-sm font-bold px-3 py-1 rounded ${
-                  inputTokenEstimate > selectedContextTokens ? 'bg-[#BE185D] text-white' :
-                  inputPercentage > 80 ? 'bg-[#BE185D] text-white' : 
-                  inputPercentage > 50 ? 'bg-[#F59E0B] text-white' : 
-                  'bg-[#166534] text-white'
+                  inputTokenEstimate > selectedContextTokens ? 'bg-[#c41c6a] text-white' :
+                  inputPercentage > 80 ? 'bg-[#c41c6a] text-white' : 
+                  inputPercentage > 50 ? 'bg-[#f5a623] text-white' : 
+                  'bg-[#1b7340] text-white'
                 }`}>
                   {inputTokenEstimate > selectedContextTokens ? 'OVERFLOW!' : `${inputPercentage.toFixed(1)}% used`}
                 </span>
@@ -410,15 +410,15 @@ export default function ChatPage() {
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all ${
-                    inputTokenEstimate > selectedContextTokens ? 'bg-[#BE185D]' :
-                    inputPercentage > 80 ? 'bg-[#BE185D]' : 
-                    inputPercentage > 50 ? 'bg-[#F59E0B]' : 'bg-[#38BDF8]'
+                    inputTokenEstimate > selectedContextTokens ? 'bg-[#c41c6a]' :
+                    inputPercentage > 80 ? 'bg-[#c41c6a]' : 
+                    inputPercentage > 50 ? 'bg-[#f5a623]' : 'bg-[#3fb4e5]'
                   }`}
                   style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
                 />
               </div>
               <div className={`text-xs mt-2 ${
-                inputTokenEstimate > selectedContextTokens ? 'text-[#BE185D] font-medium' : 'text-[#1E3A8A]'
+                inputTokenEstimate > selectedContextTokens ? 'text-[#c41c6a] font-medium' : 'text-[#1a3a8f]'
               }`}>
                 {inputTokenEstimate > selectedContextTokens 
                   ? `Your input exceeds the ${contextSize.toUpperCase()} context window. Increase the context size or shorten your prompt.`
@@ -430,17 +430,17 @@ export default function ChatPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className={`bg-white rounded-lg p-3 sm:p-4 border shadow-sm ${
-              contextSize === "1m" ? "border-[#BE185D] bg-[#BE185D]/5" : 
-              contextSize === "128k" ? "border-[#F59E0B] bg-[#F59E0B]/5" : "border-gray-200"
+              contextSize === "1m" ? "border-[#c41c6a] bg-[#c41c6a]/5" : 
+              contextSize === "128k" ? "border-[#f5a623] bg-[#f5a623]/5" : "border-gray-200"
             }`}>
               <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <div className="flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-[#1E3A8A]" />
-                  <span className="font-medium text-[#1E3A8A] text-sm sm:text-base">Context Window</span>
+                  <Brain className="w-4 h-4 text-[#1a3a8f]" />
+                  <span className="font-bold text-[#1a3a8f] text-sm sm:text-base">Context Window</span>
                 </div>
                 {(contextSize === "128k" || contextSize === "1m") && (
-                  <span className={`text-xs px-2 py-0.5 rounded ${
-                    contextSize === "1m" ? "bg-[#BE185D]/10 text-[#BE185D]" : "bg-[#F59E0B]/10 text-[#F59E0B]"
+                  <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
+                    contextSize === "1m" ? "bg-[#c41c6a] text-white" : "bg-[#f5a623] text-white"
                   }`}>
                     {contextSize === "1m" ? "Max Cost" : "↑ Higher Cost"}
                   </span>
@@ -448,8 +448,8 @@ export default function ChatPage() {
               </div>
               <Select value={contextSize} onValueChange={setContextSize} disabled={isRunning}>
                 <SelectTrigger className={`bg-white text-gray-900 ${
-                  contextSize === "1m" ? "border-[#BE185D]" : 
-                  contextSize === "128k" ? "border-[#F59E0B]" : "border-gray-300"
+                  contextSize === "1m" ? "border-[#c41c6a]" : 
+                  contextSize === "128k" ? "border-[#f5a623]" : "border-gray-300"
                 }`}>
                   <SelectValue />
                 </SelectTrigger>
@@ -461,9 +461,9 @@ export default function ChatPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className={`text-xs mt-2 hidden sm:block ${
-                contextSize === "1m" ? "text-[#BE185D]" : 
-                contextSize === "128k" ? "text-[#F59E0B]" : "text-gray-400"
+              <p className={`text-xs mt-2 hidden sm:block font-medium ${
+                contextSize === "1m" ? "text-[#c41c6a]" : 
+                contextSize === "128k" ? "text-[#f5a623]" : "text-gray-500"
               }`}>
                 {contextSize === "1m" ? "Maximum memory = Maximum cost!" :
                  contextSize === "128k" ? "Large context increases cost significantly." :
@@ -473,8 +473,8 @@ export default function ChatPage() {
 
             <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <DollarSign className="w-4 h-4 text-[#1E3A8A]" />
-                <span className="font-medium text-[#1E3A8A] text-sm sm:text-base">Max Cost Per Query</span>
+                <DollarSign className="w-4 h-4 text-[#1a3a8f]" />
+                <span className="font-bold text-[#1a3a8f] text-sm sm:text-base">Max Cost Per Query</span>
               </div>
               <div className="flex items-center gap-3">
                 <Slider
@@ -486,23 +486,23 @@ export default function ChatPage() {
                   className="flex-1"
                   disabled={isRunning}
                 />
-                <span className="font-mono text-base sm:text-lg text-gray-900">
+                <span className="font-mono text-base sm:text-lg font-bold text-gray-900">
                   ${costCap.toFixed(2)}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-2 hidden sm:block">Models exceeding this cap will be disabled.</p>
+              <p className="text-xs text-gray-500 mt-2 hidden sm:block">Models exceeding this cap will be disabled.</p>
             </div>
 
             <div className={`bg-white rounded-lg p-3 sm:p-4 border shadow-sm ${
-              reasoningEnabled ? "border-[#F59E0B] bg-[#F59E0B]/5" : "border-gray-200"
+              reasoningEnabled ? "border-[#f5a623] bg-[#f5a623]/5" : "border-gray-200"
             }`}>
               <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <div className="flex items-center gap-2">
-                  <Zap className={`w-4 h-4 ${reasoningEnabled ? 'text-[#F59E0B]' : 'text-[#1E3A8A]'}`} />
-                  <span className="font-medium text-[#1E3A8A] text-sm sm:text-base">Reasoning Mode</span>
+                  <Zap className={`w-4 h-4 ${reasoningEnabled ? 'text-[#f5a623]' : 'text-[#1a3a8f]'}`} />
+                  <span className="font-bold text-[#1a3a8f] text-sm sm:text-base">Reasoning Mode</span>
                 </div>
                 {reasoningEnabled && (
-                  <span className="text-xs px-2 py-0.5 rounded bg-[#F59E0B]/10 text-[#F59E0B]">
+                  <span className="text-xs px-2 py-0.5 rounded bg-[#f5a623] text-white font-semibold">
                     3-5x Cost
                   </span>
                 )}
@@ -513,11 +513,11 @@ export default function ChatPage() {
                   onCheckedChange={setReasoningEnabled}
                   disabled={isRunning}
                 />
-                <span className={`font-medium ${reasoningEnabled ? 'text-[#F59E0B]' : 'text-gray-400'}`}>
+                <span className={`font-bold ${reasoningEnabled ? 'text-[#f5a623]' : 'text-gray-400'}`}>
                   {reasoningEnabled ? 'ENABLED' : 'DISABLED'}
                 </span>
               </div>
-              <p className={`text-xs mt-2 hidden sm:block ${reasoningEnabled ? 'text-[#F59E0B]' : 'text-gray-400'}`}>
+              <p className={`text-xs mt-2 hidden sm:block font-medium ${reasoningEnabled ? 'text-[#f5a623]' : 'text-gray-500'}`}>
                 {reasoningEnabled 
                   ? "Deep reasoning = 3-5x cost. Only 70B+ models. Use for complex tasks."
                   : "Standard mode. Fast responses, no chain-of-thought."}
@@ -528,7 +528,7 @@ export default function ChatPage() {
           <Button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
-            className="w-full py-4 sm:py-6 text-base sm:text-lg bg-[#1E3A8A] hover:bg-[#1E3A8A]/90 text-white mb-4 sm:mb-6"
+            className="w-full py-4 sm:py-6 text-base sm:text-lg bg-[#1a3a8f] hover:bg-[#1a3a8f]/90 text-white font-bold mb-4 sm:mb-6"
           >
             {isRunning ? (
               <>
@@ -553,14 +553,14 @@ export default function ChatPage() {
                     return (
                       <div 
                         key={col} 
-                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-[#166534]/10' : ''} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-[#1b7340]/10' : ''} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
-                        <div className="font-bold text-[#1E3A8A] text-sm sm:text-base">{col}</div>
+                        <div className="font-black text-[#1a3a8f] text-sm sm:text-base">{col}</div>
                         <div className="text-xs text-gray-500">
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
-                          <div className="mt-1 text-xs font-medium text-[#166534]">★ Recommended</div>
+                          <div className="mt-1 text-xs font-bold text-[#1b7340]">★ Recommended</div>
                         )}
                       </div>
                     );
@@ -611,9 +611,9 @@ export default function ChatPage() {
                         className={`
                           p-3 sm:p-4 min-h-[160px] sm:min-h-[180px] transition-all
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
-                          ${isRecommended ? 'bg-[#166534]/10' : 'bg-white'}
-                          ${isLoading ? 'bg-[#38BDF8]/10' : ''}
-                          ${hasError ? 'bg-[#BE185D]/10' : ''}
+                          ${isRecommended ? 'bg-[#1b7340]/10' : 'bg-white'}
+                          ${isLoading ? 'bg-[#3fb4e5]/10' : ''}
+                          ${hasError ? 'bg-[#c41c6a]/10' : ''}
                           ${hasContent ? 'cursor-pointer hover:bg-gray-50' : ''}
                         `}
                       >
@@ -702,11 +702,11 @@ export default function ChatPage() {
                                   fill="none"
                                   strokeDasharray={175.9}
                                   strokeDashoffset={175.9 - (response.progress / 100) * 175.9}
-                                  className="text-[#38BDF8] transition-all duration-300"
+                                  className="text-[#3fb4e5] transition-all duration-300"
                                 />
                               </svg>
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-mono text-[#1E3A8A]">
+                                <span className="text-xs font-mono font-bold text-[#1a3a8f]">
                                   {Math.round(response.progress)}%
                                 </span>
                               </div>
@@ -717,32 +717,32 @@ export default function ChatPage() {
 
                     {hasError && (
                       <div className="text-center py-4">
-                        <XCircle className="w-10 h-10 mx-auto text-[#BE185D] mb-2" />
-                        <p className="text-xs text-[#BE185D]">{response.error}</p>
+                        <XCircle className="w-10 h-10 mx-auto text-[#c41c6a] mb-2" />
+                        <p className="text-xs text-[#c41c6a] font-medium">{response.error}</p>
                       </div>
                     )}
 
                     {hasContent && (
                       <div className="text-center py-2">
-                        <CheckCircle2 className="w-10 h-10 mx-auto text-green-500 mb-2" />
+                        <CheckCircle2 className="w-10 h-10 mx-auto text-[#1b7340] mb-2" />
                         <div className="space-y-1">
                           <div className="text-xs">
                             <span className="text-gray-500">Latency:</span>{" "}
                             <span className={`font-mono font-bold ${
-                              response.latency! < 500 ? 'text-green-600' : 
-                              response.latency! < 2000 ? 'text-yellow-600' : 'text-red-600'
+                              response.latency! < 500 ? 'text-[#1b7340]' : 
+                              response.latency! < 2000 ? 'text-[#f5a623]' : 'text-[#c41c6a]'
                             }`}>
                               {response.latency}ms
                             </span>
                           </div>
                           <div className="text-xs">
                             <span className="text-gray-500">Cost:</span>{" "}
-                            <span className="font-mono text-gray-700">
+                            <span className="font-mono font-bold text-gray-700">
                               ${response.cost?.toFixed(4)}
                             </span>
                           </div>
                         </div>
-                        <p className="text-xs text-blue-600 mt-2 hover:underline">Click to view response</p>
+                        <p className="text-xs text-[#1a3a8f] font-semibold mt-2 hover:underline">Click to view response</p>
                       </div>
                     )}
                   </div>
@@ -780,8 +780,8 @@ export default function ChatPage() {
                   <div className="text-center">
                     <div className="text-gray-500 text-xs mb-1">Response Time</div>
                     <div className={`font-mono text-sm sm:text-lg font-bold ${
-                      selectedModel.response.latency < 500 ? 'text-green-600' : 
-                      selectedModel.response.latency < 2000 ? 'text-yellow-600' : 'text-red-600'
+                      selectedModel.response.latency < 500 ? 'text-[#1b7340]' : 
+                      selectedModel.response.latency < 2000 ? 'text-[#f5a623]' : 'text-[#c41c6a]'
                     }`}>
                       {selectedModel.response.latency}ms
                     </div>
@@ -801,10 +801,10 @@ export default function ChatPage() {
                 </div>
               )}
               <div>
-                <div className="text-sm font-medium text-gray-500 mb-2">Response:</div>
+                <div className="text-sm font-bold text-[#1a3a8f] mb-2">Response:</div>
                 {selectedModel?.response.error ? (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600">{selectedModel.response.error}</p>
+                  <div className="p-4 bg-[#c41c6a]/10 border border-[#c41c6a] rounded-lg">
+                    <p className="text-[#c41c6a] font-medium">{selectedModel.response.error}</p>
                   </div>
                 ) : (
                   <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-800 max-h-[400px] overflow-y-auto">
@@ -819,29 +819,29 @@ export default function ChatPage() {
         <Dialog open={showWhyModal} onOpenChange={setShowWhyModal}>
           <DialogContent className="max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
             <DialogHeader>
-              <DialogTitle className="text-xl flex items-center gap-2">
-                <Info className="w-5 h-5 text-blue-600" />
-                Why This Model?
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <Info className="w-5 h-5 text-[#1a3a8f]" />
+                <span className="text-[#1a3a8f]">Why This Model?</span>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {recommendedModel ? (
                 <>
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="p-4 bg-[#1b7340]/10 border-2 border-[#1b7340] rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-green-700 font-bold text-lg">★ Recommended: {getModelForColumn(recommendedModel)?.name}</span>
+                      <span className="text-[#1b7340] font-black text-lg">★ Recommended: {getModelForColumn(recommendedModel)?.name}</span>
                       <span className="text-gray-500">({recommendedModel})</span>
                       {getModelForColumn(recommendedModel) && (
-                        <span className={`text-xs px-2 py-0.5 rounded ${getCapabilityColor(getModelForColumn(recommendedModel)!.expectedAccuracy)}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded font-semibold ${getCapabilityColor(getModelForColumn(recommendedModel)!.expectedAccuracy)}`}>
                           {getCapabilityLabel(getModelForColumn(recommendedModel)!.expectedAccuracy)}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-green-800 mb-2">
+                    <p className="text-sm text-[#1b7340] mb-2 font-medium">
                       {getRecommendationReason(recommendedModel)}
                     </p>
                     {getModelForColumn(recommendedModel) && (
-                      <div className="text-xs text-green-700 flex items-center gap-4 pt-2 border-t border-green-200">
+                      <div className="text-xs text-[#1b7340] flex items-center gap-4 pt-2 border-t border-[#1b7340]/30 font-medium">
                         <span>Estimated Capability: <strong>{getCapabilityLabel(getModelForColumn(recommendedModel)!.expectedAccuracy)}</strong></span>
                         <span>Cost: <strong>${estimateCost(getModelForColumn(recommendedModel)!).toFixed(4)}</strong></span>
                         <span>Latency: <strong>{getLatencyLabel(getModelForColumn(recommendedModel)!.expectedLatency)}</strong></span>
@@ -850,7 +850,7 @@ export default function ChatPage() {
                   </div>
                   
                   <div className="space-y-3">
-                    <h4 className="font-medium text-gray-700 text-sm sm:text-base">Your Current Settings:</h4>
+                    <h4 className="font-bold text-[#1a3a8f] text-sm sm:text-base">Your Current Settings:</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Budget Limit</div>
@@ -897,34 +897,34 @@ export default function ChatPage() {
                   </div>
 
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-gray-500" />
+                    <h4 className="font-bold text-[#1a3a8f] mb-3 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-[#1a3a8f]" />
                       Engineering Truths (What Students Must Learn)
                     </h4>
                     <div className="space-y-3 text-sm">
                       <div className="flex gap-3">
-                        <span className="text-green-600">●</span>
+                        <span className="text-[#1b7340] text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Bigger ≠ Always Better</strong>
                           <p className="text-gray-600">Cost rises exponentially with model size. A 70B model costs ~10x more than 7B, but isn't 10x better.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <span className="text-orange-500">●</span>
+                        <span className="text-[#f5a623] text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Reasoning Requires Scale</strong>
                           <p className="text-gray-600">Small models (3B-14B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <span className="text-blue-600">●</span>
+                        <span className="text-[#1a3a8f] text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Context = Memory = Cost</strong>
                           <p className="text-gray-600">Longer context windows use more GPU memory. Processing 1M tokens costs much more than 8K tokens.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <span className="text-yellow-500">●</span>
+                        <span className="text-[#c41c6a] text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Speed vs Accuracy Tradeoff</strong>
                           <p className="text-gray-600">Fast models (3B-7B) respond quickly but make more mistakes. Slow models (70B+) are more accurate but take longer.</p>
@@ -934,28 +934,28 @@ export default function ChatPage() {
                   </div>
 
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h4 className="font-medium text-gray-700 mb-2">Available Models Right Now:</h4>
+                    <h4 className="font-bold text-[#1a3a8f] mb-2">Available Models Right Now:</h4>
                     <div className="space-y-2">
                       {COLUMNS.map(col => {
                         const model = getModelForColumn(col);
                         const { disabled, reason } = isModelDisabled(col);
                         return (
                           <div key={col} className={`flex items-center justify-between p-2 rounded border ${
-                            col === recommendedModel ? 'bg-green-50 border-green-300' : 
+                            col === recommendedModel ? 'bg-[#1b7340]/10 border-[#1b7340]' : 
                             disabled ? 'bg-gray-100 opacity-50 border-gray-200' : 'bg-white border-gray-200'
                           }`}>
                             <div className="flex items-center gap-2">
-                              {col === recommendedModel && <span className="text-green-600">★</span>}
+                              {col === recommendedModel && <span className="text-[#1b7340] font-bold">★</span>}
                               {disabled && <Lock className="w-3 h-3 text-gray-400" />}
-                              <span className={disabled ? 'text-gray-400' : 'text-gray-900'}>
+                              <span className={disabled ? 'text-gray-400' : 'text-gray-900 font-medium'}>
                                 {model?.name || `${col} (disabled)`}
                               </span>
                             </div>
                             <div className="text-xs">
                               {disabled ? (
-                                <span className="text-red-500">{reason}</span>
+                                <span className="text-[#c41c6a] font-medium">{reason}</span>
                               ) : (
-                                <span className="text-green-600 font-mono">${estimateCost(model!).toFixed(4)}</span>
+                                <span className="text-[#1b7340] font-mono font-bold">${estimateCost(model!).toFixed(4)}</span>
                               )}
                             </div>
                           </div>
@@ -965,8 +965,8 @@ export default function ChatPage() {
                   </div>
                 </>
               ) : (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-yellow-700 font-medium mb-2">
+                <div className="p-4 bg-[#f5a623]/10 border-2 border-[#f5a623] rounded-lg">
+                  <p className="text-[#f5a623] font-bold mb-2">
                     No models fit your current constraints
                   </p>
                   <p className="text-sm text-gray-600 mb-3">
@@ -987,14 +987,14 @@ export default function ChatPage() {
         <Dialog open={showParetoModal} onOpenChange={setShowParetoModal}>
           <DialogContent className="max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
             <DialogHeader>
-              <DialogTitle className="text-xl flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
-                Cost vs Capability Tradeoff (Pareto Frontier)
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <TrendingUp className="w-5 h-5 text-[#1a3a8f]" />
+                <span className="text-[#1a3a8f]">Cost vs Capability Tradeoff (Pareto Frontier)</span>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                <p className="text-sm text-purple-800">
+              <div className="p-4 bg-[#3fb4e5]/10 border-2 border-[#3fb4e5] rounded-lg">
+                <p className="text-sm text-[#1a3a8f]">
                   <strong>The Pareto Frontier:</strong> Every AI system lives on a tradeoff curve. 
                   You can't get maximum capability at minimum cost—you must choose where on the curve you want to be.
                 </p>
@@ -1030,8 +1030,8 @@ export default function ChatPage() {
                           <TooltipTrigger asChild>
                             <div
                               className={`absolute w-4 h-4 rounded-full transform -translate-x-1/2 translate-y-1/2 cursor-pointer transition-all ${
-                                isRecommended ? 'w-6 h-6 bg-green-500 ring-4 ring-green-200' :
-                                disabled ? 'bg-gray-300' : 'bg-blue-500 hover:bg-blue-600'
+                                isRecommended ? 'w-6 h-6 bg-[#1b7340] ring-4 ring-[#1b7340]/30' :
+                                disabled ? 'bg-gray-300' : 'bg-[#1a3a8f] hover:bg-[#1a3a8f]/80'
                               }`}
                               style={{
                                 left: `${Math.max(costX, 5)}%`,
@@ -1039,7 +1039,7 @@ export default function ChatPage() {
                               }}
                             >
                               {isRecommended && (
-                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-green-600 whitespace-nowrap">
+                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[#1b7340] whitespace-nowrap">
                                   ★ Best
                                 </span>
                               )}
@@ -1051,7 +1051,7 @@ export default function ChatPage() {
                               <div>Size: {col}</div>
                               <div>Cost: ${estimateCost(model).toFixed(4)}</div>
                               <div>Capability: {getCapabilityLabel(model.expectedAccuracy)}</div>
-                              {disabled && <div className="text-red-400">Disabled (exceeds budget)</div>}
+                              {disabled && <div className="text-[#c41c6a]">Disabled (exceeds budget)</div>}
                             </div>
                           </TooltipContent>
                         </Tooltip>
@@ -1064,22 +1064,22 @@ export default function ChatPage() {
                     <path
                       d="M 5,80 Q 20,60 35,50 T 60,35 T 90,10"
                       fill="none"
-                      stroke="#9333ea"
+                      stroke="#3fb4e5"
                       strokeWidth="2"
                       strokeDasharray="4,4"
-                      opacity="0.5"
+                      opacity="0.7"
                     />
                   </svg>
                 </div>
 
                 {/* Legend */}
-                <div className="flex flex-wrap gap-4 mt-4 text-xs">
+                <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium">
                   <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-green-500 ring-2 ring-green-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-[#1b7340] ring-2 ring-[#1b7340]/30"></div>
                     <span>Recommended</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-[#1a3a8f]"></div>
                     <span>Available</span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -1087,7 +1087,7 @@ export default function ChatPage() {
                     <span>Over Budget</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-6 h-0.5 bg-purple-500" style={{borderStyle: 'dashed'}}></div>
+                    <div className="w-6 h-0.5 bg-[#3fb4e5]" style={{borderStyle: 'dashed'}}></div>
                     <span>Pareto Frontier</span>
                   </div>
                 </div>
@@ -1095,7 +1095,7 @@ export default function ChatPage() {
 
               {/* Cost comparison table */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="text-sm font-medium text-gray-700 mb-3">
+                <div className="text-sm font-bold text-[#1a3a8f] mb-3">
                   {reasoningEnabled ? "Reasoning Mode: Cost rises dramatically" : "Standard Mode: Cost Comparison"}
                 </div>
                 <div className="space-y-2">
@@ -1115,7 +1115,7 @@ export default function ChatPage() {
                     
                     return (
                       <div key={col} className={`flex items-center justify-between p-2 rounded border ${
-                        col === recommendedModel ? 'bg-green-50 border-green-300' : 
+                        col === recommendedModel ? 'bg-[#1b7340]/10 border-[#1b7340]' : 
                         disabled ? 'bg-gray-100 border-gray-200 opacity-50' : 'bg-white border-gray-200'
                       }`}>
                         <div className="flex items-center gap-2">
@@ -1124,14 +1124,14 @@ export default function ChatPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className={`text-xs px-2 py-0.5 rounded ${getCapabilityColor(model.expectedAccuracy)}`}>
+                          <div className={`text-xs px-2 py-0.5 rounded font-semibold ${getCapabilityColor(model.expectedAccuracy)}`}>
                             {getCapabilityLabel(model.expectedAccuracy)}
                           </div>
                           <div className="text-right">
-                            <div className={`font-mono text-sm ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
+                            <div className={`font-mono text-sm font-bold ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
                               ${cost.toFixed(4)}
                             </div>
-                            <div className={`text-xs ${multiplier > 100 ? 'text-red-500 font-bold' : multiplier > 10 ? 'text-orange-500' : 'text-gray-500'}`}>
+                            <div className={`text-xs font-medium ${multiplier > 100 ? 'text-[#c41c6a] font-bold' : multiplier > 10 ? 'text-[#f5a623]' : 'text-gray-500'}`}>
                               {multiplier.toFixed(0)}x base cost
                             </div>
                           </div>
@@ -1142,18 +1142,18 @@ export default function ChatPage() {
                 </div>
                 
                 {reasoningEnabled && (
-                  <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-orange-700">
-                      <strong>Reasoning adds 3-5x cost!</strong> Deep chain-of-thought requires more compute. 
+                  <div className="mt-3 p-3 bg-[#f5a623]/10 border-2 border-[#f5a623] rounded-lg flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-[#f5a623] mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-gray-700">
+                      <strong className="text-[#f5a623]">Reasoning adds 3-5x cost!</strong> Deep chain-of-thought requires more compute. 
                       Only use when complex multi-step reasoning is truly needed.
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
+              <div className="p-4 bg-[#1a3a8f]/10 border-2 border-[#1a3a8f] rounded-lg">
+                <p className="text-sm text-[#1a3a8f]">
                   <strong>Key Insight:</strong> The "best" model depends on your constraints. 
                   A 3B model at $0.0001 might be perfect for simple tasks, while a Frontier model at $0.01+ 
                   is only worth it for the hardest problems. Learn to pick the right tool for the job!
