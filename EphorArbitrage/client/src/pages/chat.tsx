@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Play, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
-interface ModelCell {
+interface Model {
   id: string;
   name: string;
-  category: "3B" | "7B" | "14B" | "70B" | "Frontier";
   isReasoning: boolean;
 }
 
@@ -17,18 +23,28 @@ interface ModelResponse {
   error: string | null;
 }
 
-const WIND_TUNNEL_MODELS: ModelCell[] = [
-  { id: "together/qwen-2.5-3b-instruct", name: "Qwen 2.5 3B", category: "3B", isReasoning: false },
-  { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", category: "7B", isReasoning: false },
-  { id: "together/qwen-2.5-14b-instruct", name: "Qwen 2.5 14B", category: "14B", isReasoning: false },
-  { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", category: "70B", isReasoning: false },
-  { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", category: "70B", isReasoning: true },
-  { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", category: "Frontier", isReasoning: false },
-  { id: "deepseek/deepseek-chat", name: "DeepSeek V3", category: "Frontier", isReasoning: false },
-  { id: "together/deepseek-r1", name: "DeepSeek R1", category: "Frontier", isReasoning: true },
-  { id: "together/qwq-32b", name: "QwQ 32B", category: "Frontier", isReasoning: true },
-  { id: "moonshotai/kimi-k2", name: "Kimi K2", category: "Frontier", isReasoning: false },
-];
+const MODELS_BY_CATEGORY: Record<string, Model[]> = {
+  "3B": [
+    { id: "together/qwen-2.5-3b-instruct", name: "Qwen 2.5 3B", isReasoning: false },
+  ],
+  "7B": [
+    { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", isReasoning: false },
+  ],
+  "14B": [
+    { id: "together/qwen-2.5-14b-instruct", name: "Qwen 2.5 14B", isReasoning: false },
+  ],
+  "70B": [
+    { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", isReasoning: false },
+    { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", isReasoning: true },
+  ],
+  "Frontier": [
+    { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", isReasoning: false },
+    { id: "deepseek/deepseek-chat", name: "DeepSeek V3", isReasoning: false },
+    { id: "together/deepseek-r1", name: "DeepSeek R1", isReasoning: true },
+    { id: "together/qwq-32b", name: "QwQ 32B", isReasoning: true },
+    { id: "moonshotai/kimi-k2", name: "Kimi K2", isReasoning: false },
+  ],
+};
 
 const CATEGORIES = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
@@ -36,9 +52,22 @@ export default function ChatPage() {
   const [prompt, setPrompt] = useState("");
   const [responses, setResponses] = useState<Record<string, ModelResponse>>({});
   const [isRunning, setIsRunning] = useState(false);
+  
+  const [selectedModels, setSelectedModels] = useState<Record<string, string>>({
+    "3B": MODELS_BY_CATEGORY["3B"][0].id,
+    "7B": MODELS_BY_CATEGORY["7B"][0].id,
+    "14B": MODELS_BY_CATEGORY["14B"][0].id,
+    "70B": MODELS_BY_CATEGORY["70B"][0].id,
+    "Frontier": MODELS_BY_CATEGORY["Frontier"][0].id,
+  });
 
-  const getModelsByCategory = (category: string) => {
-    return WIND_TUNNEL_MODELS.filter((m) => m.category === category);
+  const getSelectedModel = (category: string): Model | undefined => {
+    const modelId = selectedModels[category];
+    return MODELS_BY_CATEGORY[category].find(m => m.id === modelId);
+  };
+
+  const handleModelChange = (category: string, modelId: string) => {
+    setSelectedModels(prev => ({ ...prev, [category]: modelId }));
   };
 
   const handleRunAll = async () => {
@@ -47,15 +76,16 @@ export default function ChatPage() {
     setIsRunning(true);
 
     const initialResponses: Record<string, ModelResponse> = {};
-    WIND_TUNNEL_MODELS.forEach((model) => {
-      initialResponses[model.id] = { content: "", loading: true, error: null };
+    CATEGORIES.forEach((category) => {
+      initialResponses[category] = { content: "", loading: true, error: null };
     });
     setResponses(initialResponses);
 
-    const runModel = async (model: ModelCell) => {
+    const runModel = async (category: string) => {
+      const modelId = selectedModels[category];
       try {
         const response = await apiRequest("POST", "/api/wind-tunnel/run", {
-          modelId: model.id,
+          modelId,
           prompt: prompt,
         });
 
@@ -67,7 +97,7 @@ export default function ChatPage() {
 
         setResponses((prev) => ({
           ...prev,
-          [model.id]: {
+          [category]: {
             content: data.content || "",
             loading: false,
             error: null,
@@ -76,7 +106,7 @@ export default function ChatPage() {
       } catch (err) {
         setResponses((prev) => ({
           ...prev,
-          [model.id]: {
+          [category]: {
             content: "",
             loading: false,
             error: "Failed to get response",
@@ -85,7 +115,7 @@ export default function ChatPage() {
       }
     };
 
-    await Promise.all(WIND_TUNNEL_MODELS.map(runModel));
+    await Promise.all(CATEGORIES.map(runModel));
 
     setIsRunning(false);
   };
@@ -130,69 +160,87 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-5 gap-3 items-start">
+        <div className="grid grid-cols-5 gap-3 mb-4">
           {CATEGORIES.map((category) => (
-            <div key={category} className="flex flex-col gap-2">
-              <div className="text-center py-2 bg-gray-800 text-white font-bold rounded-lg text-sm">
-                {category}
-              </div>
-
-              {getModelsByCategory(category).map((model) => {
-                const response = responses[model.id];
-                const isEmpty = !response;
-                const isLoading = response?.loading;
-                const hasError = response?.error;
-                const hasContent = response?.content;
-
-                return (
-                  <div
-                    key={model.id}
-                    className={`
-                      rounded-lg border p-3
-                      ${isEmpty ? "bg-gray-100 border-gray-200" : ""}
-                      ${isLoading ? "bg-blue-50 border-blue-300" : ""}
-                      ${hasError ? "bg-red-50 border-red-300" : ""}
-                      ${hasContent ? "bg-white border-green-300" : ""}
-                    `}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-900 text-sm">
-                        {model.name}
-                      </span>
-                      {model.isReasoning && (
-                        <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-medium">
-                          reasoning
-                        </span>
-                      )}
-                    </div>
-
-                    {isEmpty && (
-                      <div className="text-gray-400 text-xs">
-                        Waiting for prompt...
-                      </div>
+            <Select
+              key={category}
+              value={selectedModels[category]}
+              onValueChange={(value) => handleModelChange(category, value)}
+              disabled={isRunning}
+            >
+              <SelectTrigger className="bg-gray-800 text-white border-gray-700 font-semibold">
+                <SelectValue placeholder={category} />
+              </SelectTrigger>
+              <SelectContent>
+                {MODELS_BY_CATEGORY[category].map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    {model.name}
+                    {model.isReasoning && (
+                      <span className="ml-2 text-orange-500 text-xs">(reasoning)</span>
                     )}
-
-                    {isLoading && (
-                      <div className="flex items-center gap-2 text-blue-600 text-xs">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        Generating...
-                      </div>
-                    )}
-
-                    {hasError && (
-                      <div className="text-red-600 text-xs">{response.error}</div>
-                    )}
-
-                    {hasContent && (
-                      <div className="text-gray-700 text-xs line-clamp-3 overflow-hidden">
-                        {response.content}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ))}
+        </div>
+
+        <div className="grid grid-cols-5 gap-3">
+          {CATEGORIES.map((category) => {
+            const model = getSelectedModel(category);
+            const response = responses[category];
+            const isEmpty = !response;
+            const isLoading = response?.loading;
+            const hasError = response?.error;
+            const hasContent = response?.content;
+
+            return (
+              <div
+                key={category}
+                className={`
+                  rounded-lg border p-4 min-h-[150px]
+                  ${isEmpty ? "bg-gray-100 border-gray-200" : ""}
+                  ${isLoading ? "bg-blue-50 border-blue-300" : ""}
+                  ${hasError ? "bg-red-50 border-red-300" : ""}
+                  ${hasContent ? "bg-white border-green-300" : ""}
+                `}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium text-gray-900 text-sm">
+                    {model?.name}
+                  </span>
+                  {model?.isReasoning && (
+                    <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                      reasoning
+                    </span>
+                  )}
+                </div>
+
+                {isEmpty && (
+                  <div className="text-gray-400 text-xs">
+                    Waiting for prompt...
+                  </div>
+                )}
+
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-blue-600 text-xs">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Generating...
+                  </div>
+                )}
+
+                {hasError && (
+                  <div className="text-red-600 text-xs">{response.error}</div>
+                )}
+
+                {hasContent && (
+                  <div className="text-gray-700 text-xs line-clamp-6 overflow-hidden">
+                    {response.content}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
