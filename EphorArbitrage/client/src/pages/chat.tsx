@@ -51,6 +51,7 @@ export default function ChatPage() {
   const [prompt, setPrompt] = useState("");
   const [responses, setResponses] = useState<Record<string, ModelResponse>>({});
   const [isRunning, setIsRunning] = useState(false);
+  const [showCards, setShowCards] = useState(false);
   
   const [selectedModels, setSelectedModels] = useState<Record<string, string>>({
     "3B": MODELS_BY_CATEGORY["3B"][0].id,
@@ -73,6 +74,7 @@ export default function ChatPage() {
     if (!prompt.trim() || isRunning) return;
 
     setIsRunning(true);
+    setShowCards(true);
 
     const initialResponses: Record<string, ModelResponse> = {};
     CATEGORIES.forEach((category) => {
@@ -179,63 +181,63 @@ export default function ChatPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-5 gap-2">
-            {CATEGORIES.map((category) => {
-              const model = getSelectedModel(category);
-              const response = responses[category];
-              const isEmpty = !response;
-              const isLoading = response?.loading;
-              const hasError = response?.error;
-              const hasContent = response?.content;
+          {showCards && (
+            <div className="grid grid-cols-5 gap-2">
+              {CATEGORIES.map((category) => {
+                const model = getSelectedModel(category);
+                const response = responses[category];
+                const isLoading = response?.loading;
+                const hasError = response?.error;
+                const hasContent = response?.content;
 
-              return (
-                <div
-                  key={category}
-                  className={`
-                    rounded-b-lg border border-t-0 p-3 min-h-[100px]
-                    ${isEmpty ? "bg-gray-50 border-gray-200" : ""}
-                    ${isLoading ? "bg-blue-50 border-blue-200" : ""}
-                    ${hasError ? "bg-red-50 border-red-200" : ""}
-                    ${hasContent ? "bg-white border-green-200" : ""}
-                  `}
-                >
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className="font-medium text-gray-900 text-xs truncate">
-                      {model?.name}
-                    </span>
-                    {model?.isReasoning && (
-                      <span className="text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded-full font-medium shrink-0">
-                        R
+                return (
+                  <div
+                    key={category}
+                    className={`
+                      rounded-b-lg border border-t-0 p-3 min-h-[100px]
+                      ${isLoading ? "bg-blue-50 border-blue-200" : ""}
+                      ${hasError ? "bg-red-50 border-red-200" : ""}
+                      ${hasContent ? "bg-white border-green-200" : ""}
+                      ${!isLoading && !hasError && !hasContent ? "bg-gray-50 border-gray-200" : ""}
+                    `}
+                  >
+                    <div className="flex items-center gap-1 mb-2">
+                      <span className="font-medium text-gray-900 text-xs truncate">
+                        {model?.name}
                       </span>
+                      {model?.isReasoning && (
+                        <span className="text-[9px] bg-orange-500 text-white px-1 py-0.5 rounded-full font-medium shrink-0">
+                          R
+                        </span>
+                      )}
+                    </div>
+
+                    {isLoading && (
+                      <div className="space-y-2">
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div className="bg-blue-600 h-1.5 rounded-full animate-pulse w-2/3"></div>
+                        </div>
+                        <div className="flex items-center gap-1 text-blue-600 text-[11px]">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Generating...
+                        </div>
+                      </div>
+                    )}
+
+                    {hasError && (
+                      <div className="text-red-600 text-[11px]">{response.error}</div>
+                    )}
+
+                    {hasContent && (
+                      <div className="text-gray-700 text-[11px] line-clamp-5 overflow-hidden leading-tight">
+                        {response.content}
+                      </div>
                     )}
                   </div>
-
-                  {isEmpty && (
-                    <div className="text-gray-400 text-[11px]">
-                      Waiting...
-                    </div>
-                  )}
-
-                  {isLoading && (
-                    <div className="flex items-center gap-1 text-blue-600 text-[11px]">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Generating...
-                    </div>
-                  )}
-
-                  {hasError && (
-                    <div className="text-red-600 text-[11px]">{response.error}</div>
-                  )}
-
-                  {hasContent && (
-                    <div className="text-gray-700 text-[11px] line-clamp-5 overflow-hidden leading-tight">
-                      {response.content}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
