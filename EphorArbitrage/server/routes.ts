@@ -1025,7 +1025,33 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       const messages: ChatMessage[] = [{ role: "user", content: prompt }];
       const startTime = Date.now();
       
-      // Stream directly using OpenAI-compatible clients
+      // Anthropic requires special handling - use non-streaming fallback
+      if (modelId === "anthropic/claude-sonnet-4.5") {
+        // Use existing non-streaming completion for Anthropic
+        const result = await getModelCompletion({
+          model: modelId,
+          messages,
+          maxTokens: 1024,
+          timeoutMs: 60000,
+        });
+        
+        const latency = Date.now() - startTime;
+        const cost = calculateCost(modelId, result.inputTokens, result.outputTokens);
+        
+        // Send complete message directly
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete',
+          content: result.content,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
+          latency,
+          cost
+        })}\n\n`);
+        res.end();
+        return;
+      }
+      
+      // Stream using OpenAI-compatible clients (Together, Cerebras, OpenRouter)
       const client = getStreamingClient(modelId);
       const actualModelId = getActualModelId(modelId);
       
@@ -1048,7 +1074,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         const delta = chunk.choices[0]?.delta?.content || "";
         if (delta) {
           content += delta;
-          tokenCount += 1; // Rough estimate: each chunk is ~1 token
+          tokenCount += 1;
           
           // Send progress update
           res.write(`data: ${JSON.stringify({ 
