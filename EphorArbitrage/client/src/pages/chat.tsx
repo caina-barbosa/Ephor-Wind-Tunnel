@@ -197,10 +197,10 @@ export default function ChatPage() {
   };
 
   // Analyze prompt complexity based on content, not just length
-  const analyzePromptComplexity = (text: string): "trivial" | "simple" | "moderate" | "complex" | "expert" => {
-    if (!text.trim()) return "trivial";
+  const promptComplexity = useMemo((): "trivial" | "simple" | "moderate" | "complex" | "expert" => {
+    if (!prompt.trim()) return "trivial";
     
-    const lowerText = text.toLowerCase();
+    const lowerText = prompt.toLowerCase();
     const tokens = inputTokenEstimate;
     
     // Expert-level indicators (needs Frontier)
@@ -215,7 +215,7 @@ export default function ChatPage() {
     
     // Complex indicators (needs 70B)
     const complexPatterns = [
-      /why|explain|analyze|evaluate/i,
+      /\bwhy\b|\bexplain\b|\banalyze\b|\bevaluate\b/i,
       /pros.*cons|advantages.*disadvantages/i,
       /multi.*step|reasoning|logic/i,
       /summarize.*long|synthesize/i,
@@ -224,34 +224,37 @@ export default function ChatPage() {
     // Moderate indicators (needs 14B)
     const moderatePatterns = [
       /how.*to|what.*is.*the.*best/i,
-      /describe|outline|list.*and.*explain/i,
+      /\bdescribe\b|\boutline\b|list.*and.*explain/i,
       /translate|convert|rewrite/i,
     ];
     
     // Check for expert patterns
     if (expertPatterns.some(p => p.test(lowerText)) || tokens > 1000) {
+      console.log("Complexity: EXPERT", { lowerText, tokens });
       return "expert";
     }
     
     // Check for complex patterns
     if (complexPatterns.some(p => p.test(lowerText)) || tokens > 500) {
+      console.log("Complexity: COMPLEX", { lowerText, tokens });
       return "complex";
     }
     
     // Check for moderate patterns
     if (moderatePatterns.some(p => p.test(lowerText)) || tokens > 200) {
+      console.log("Complexity: MODERATE", { lowerText, tokens });
       return "moderate";
     }
     
     // Simple questions
     if (tokens > 50) {
+      console.log("Complexity: SIMPLE", { lowerText, tokens });
       return "simple";
     }
     
+    console.log("Complexity: TRIVIAL", { lowerText, tokens });
     return "trivial";
-  };
-
-  const promptComplexity = useMemo(() => analyzePromptComplexity(prompt), [prompt, inputTokenEstimate]);
+  }, [prompt, inputTokenEstimate]);
 
   const recommendedModel = useMemo(() => {
     const available = COLUMNS.filter(col => !isModelDisabled(col).disabled);
