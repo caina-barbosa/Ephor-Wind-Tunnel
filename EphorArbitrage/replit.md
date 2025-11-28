@@ -3,7 +3,9 @@
 ## Overview
 EPHOR ARBITRAGE is a clean, minimal multi-model AI chat interface focused on demonstrating **Speed Arbitrage** - comparing fast, budget-friendly AI models while tracking performance versus the premium Claude baseline. The application uses direct API integrations with 5 speed-optimized providers plus Together AI for 2 additional models (8 total). The interface emphasizes performance metrics, real-time cost tracking, and competitive analysis between models.
 
-## Model Lineup (8 Models Total)
+## Model Lineup (14 Models Total)
+
+### Core Models (8 models)
 1. **Claude Sonnet 4.5** - anthropic/claude-sonnet-4.5 - $3.00/$15.00 (Premium baseline)
 2. **Cerebras: Llama 3.3 70B** - meta-llama/llama-3.3-70b-instruct:cerebras - $0.60/$0.60 (Wafer-scale chip - FASTEST)
 3. **Groq: Llama 4 Maverick** - meta-llama/llama-4-maverick:groq - $0.11/$0.34 (Groq LPU - Very fast)
@@ -12,6 +14,14 @@ EPHOR ARBITRAGE is a clean, minimal multi-model AI chat interface focused on dem
 6. **Kimi K2 (Moonshot)** - moonshotai/kimi-k2 - $1.00/$3.00 (via OpenRouter - faster than Together AI)
 7. **Qwen 2.5 72B (Alibaba)** - qwen/qwen-2.5-72b-instruct - $0.18/$0.18 (via Together AI - Turbo)
 8. **GLM-4.6 (Zhipu)** - z-ai/glm-4-32b - $0.10/$0.10 (via Together AI)
+
+### LLM Wind Tunnel Models (6 additional models via Together AI)
+9. **Qwen 2.5 3B** - together/qwen-2.5-3b-instruct - $0.06/$0.06 (3B, no reasoning)
+10. **Qwen 2.5 7B Turbo** - together/qwen-2.5-7b-instruct-turbo - $0.30/$0.30 (7B, no reasoning)
+11. **Qwen 2.5 14B** - together/qwen-2.5-14b-instruct - $0.18/$0.18 (14B, no reasoning)
+12. **DeepSeek R1 Distill 70B** - together/deepseek-r1-distill-llama-70b - $2.00/$2.00 (70B, reasoning)
+13. **DeepSeek R1** - together/deepseek-r1 - $3.00/$7.00 (Frontier, reasoning)
+14. **QwQ 32B** - together/qwq-32b - $1.20/$1.20 (Frontier, reasoning)
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
