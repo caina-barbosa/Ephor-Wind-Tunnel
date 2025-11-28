@@ -374,28 +374,33 @@ export default function ChatPage() {
               disabled={isRunning}
             />
             
-            <div className="mt-3 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="mt-3 p-3 sm:p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-blue-700 font-semibold text-sm">INPUT GAUGE</span>
+              </div>
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-600 font-medium">Input vs Context Capacity:</span>
-                  <span className="font-mono text-gray-900 font-bold">{inputTokenEstimate.toLocaleString()}</span>
-                  <span className="text-gray-400">/</span>
-                  <span className="font-mono text-gray-600">{selectedContextTokens.toLocaleString()}</span>
-                  <span className="text-gray-500 text-xs">tokens</span>
+                  <span className="font-mono text-xl text-gray-900 font-bold">{inputTokenEstimate.toLocaleString()}</span>
+                  <span className="text-gray-400 text-lg">/</span>
+                  <span className="font-mono text-lg text-gray-600">{selectedContextTokens.toLocaleString()}</span>
+                  <span className="text-gray-500">tokens</span>
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                  inputPercentage > 80 ? 'bg-red-100 text-red-600' : 
-                  inputPercentage > 50 ? 'bg-yellow-100 text-yellow-600' : 
-                  'bg-green-100 text-green-600'
+                <span className={`text-sm font-bold px-3 py-1 rounded ${
+                  inputPercentage > 80 ? 'bg-red-500 text-white' : 
+                  inputPercentage > 50 ? 'bg-yellow-500 text-white' : 
+                  'bg-green-500 text-white'
                 }`}>
                   {inputPercentage.toFixed(1)}% used
                 </span>
               </div>
-              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all ${inputPercentage > 80 ? 'bg-red-500' : inputPercentage > 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
-                  style={{ width: `${Math.max(inputPercentage, 1)}%` }}
+                  style={{ width: `${Math.max(inputPercentage, 2)}%` }}
                 />
+              </div>
+              <div className="text-xs text-blue-600 mt-2">
+                As you type, this gauge shows how much of your context window you're using.
               </div>
             </div>
           </div>
