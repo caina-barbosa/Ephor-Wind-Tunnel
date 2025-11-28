@@ -155,6 +155,12 @@ export default function ChatPage() {
     if (!model) {
       return { disabled: true, reason: "Reasoning requires 70B+" };
     }
+    
+    // Check if input exceeds selected context window
+    if (inputTokenEstimate > selectedContextTokens) {
+      return { disabled: true, reason: `Input exceeds ${contextSize.toUpperCase()} context` };
+    }
+    
     const cost = estimateCost(model);
     if (cost > costCap) {
       return { disabled: true, reason: `Exceeds $${costCap.toFixed(2)} cap` };
