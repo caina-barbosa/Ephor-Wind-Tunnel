@@ -166,66 +166,146 @@ export default function ChatPage() {
     const model = getModelForColumn(col);
     if (!model) return "";
     
-    const inputComplexity = inputTokenEstimate > 500 ? "complex" : inputTokenEstimate > 100 ? "moderate" : "simple";
+    const contextNote = contextSize === "1m" ? " Your 1M context window requires more capable models." :
+                        contextSize === "128k" ? " Your large context window (128K) benefits from stronger models." : "";
     
     if (reasoningEnabled) {
       if (col === "70B") {
-        return "Best value for reasoning tasks. DeepSeek R1 Distill gives you deep chain-of-thought at ~65% less cost than full R1.";
+        return `Best value for reasoning tasks.${contextNote} DeepSeek R1 Distill gives deep chain-of-thought at ~65% less cost than full R1. Engineering insight: Reasoning requires 70B+ parameters to work reliably.`;
       }
       if (col === "Frontier") {
-        return "Most capable reasoning model (DeepSeek R1). Use when you need maximum reasoning depth for the hardest problems.";
+        return `Most capable reasoning model.${contextNote} DeepSeek R1 has the deepest chain-of-thought. Use when accuracy on hard problems matters more than cost.`;
       }
     } else {
       if (col === "3B") {
-        return `Perfect match for your ${inputComplexity} query. Basic capability handles simple tasks well, and you save 99%+ on cost vs larger models. Why pay more when you don't need to?`;
+        return `Your query is simple enough for a 3B model.${contextNote} Basic capability handles straightforward Q&A well—you save 99%+ on cost vs larger models. Engineering insight: Don't overspend on capability you don't need.`;
       }
       if (col === "7B") {
-        return `Good match for your ${inputComplexity} query. Handles most everyday questions well at minimal cost. Upgrade to 14B+ only for complex analysis.`;
+        return `Your query matches 7B capability.${contextNote} Good for everyday questions with minimal cost. 7B models handle most tasks humans ask—coding questions, explanations, summaries.`;
       }
       if (col === "14B") {
-        return `Recommended for your ${inputComplexity} query. Strong enough for nuanced questions while staying cost-efficient. The sweet spot for most real work.`;
+        return `Your query needs 14B capability.${contextNote} The sweet spot for nuanced work—strong enough for analysis while staying cost-efficient. Engineering insight: 14B is often the best value.`;
       }
       if (col === "70B") {
-        return `Your ${inputComplexity} query benefits from higher capability. 70B models excel at complex reasoning, multi-step analysis, and nuanced understanding.`;
+        return `Your query requires 70B capability.${contextNote} Complex reasoning, multi-step analysis, and nuanced understanding need this scale. Cost is higher but accuracy matters here.`;
       }
       if (col === "Frontier") {
-        return "Maximum capability (Claude Sonnet 4.5). Use for the hardest problems where quality matters more than cost—coding, analysis, creative work.";
+        return `Your query needs maximum capability.${contextNote} Claude Sonnet 4.5 excels at the hardest problems—coding, deep analysis, creative work. Premium cost for premium quality.`;
       }
     }
     return "";
   };
 
+  // Analyze prompt complexity based on content, not just length
+  const analyzePromptComplexity = (text: string): "trivial" | "simple" | "moderate" | "complex" | "expert" => {
+    if (!text.trim()) return "trivial";
+    
+    const lowerText = text.toLowerCase();
+    const tokens = inputTokenEstimate;
+    
+    // Expert-level indicators (needs Frontier)
+    const expertPatterns = [
+      /write.*code|implement|debug|refactor/i,
+      /analyze.*data|statistical|regression/i,
+      /compare.*contrast.*multiple/i,
+      /explain.*step.*by.*step.*how/i,
+      /research|thesis|dissertation/i,
+      /legal|medical|scientific.*analysis/i,
+    ];
+    
+    // Complex indicators (needs 70B)
+    const complexPatterns = [
+      /why|explain|analyze|evaluate/i,
+      /pros.*cons|advantages.*disadvantages/i,
+      /multi.*step|reasoning|logic/i,
+      /summarize.*long|synthesize/i,
+    ];
+    
+    // Moderate indicators (needs 14B)
+    const moderatePatterns = [
+      /how.*to|what.*is.*the.*best/i,
+      /describe|outline|list.*and.*explain/i,
+      /translate|convert|rewrite/i,
+    ];
+    
+    // Check for expert patterns
+    if (expertPatterns.some(p => p.test(lowerText)) || tokens > 1000) {
+      return "expert";
+    }
+    
+    // Check for complex patterns
+    if (complexPatterns.some(p => p.test(lowerText)) || tokens > 500) {
+      return "complex";
+    }
+    
+    // Check for moderate patterns
+    if (moderatePatterns.some(p => p.test(lowerText)) || tokens > 200) {
+      return "moderate";
+    }
+    
+    // Simple questions
+    if (tokens > 50) {
+      return "simple";
+    }
+    
+    return "trivial";
+  };
+
+  const promptComplexity = useMemo(() => analyzePromptComplexity(prompt), [prompt, inputTokenEstimate]);
+
   const recommendedModel = useMemo(() => {
     const available = COLUMNS.filter(col => !isModelDisabled(col).disabled);
     if (available.length === 0) return null;
     
+    // Reasoning mode: always prefer 70B (best value) over Frontier
     if (reasoningEnabled) {
       if (available.includes("70B")) return "70B";
       if (available.includes("Frontier")) return "Frontier";
       return null;
     }
     
-    const inputComplexity = inputTokenEstimate > 500 ? "complex" : inputTokenEstimate > 100 ? "moderate" : "simple";
+    // Context window factor: larger context suggests more complex task
+    const contextFactor = contextSize === "1m" ? 2 : contextSize === "128k" ? 1 : 0;
     
-    if (inputComplexity === "simple") {
-      if (available.includes("3B")) return "3B";
-      if (available.includes("7B")) return "7B";
+    // Determine minimum model based on prompt complexity + context
+    const getMinModel = () => {
+      switch (promptComplexity) {
+        case "expert":
+          return contextFactor > 0 ? "Frontier" : "70B";
+        case "complex":
+          return contextFactor > 1 ? "70B" : "14B";
+        case "moderate":
+          return contextFactor > 0 ? "14B" : "7B";
+        case "simple":
+          return "7B";
+        case "trivial":
+        default:
+          return "3B";
+      }
+    };
+    
+    const minModel = getMinModel();
+    const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "14B", "70B", "Frontier"];
+    const minIndex = modelOrder.indexOf(minModel as typeof COLUMNS[number]);
+    
+    // Find the smallest available model that meets our minimum requirement
+    for (let i = minIndex; i < modelOrder.length; i++) {
+      const model = modelOrder[i];
+      if (available.includes(model)) {
+        return model;
+      }
     }
     
-    if (inputComplexity === "moderate") {
-      if (available.includes("7B")) return "7B";
-      if (available.includes("14B")) return "14B";
-      if (available.includes("3B")) return "3B";
-    }
-    
-    if (inputComplexity === "complex") {
-      if (available.includes("14B")) return "14B";
-      if (available.includes("70B")) return "70B";
-      if (available.includes("7B")) return "7B";
+    // Fallback: return the largest available model
+    for (let i = modelOrder.length - 1; i >= 0; i--) {
+      const model = modelOrder[i];
+      if (available.includes(model)) {
+        return model;
+      }
     }
     
     return available[0];
-  }, [costCap, reasoningEnabled, inputTokenEstimate]);
+  }, [costCap, reasoningEnabled, promptComplexity, contextSize]);
 
   const handleRunAll = async () => {
     if (!prompt.trim() || isRunning) return;
@@ -394,13 +474,25 @@ export default function ChatPage() {
                   <span className="font-mono text-gray-600">{selectedContextTokens.toLocaleString()}</span>
                   <span className="text-gray-500 text-xs">tokens</span>
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                  inputPercentage > 80 ? 'bg-red-100 text-red-600' : 
-                  inputPercentage > 50 ? 'bg-yellow-100 text-yellow-600' : 
-                  'bg-green-100 text-green-600'
-                }`}>
-                  {inputPercentage.toFixed(1)}% used
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                    promptComplexity === "expert" ? 'bg-purple-100 text-purple-600' :
+                    promptComplexity === "complex" ? 'bg-red-100 text-red-600' :
+                    promptComplexity === "moderate" ? 'bg-orange-100 text-orange-600' :
+                    promptComplexity === "simple" ? 'bg-blue-100 text-blue-600' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {promptComplexity === "trivial" ? "Empty" : 
+                     promptComplexity.charAt(0).toUpperCase() + promptComplexity.slice(1)} Query
+                  </span>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                    inputPercentage > 80 ? 'bg-red-100 text-red-600' : 
+                    inputPercentage > 50 ? 'bg-yellow-100 text-yellow-600' : 
+                    'bg-green-100 text-green-600'
+                  }`}>
+                    {inputPercentage.toFixed(1)}% used
+                  </span>
+                </div>
               </div>
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                 <div 
