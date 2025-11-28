@@ -24,7 +24,8 @@ Preferred communication style: Simple, everyday language.
   - Changed latency metric from TTFT to Total Latency (full response time)
   - Mobile-responsive design: stacked controls, horizontal scrolling grid, touch-friendly dialogs
   - Enhanced "Input vs Context Capacity" gauge with clear X/Y tokens display and percentage
-  - Added expected accuracy indicator per model (stars: ★☆☆☆ to ★★★★)
+  - Added "Capability" indicator per model (Basic → Good → Strong → Excellent) with tooltips explaining each level
+  - Smart recommendation logic that matches model capability to prompt complexity
   - Context window selector (8K/32K/128K/1M) with explanatory text
   - Cost cap slider ($0.00-$0.25) that disables expensive models
   - Reasoning mode toggle with 70B+ restriction

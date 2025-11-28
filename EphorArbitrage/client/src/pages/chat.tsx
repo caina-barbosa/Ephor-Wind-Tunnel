@@ -32,7 +32,7 @@ interface Model {
   costPer1k: number;
   expectedLatency: "fast" | "medium" | "slow";
   reasoningDepth: "none" | "shallow" | "deep";
-  expectedAccuracy: "low" | "medium" | "high" | "very-high";
+  expectedAccuracy: "basic" | "good" | "strong" | "excellent";
 }
 
 interface ModelResponse {
@@ -47,19 +47,19 @@ interface ModelResponse {
 const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "low" },
-  "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "medium" },
-  "14B": { id: "openrouter/qwen3-14b", name: "Qwen3 14B", costPer1k: 0.0002, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "medium" },
-  "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "high" },
-  "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "very-high" },
+  "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "basic" },
+  "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
+  "14B": { id: "openrouter/qwen3-14b", name: "Qwen3 14B", costPer1k: 0.0002, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "good" },
+  "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "strong" },
+  "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "excellent" },
 };
 
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
   "14B": null,
-  "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "high" },
-  "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "very-high" },
+  "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "strong" },
+  "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "excellent" },
 };
 
 const CONTEXT_SIZES = [
@@ -91,30 +91,30 @@ const getLatencyCategory = (latency: number): "fast" | "medium" | "slow" => {
   return "slow";
 };
 
-const getAccuracyColor = (accuracy: "low" | "medium" | "high" | "very-high") => {
+const getCapabilityColor = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "low": return "text-red-600 bg-red-100";
-    case "medium": return "text-yellow-600 bg-yellow-100";
-    case "high": return "text-green-600 bg-green-100";
-    case "very-high": return "text-blue-600 bg-blue-100";
+    case "basic": return "text-gray-600 bg-gray-100";
+    case "good": return "text-blue-600 bg-blue-100";
+    case "strong": return "text-green-600 bg-green-100";
+    case "excellent": return "text-purple-600 bg-purple-100";
   }
 };
 
-const getAccuracyLabel = (accuracy: "low" | "medium" | "high" | "very-high") => {
+const getCapabilityLabel = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "low": return "Low";
-    case "medium": return "Medium";
-    case "high": return "High";
-    case "very-high": return "Very High";
+    case "basic": return "Basic";
+    case "good": return "Good";
+    case "strong": return "Strong";
+    case "excellent": return "Excellent";
   }
 };
 
-const getAccuracyStars = (accuracy: "low" | "medium" | "high" | "very-high") => {
+const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "low": return "★☆☆☆";
-    case "medium": return "★★☆☆";
-    case "high": return "★★★☆";
-    case "very-high": return "★★★★";
+    case "basic": return "Simple Q&A, basic tasks";
+    case "good": return "Most everyday tasks";
+    case "strong": return "Complex reasoning";
+    case "excellent": return "Hardest problems";
   }
 };
 
@@ -165,28 +165,30 @@ export default function ChatPage() {
     const model = getModelForColumn(col);
     if (!model) return "";
     
+    const inputComplexity = inputTokenEstimate > 500 ? "complex" : inputTokenEstimate > 100 ? "moderate" : "simple";
+    
     if (reasoningEnabled) {
       if (col === "70B") {
-        return "Best balance of deep reasoning and cost. DeepSeek R1 Distill provides strong reasoning at lower cost than full R1.";
+        return "Best value for reasoning tasks. DeepSeek R1 Distill gives you deep chain-of-thought at ~65% less cost than full R1.";
       }
       if (col === "Frontier") {
-        return "Most capable reasoning model (DeepSeek R1). Choose when accuracy matters more than cost.";
+        return "Most capable reasoning model (DeepSeek R1). Use when you need maximum reasoning depth for the hardest problems.";
       }
     } else {
       if (col === "3B") {
-        return "Fastest and cheapest option. Good for simple tasks where speed matters most.";
+        return `Perfect match for your ${inputComplexity} query. Basic capability handles simple tasks well, and you save 99%+ on cost vs larger models. Why pay more when you don't need to?`;
       }
       if (col === "7B") {
-        return "Slightly more capable than 3B with minimal cost increase. Better for moderately complex queries.";
+        return `Good match for your ${inputComplexity} query. Handles most everyday questions well at minimal cost. Upgrade to 14B+ only for complex analysis.`;
       }
       if (col === "14B") {
-        return "Good middle ground between capability and cost. Handles nuanced queries better than smaller models.";
+        return `Recommended for your ${inputComplexity} query. Strong enough for nuanced questions while staying cost-efficient. The sweet spot for most real work.`;
       }
       if (col === "70B") {
-        return "High capability for complex reasoning tasks. Worth the cost when accuracy is critical.";
+        return `Your ${inputComplexity} query benefits from higher capability. 70B models excel at complex reasoning, multi-step analysis, and nuanced understanding.`;
       }
       if (col === "Frontier") {
-        return "Highest capability (Claude Sonnet 4.5). Premium cost but best for challenging, nuanced tasks.";
+        return "Maximum capability (Claude Sonnet 4.5). Use for the hardest problems where quality matters more than cost—coding, analysis, creative work.";
       }
     }
     return "";
@@ -568,11 +570,20 @@ export default function ChatPage() {
                           </div>
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-gray-500 flex items-center gap-1">
-                              <Target className="w-3 h-3" /> <span className="hidden sm:inline">Accuracy</span>
+                              <Target className="w-3 h-3" /> <span className="hidden sm:inline">Capability</span>
                             </span>
-                            <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium ${getAccuracyColor(model!.expectedAccuracy)}`}>
-                              {getAccuracyStars(model!.expectedAccuracy)}
-                            </span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium cursor-help ${getCapabilityColor(model!.expectedAccuracy)}`}>
+                                    {getCapabilityLabel(model!.expectedAccuracy)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{getCapabilityDescription(model!.expectedAccuracy)}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </div>
 
