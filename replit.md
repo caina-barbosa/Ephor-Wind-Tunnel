@@ -23,7 +23,8 @@ Preferred communication style: Simple, everyday language.
   - Blue accent for "Run" button, green for "Recommended"
   - Changed latency metric from TTFT to Total Latency (full response time)
   - Mobile-responsive design: stacked controls, horizontal scrolling grid, touch-friendly dialogs
-  - Input token gauge showing usage vs context capacity
+  - Enhanced "Input vs Context Capacity" gauge with clear X/Y tokens display and percentage
+  - Added expected accuracy indicator per model (stars: ★☆☆☆ to ★★★★)
   - Context window selector (8K/32K/128K/1M) with explanatory text
   - Cost cap slider ($0.00-$0.25) that disables expensive models
   - Reasoning mode toggle with 70B+ restriction

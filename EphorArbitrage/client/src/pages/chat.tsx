@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Model {
@@ -32,6 +32,7 @@ interface Model {
   costPer1k: number;
   expectedLatency: "fast" | "medium" | "slow";
   reasoningDepth: "none" | "shallow" | "deep";
+  expectedAccuracy: "low" | "medium" | "high" | "very-high";
 }
 
 interface ModelResponse {
@@ -46,19 +47,19 @@ interface ModelResponse {
 const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none" },
-  "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none" },
-  "14B": { id: "openrouter/qwen3-14b", name: "Qwen3 14B", costPer1k: 0.0002, expectedLatency: "medium", reasoningDepth: "none" },
-  "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none" },
-  "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none" },
+  "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "low" },
+  "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "medium" },
+  "14B": { id: "openrouter/qwen3-14b", name: "Qwen3 14B", costPer1k: 0.0002, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "medium" },
+  "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "high" },
+  "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "very-high" },
 };
 
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
   "14B": null,
-  "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep" },
-  "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep" },
+  "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "high" },
+  "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "very-high" },
 };
 
 const CONTEXT_SIZES = [
@@ -88,6 +89,33 @@ const getLatencyCategory = (latency: number): "fast" | "medium" | "slow" => {
   if (latency < 500) return "fast";
   if (latency < 2000) return "medium";
   return "slow";
+};
+
+const getAccuracyColor = (accuracy: "low" | "medium" | "high" | "very-high") => {
+  switch (accuracy) {
+    case "low": return "text-red-600 bg-red-100";
+    case "medium": return "text-yellow-600 bg-yellow-100";
+    case "high": return "text-green-600 bg-green-100";
+    case "very-high": return "text-blue-600 bg-blue-100";
+  }
+};
+
+const getAccuracyLabel = (accuracy: "low" | "medium" | "high" | "very-high") => {
+  switch (accuracy) {
+    case "low": return "Low";
+    case "medium": return "Medium";
+    case "high": return "High";
+    case "very-high": return "Very High";
+  }
+};
+
+const getAccuracyStars = (accuracy: "low" | "medium" | "high" | "very-high") => {
+  switch (accuracy) {
+    case "low": return "★☆☆☆";
+    case "medium": return "★★☆☆";
+    case "high": return "★★★☆";
+    case "very-high": return "★★★★";
+  }
 };
 
 export default function ChatPage() {
@@ -318,18 +346,29 @@ export default function ChatPage() {
               disabled={isRunning}
             />
             
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-gray-500">Input tokens:</span>
-              <span className="font-mono text-gray-900">{inputTokenEstimate.toLocaleString()}</span>
-              <div className="flex-1 min-w-[100px] mx-2 sm:mx-4">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full transition-all ${inputPercentage > 80 ? 'bg-red-500' : inputPercentage > 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
-                    style={{ width: `${inputPercentage}%` }}
-                  />
+            <div className="mt-3 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 font-medium">Input vs Context Capacity:</span>
+                  <span className="font-mono text-gray-900 font-bold">{inputTokenEstimate.toLocaleString()}</span>
+                  <span className="text-gray-400">/</span>
+                  <span className="font-mono text-gray-600">{selectedContextTokens.toLocaleString()}</span>
+                  <span className="text-gray-500 text-xs">tokens</span>
                 </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                  inputPercentage > 80 ? 'bg-red-100 text-red-600' : 
+                  inputPercentage > 50 ? 'bg-yellow-100 text-yellow-600' : 
+                  'bg-green-100 text-green-600'
+                }`}>
+                  {inputPercentage.toFixed(1)}% used
+                </span>
               </div>
-              <span className="text-gray-400 text-xs hidden sm:inline">{inputPercentage.toFixed(1)}% of {contextSize} context</span>
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all ${inputPercentage > 80 ? 'bg-red-500' : inputPercentage > 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
+                  style={{ width: `${Math.max(inputPercentage, 1)}%` }}
+                />
+              </div>
             </div>
           </div>
 
@@ -525,6 +564,14 @@ export default function ChatPage() {
                             </span>
                             <span className="text-gray-600 text-xs">
                               {getReasoningDepthLabel(model!.reasoningDepth)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 flex items-center gap-1">
+                              <Target className="w-3 h-3" /> <span className="hidden sm:inline">Accuracy</span>
+                            </span>
+                            <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium ${getAccuracyColor(model!.expectedAccuracy)}`}>
+                              {getAccuracyStars(model!.expectedAccuracy)}
                             </span>
                           </div>
                         </div>
