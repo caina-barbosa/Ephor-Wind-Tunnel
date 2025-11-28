@@ -11,10 +11,12 @@ export interface OpenRouterChatCompletionRequest {
 export async function createOpenRouterChatCompletion(
   request: OpenRouterChatCompletionRequest
 ): Promise<ChatCompletionResult> {
-  const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+  // Using Replit's AI Integrations service for OpenRouter access
+  const baseURL = process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL;
+  const apiKey = process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY;
   
-  if (!openRouterApiKey) {
-    throw new Error("OPENROUTER_API_KEY not configured");
+  if (!baseURL || !apiKey) {
+    throw new Error("Replit AI Integration for OpenRouter not configured");
   }
 
   try {
@@ -22,13 +24,9 @@ export async function createOpenRouterChatCompletion(
     const startTime = Date.now();
     
     const client = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: openRouterApiKey,
+      baseURL: baseURL,
+      apiKey: apiKey,
       timeout: timeoutMs,
-      defaultHeaders: {
-        "HTTP-Referer": "https://ephor.replit.app",
-        "X-Title": "EPHOR WIND TUNNEL",
-      },
     });
 
     // Use streaming to measure TTFT (Time to First Token)
