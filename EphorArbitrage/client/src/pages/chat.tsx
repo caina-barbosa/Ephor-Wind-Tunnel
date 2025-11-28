@@ -86,21 +86,18 @@ export default function ChatPage() {
     setResponses(initialResponses);
 
     const runModel = async (model: Model) => {
-      const startTime = performance.now();
       try {
         const response = await apiRequest("POST", "/api/wind-tunnel/run", {
           modelId: model.id,
           prompt: prompt,
         });
 
-        const ttft = Math.round(performance.now() - startTime);
-
         if (!response.ok) {
-          throw new Error("Request failed");
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Request failed");
         }
 
         const data = await response.json();
-        const cost = data.cost || 0.001 + Math.random() * 0.005;
 
         setResponses((prev) => ({
           ...prev,
@@ -108,17 +105,17 @@ export default function ChatPage() {
             content: data.content || "",
             loading: false,
             error: null,
-            ttft,
-            cost,
+            ttft: data.ttft,
+            cost: data.cost,
           },
         }));
-      } catch (err) {
+      } catch (err: any) {
         setResponses((prev) => ({
           ...prev,
           [model.id]: {
             content: "",
             loading: false,
-            error: "Failed",
+            error: err.message || "Failed",
             ttft: null,
             cost: null,
           },
