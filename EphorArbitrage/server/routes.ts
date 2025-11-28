@@ -958,6 +958,48 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
     }
   });
 
+  // Wind Tunnel: Run a single model
+  app.post("/api/wind-tunnel/run", async (req, res) => {
+    try {
+      const { modelId, prompt } = req.body;
+
+      if (!modelId || typeof modelId !== "string") {
+        return res.status(400).json({ error: "Model ID is required" });
+      }
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      console.log(`[Wind Tunnel] Running model: ${modelId}`);
+
+      const messages: ChatMessage[] = [
+        { role: "user", content: prompt }
+      ];
+
+      const startTime = Date.now();
+      const result = await getModelCompletion({
+        model: modelId,
+        messages,
+        maxTokens: 1024,
+        timeoutMs: 60000,
+      });
+      const responseTimeMs = Date.now() - startTime;
+
+      console.log(`[Wind Tunnel] Model ${modelId} responded in ${responseTimeMs}ms`);
+
+      res.json({
+        content: result.content,
+        modelId,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        responseTimeMs,
+      });
+    } catch (error: any) {
+      console.error(`[Wind Tunnel] Error:`, error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
