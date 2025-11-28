@@ -293,35 +293,35 @@ export default function ChatPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50 text-gray-900">
-        <div className="max-w-7xl mx-auto p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">
+        <div className="max-w-7xl mx-auto p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
               Ephor Wind Tunnel
             </h1>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowWhyModal(true)}
-              className="border-gray-300 text-gray-600 hover:bg-gray-100"
+              className="border-gray-300 text-gray-600 hover:bg-gray-100 w-full sm:w-auto"
             >
               <Info className="w-4 h-4 mr-2" />
               Why This Model?
             </Button>
           </div>
 
-          <div className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
+          <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-gray-200">
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Enter your prompt to test across all model sizes..."
-              className="w-full h-[100px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
+              className="w-full h-[80px] sm:h-[100px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm sm:text-base"
               disabled={isRunning}
             />
             
-            <div className="mt-3 flex items-center gap-2 text-sm">
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
               <span className="text-gray-500">Input tokens:</span>
               <span className="font-mono text-gray-900">{inputTokenEstimate.toLocaleString()}</span>
-              <div className="flex-1 mx-4">
+              <div className="flex-1 min-w-[100px] mx-2 sm:mx-4">
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div 
                     className={`h-full transition-all ${inputPercentage > 80 ? 'bg-red-500' : inputPercentage > 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
@@ -329,15 +329,15 @@ export default function ChatPage() {
                   />
                 </div>
               </div>
-              <span className="text-gray-400 text-xs">{inputPercentage.toFixed(1)}% of {contextSize} context</span>
+              <span className="text-gray-400 text-xs hidden sm:inline">{inputPercentage.toFixed(1)}% of {contextSize} context</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <Brain className="w-4 h-4 text-gray-500" />
-                <span className="font-medium text-gray-700">Context Window</span>
+                <span className="font-medium text-gray-700 text-sm sm:text-base">Context Window</span>
               </div>
               <Select value={contextSize} onValueChange={setContextSize} disabled={isRunning}>
                 <SelectTrigger className="bg-white border-gray-300 text-gray-900">
@@ -351,13 +351,13 @@ export default function ChatPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-400 mt-2">Memory = Cost. Bigger context = more expensive.</p>
+              <p className="text-xs text-gray-400 mt-2 hidden sm:block">Memory = Cost. Bigger context = more expensive.</p>
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <DollarSign className="w-4 h-4 text-gray-500" />
-                <span className="font-medium text-gray-700">Max Cost Per Query</span>
+                <span className="font-medium text-gray-700 text-sm sm:text-base">Max Cost Per Query</span>
               </div>
               <div className="flex items-center gap-3">
                 <Slider
@@ -369,17 +369,17 @@ export default function ChatPage() {
                   className="flex-1"
                   disabled={isRunning}
                 />
-                <span className="font-mono text-lg text-gray-900">
+                <span className="font-mono text-base sm:text-lg text-gray-900">
                   ${costCap.toFixed(2)}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-2">Models exceeding this cap will be disabled.</p>
+              <p className="text-xs text-gray-400 mt-2 hidden sm:block">Models exceeding this cap will be disabled.</p>
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <Zap className="w-4 h-4 text-gray-500" />
-                <span className="font-medium text-gray-700">Reasoning Mode</span>
+                <span className="font-medium text-gray-700 text-sm sm:text-base">Reasoning Mode</span>
               </div>
               <div className="flex items-center gap-3">
                 <Switch
@@ -391,7 +391,7 @@ export default function ChatPage() {
                   {reasoningEnabled ? 'ENABLED' : 'DISABLED'}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-gray-400 mt-2 hidden sm:block">
                 {reasoningEnabled 
                   ? "Deep reasoning enabled on 70B+ only. Slower but more accurate."
                   : "Standard mode. Fast responses, no chain-of-thought."}
@@ -402,173 +402,175 @@ export default function ChatPage() {
           <Button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
-            className="w-full py-6 text-lg bg-blue-600 hover:bg-blue-700 text-white mb-6"
+            className="w-full py-4 sm:py-6 text-base sm:text-lg bg-blue-600 hover:bg-blue-700 text-white mb-4 sm:mb-6"
           >
             {isRunning ? (
               <>
-                <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 animate-spin" />
                 Testing All Models...
               </>
             ) : (
               <>
-                <Play className="w-6 h-6 mr-3" />
+                <Play className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
                 Run Wind Tunnel Test
               </>
             )}
           </Button>
 
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="grid grid-cols-5 border-b border-gray-200">
-              {COLUMNS.map(col => {
-                const model = getModelForColumn(col);
-                const isRecommended = col === recommendedModel;
-                return (
-                  <div 
-                    key={col} 
-                    className={`p-3 text-center ${isRecommended ? 'bg-green-50' : ''} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
-                  >
-                    <div className="font-bold text-gray-900">{col}</div>
-                    <div className="text-xs text-gray-500">
-                      {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
-                    </div>
-                    {isRecommended && (
-                      <div className="mt-1 text-xs font-medium text-green-600">★ Recommended</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="grid grid-cols-5">
-              {COLUMNS.map(col => {
-                const model = getModelForColumn(col);
-                const { disabled, reason } = isModelDisabled(col);
-                const response = responses[col];
-                const isLoading = response?.loading;
-                const hasError = response?.error;
-                const hasContent = response?.content;
-                const isRecommended = col === recommendedModel;
-
-                if (disabled) {
-                  const isReasoningLocked = !model;
-                  return (
-                    <Tooltip key={col}>
-                      <TooltipTrigger asChild>
-                        <div className={`p-4 min-h-[180px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
-                          <Lock className="w-6 h-6 mb-2 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-400 text-center">
-                            {isReasoningLocked ? "Reasoning" : model?.name}
-                          </span>
-                          <span className="text-xs text-gray-400 text-center mt-1">
-                            {reason}
-                          </span>
+            <div className="overflow-x-auto">
+              <div className="min-w-[700px] sm:min-w-0">
+                <div className="grid grid-cols-5 border-b border-gray-200">
+                  {COLUMNS.map(col => {
+                    const model = getModelForColumn(col);
+                    const isRecommended = col === recommendedModel;
+                    return (
+                      <div 
+                        key={col} 
+                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-green-50' : ''} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                      >
+                        <div className="font-bold text-gray-900 text-sm sm:text-base">{col}</div>
+                        <div className="text-xs text-gray-500">
+                          {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-white border-gray-200 text-gray-700">
-                        <p>{reason}</p>
-                        {isReasoningLocked && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Small models produce unreliable reasoning chains.
-                          </p>
+                        {isRecommended && (
+                          <div className="mt-1 text-xs font-medium text-green-600">★ Recommended</div>
                         )}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                }
-
-                return (
-                  <div
-                    key={col}
-                    onClick={() => response && hasContent && openModal(col, model!, response)}
-                    className={`
-                      p-4 min-h-[180px] transition-all
-                      ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
-                      ${isRecommended ? 'bg-green-50' : 'bg-white'}
-                      ${isLoading ? 'bg-blue-50' : ''}
-                      ${hasError ? 'bg-red-50' : ''}
-                      ${hasContent ? 'cursor-pointer hover:bg-gray-50' : ''}
-                    `}
-                  >
-                    <div className="text-center mb-3">
-                      <span className="font-medium text-gray-900 text-sm">
-                        {model!.name}
-                      </span>
-                      {reasoningEnabled && (col === "70B" || col === "Frontier") && (
-                        <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">
-                          Deep
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Latency
-                        </span>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getLatencyColor(model!.expectedLatency)}`}>
-                          {getLatencyLabel(model!.expectedLatency)}
-                        </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" /> Est. Cost
-                        </span>
-                        <span className="font-mono text-gray-700">
-                          ${estimateCost(model!).toFixed(4)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 flex items-center gap-1">
-                          <Brain className="w-3 h-3" /> Reasoning
-                        </span>
-                        <span className="text-gray-600">
-                          {getReasoningDepthLabel(model!.reasoningDepth)}
-                        </span>
-                      </div>
-                    </div>
+                    );
+                  })}
+                </div>
 
-                    {!showResults && (
-                      <div className="text-center py-4">
-                        <div className="w-12 h-12 mx-auto rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
-                          <span className="text-gray-400 text-xs">Ready</span>
+                <div className="grid grid-cols-5">
+                  {COLUMNS.map(col => {
+                    const model = getModelForColumn(col);
+                    const { disabled, reason } = isModelDisabled(col);
+                    const response = responses[col];
+                    const isLoading = response?.loading;
+                    const hasError = response?.error;
+                    const hasContent = response?.content;
+                    const isRecommended = col === recommendedModel;
+
+                    if (disabled) {
+                      const isReasoningLocked = !model;
+                      return (
+                        <Tooltip key={col}>
+                          <TooltipTrigger asChild>
+                            <div className={`p-3 sm:p-4 min-h-[160px] sm:min-h-[180px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
+                              <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
+                              <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
+                                {isReasoningLocked ? "Reasoning" : model?.name}
+                              </span>
+                              <span className="text-xs text-gray-400 text-center mt-1">
+                                {reason}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white border-gray-200 text-gray-700">
+                            <p>{reason}</p>
+                            {isReasoningLocked && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Small models produce unreliable reasoning chains.
+                              </p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={col}
+                        onClick={() => response && hasContent && openModal(col, model!, response)}
+                        className={`
+                          p-3 sm:p-4 min-h-[160px] sm:min-h-[180px] transition-all
+                          ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
+                          ${isRecommended ? 'bg-green-50' : 'bg-white'}
+                          ${isLoading ? 'bg-blue-50' : ''}
+                          ${hasError ? 'bg-red-50' : ''}
+                          ${hasContent ? 'cursor-pointer hover:bg-gray-50' : ''}
+                        `}
+                      >
+                        <div className="text-center mb-2 sm:mb-3">
+                          <span className="font-medium text-gray-900 text-xs sm:text-sm">
+                            {model!.name}
+                          </span>
+                          {reasoningEnabled && (col === "70B" || col === "Frontier") && (
+                            <span className="ml-1 sm:ml-2 text-xs bg-gray-100 text-gray-600 px-1 sm:px-2 py-0.5 rounded font-medium">
+                              Deep
+                            </span>
+                          )}
                         </div>
-                      </div>
-                    )}
 
-                    {isLoading && (
-                      <div className="text-center py-2">
-                        <div className="relative w-16 h-16 mx-auto">
-                          <svg className="w-16 h-16 transform -rotate-90">
-                            <circle
-                              cx="32"
-                              cy="32"
-                              r="28"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              fill="none"
-                              className="text-gray-200"
-                            />
-                            <circle
-                              cx="32"
-                              cy="32"
-                              r="28"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              fill="none"
-                              strokeDasharray={175.9}
-                              strokeDashoffset={175.9 - (response.progress / 100) * 175.9}
-                              className="text-blue-500 transition-all duration-300"
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-xs font-mono text-blue-600">
-                              {Math.round(response.progress)}%
+                        <div className="space-y-1 sm:space-y-2 mb-2 sm:mb-3">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> <span className="hidden sm:inline">Latency</span>
+                            </span>
+                            <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium ${getLatencyColor(model!.expectedLatency)}`}>
+                              {getLatencyLabel(model!.expectedLatency)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" /> <span className="hidden sm:inline">Est. Cost</span>
+                            </span>
+                            <span className="font-mono text-gray-700">
+                              ${estimateCost(model!).toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 flex items-center gap-1">
+                              <Brain className="w-3 h-3" /> <span className="hidden sm:inline">Reasoning</span>
+                            </span>
+                            <span className="text-gray-600 text-xs">
+                              {getReasoningDepthLabel(model!.reasoningDepth)}
                             </span>
                           </div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">Processing...</p>
-                      </div>
-                    )}
+
+                        {!showResults && (
+                          <div className="text-center py-2 sm:py-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                              <span className="text-gray-400 text-xs">Ready</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {isLoading && (
+                          <div className="text-center py-2">
+                            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mx-auto">
+                              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 64 64">
+                                <circle
+                                  cx="32"
+                                  cy="32"
+                                  r="28"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  fill="none"
+                                  className="text-gray-200"
+                                />
+                                <circle
+                                  cx="32"
+                                  cy="32"
+                                  r="28"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  fill="none"
+                                  strokeDasharray={175.9}
+                                  strokeDashoffset={175.9 - (response.progress / 100) * 175.9}
+                                  className="text-blue-500 transition-all duration-300"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-xs font-mono text-blue-600">
+                                  {Math.round(response.progress)}%
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1 sm:mt-2">Processing...</p>
+                          </div>
+                        )}
 
                     {hasError && (
                       <div className="text-center py-4">
@@ -603,22 +605,25 @@ export default function ChatPage() {
                   </div>
                 );
               })}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 text-center text-sm text-gray-500">
-            <p>Compare model responses side-by-side. Bigger models = more accurate but slower. Reasoning = deeper thinking but expensive.</p>
+          <div className="mt-4 text-center text-xs sm:text-sm text-gray-500 px-2">
+            <p className="hidden sm:block">Compare model responses side-by-side. Bigger models = more accurate but slower. Reasoning = deeper thinking but expensive.</p>
+            <p className="sm:hidden">Swipe left/right to see all models. Tap a result to view full response.</p>
           </div>
         </div>
 
         <Dialog open={!!selectedModel} onOpenChange={() => setSelectedModel(null)}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
+          <DialogContent className="max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-xl">
-                <span className="px-2 py-1 bg-gray-100 rounded text-gray-600 text-sm font-mono">
+              <DialogTitle className="flex flex-wrap items-center gap-2 sm:gap-3 text-lg sm:text-xl">
+                <span className="px-2 py-1 bg-gray-100 rounded text-gray-600 text-xs sm:text-sm font-mono">
                   {selectedModel?.col}
                 </span>
-                {selectedModel?.model.name}
+                <span className="text-base sm:text-xl">{selectedModel?.model.name}</span>
                 {selectedModel?.model.reasoningDepth === "deep" && (
                   <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">
                     Deep Reasoning
@@ -626,12 +631,12 @@ export default function ChatPage() {
                 )}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {selectedModel?.response.latency && (
-                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="text-center">
                     <div className="text-gray-500 text-xs mb-1">Response Time</div>
-                    <div className={`font-mono text-lg font-bold ${
+                    <div className={`font-mono text-sm sm:text-lg font-bold ${
                       selectedModel.response.latency < 500 ? 'text-green-600' : 
                       selectedModel.response.latency < 2000 ? 'text-yellow-600' : 'text-red-600'
                     }`}>
@@ -639,15 +644,15 @@ export default function ChatPage() {
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-gray-500 text-xs mb-1">Total Cost</div>
-                    <div className="font-mono text-lg font-bold text-gray-900">
+                    <div className="text-gray-500 text-xs mb-1">Cost</div>
+                    <div className="font-mono text-sm sm:text-lg font-bold text-gray-900">
                       ${selectedModel.response.cost?.toFixed(4)}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-gray-500 text-xs mb-1">Response Length</div>
-                    <div className="font-mono text-lg font-bold text-gray-900">
-                      {selectedModel.response.content.length} chars
+                    <div className="text-gray-500 text-xs mb-1">Length</div>
+                    <div className="font-mono text-sm sm:text-lg font-bold text-gray-900">
+                      {selectedModel.response.content.length}
                     </div>
                   </div>
                 </div>
@@ -669,7 +674,7 @@ export default function ChatPage() {
         </Dialog>
 
         <Dialog open={showWhyModal} onOpenChange={setShowWhyModal}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
+          <DialogContent className="max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
             <DialogHeader>
               <DialogTitle className="text-xl flex items-center gap-2">
                 <Info className="w-5 h-5 text-blue-600" />
@@ -690,8 +695,8 @@ export default function ChatPage() {
                   </div>
                   
                   <div className="space-y-3">
-                    <h4 className="font-medium text-gray-700">Your Current Settings:</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <h4 className="font-medium text-gray-700 text-sm sm:text-base">Your Current Settings:</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Budget Limit</div>
                         <div className="font-mono text-lg text-gray-900">
