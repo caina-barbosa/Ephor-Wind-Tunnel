@@ -525,10 +525,11 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <Button
+          <button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
-            className="w-full py-4 sm:py-6 text-base sm:text-lg bg-[#1a3a8f] hover:bg-[#1a3a8f]/90 text-white font-bold mb-4 sm:mb-6"
+            className="w-full py-4 sm:py-6 text-base sm:text-lg font-bold mb-4 sm:mb-6 rounded-lg flex items-center justify-center gap-2 text-white disabled:cursor-not-allowed hover:brightness-110 transition-all"
+            style={{ backgroundColor: (!prompt.trim() || isRunning) ? '#2a4a9f' : '#1a3a8f' }}
           >
             {isRunning ? (
               <>
@@ -541,7 +542,7 @@ export default function ChatPage() {
                 Run Wind Tunnel Test
               </>
             )}
-          </Button>
+          </button>
 
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
