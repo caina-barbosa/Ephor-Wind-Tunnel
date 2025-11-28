@@ -374,33 +374,56 @@ export default function ChatPage() {
               disabled={isRunning}
             />
             
-            <div className="mt-3 p-3 sm:p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+            <div className={`mt-3 p-3 sm:p-4 rounded-lg border-2 ${
+              inputTokenEstimate > selectedContextTokens 
+                ? 'bg-red-50 border-red-400' 
+                : 'bg-blue-50 border-blue-200'
+            }`}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-blue-700 font-semibold text-sm">INPUT GAUGE</span>
+                <span className={`font-semibold text-sm ${
+                  inputTokenEstimate > selectedContextTokens ? 'text-red-700' : 'text-blue-700'
+                }`}>INPUT GAUGE</span>
+                {inputTokenEstimate > selectedContextTokens && (
+                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded font-bold">
+                    OVERFLOW - All models disabled
+                  </span>
+                )}
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xl text-gray-900 font-bold">{inputTokenEstimate.toLocaleString()}</span>
+                  <span className={`font-mono text-xl font-bold ${
+                    inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
+                  }`}>{inputTokenEstimate.toLocaleString()}</span>
                   <span className="text-gray-400 text-lg">/</span>
                   <span className="font-mono text-lg text-gray-600">{selectedContextTokens.toLocaleString()}</span>
                   <span className="text-gray-500">tokens</span>
                 </div>
                 <span className={`text-sm font-bold px-3 py-1 rounded ${
+                  inputTokenEstimate > selectedContextTokens ? 'bg-red-600 text-white' :
                   inputPercentage > 80 ? 'bg-red-500 text-white' : 
                   inputPercentage > 50 ? 'bg-yellow-500 text-white' : 
                   'bg-green-500 text-white'
                 }`}>
-                  {inputPercentage.toFixed(1)}% used
+                  {inputTokenEstimate > selectedContextTokens ? 'OVERFLOW!' : `${inputPercentage.toFixed(1)}% used`}
                 </span>
               </div>
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className={`h-full transition-all ${inputPercentage > 80 ? 'bg-red-500' : inputPercentage > 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
-                  style={{ width: `${Math.max(inputPercentage, 2)}%` }}
+                  className={`h-full transition-all ${
+                    inputTokenEstimate > selectedContextTokens ? 'bg-red-600' :
+                    inputPercentage > 80 ? 'bg-red-500' : 
+                    inputPercentage > 50 ? 'bg-yellow-500' : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
                 />
               </div>
-              <div className="text-xs text-blue-600 mt-2">
-                As you type, this gauge shows how much of your context window you're using.
+              <div className={`text-xs mt-2 ${
+                inputTokenEstimate > selectedContextTokens ? 'text-red-600 font-medium' : 'text-blue-600'
+              }`}>
+                {inputTokenEstimate > selectedContextTokens 
+                  ? `Your input exceeds the ${contextSize.toUpperCase()} context window. Increase the context size or shorten your prompt.`
+                  : 'As you type, this gauge shows how much of your context window you\'re using.'
+                }
               </div>
             </div>
           </div>

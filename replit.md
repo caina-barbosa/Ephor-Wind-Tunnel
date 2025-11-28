@@ -23,6 +23,9 @@ Preferred communication style: Simple, everyday language.
   - Logic: (1) Filter by cost cap, (2) Filter by context window, (3) Filter by reasoning mode, (4) Pick cheapest
   - Students learn by experimenting: start cheap, compare results, upgrade if needed
   - Title changed to all caps: "EPHOR WIND TUNNEL"
+  - Enhanced INPUT GAUGE with prominent blue styling, large token display, and explanatory text
+  - Added "Estimated Capability" display in "Why This Model?" modal
+  - Added context overflow check: models disabled when input exceeds selected context window
 - **2025-11-28**: Renamed to "Ephor Wind Tunnel" with clean, minimal light theme
   - White/light gray background with black text
   - Simple gray borders, no gradients
