@@ -198,61 +198,51 @@ export default function ChatPage() {
 
   // Analyze prompt complexity based on content, not just length
   const promptComplexity = useMemo((): "trivial" | "simple" | "moderate" | "complex" | "expert" => {
-    if (!prompt.trim()) return "trivial";
+    const trimmed = prompt.trim();
+    if (!trimmed) return "trivial";
     
-    const lowerText = prompt.toLowerCase();
+    const words = trimmed.toLowerCase().split(/\s+/);
+    const text = trimmed.toLowerCase();
     const tokens = inputTokenEstimate;
     
-    // Expert-level indicators (needs Frontier)
-    const expertPatterns = [
-      /write.*code|implement|debug|refactor/i,
-      /analyze.*data|statistical|regression/i,
-      /compare.*contrast.*multiple/i,
-      /explain.*step.*by.*step.*how/i,
-      /research|thesis|dissertation/i,
-      /legal|medical|scientific.*analysis/i,
-    ];
+    // Helper: check if any keyword exists in the text
+    const hasKeyword = (keywords: string[]) => keywords.some(kw => text.includes(kw));
+    const hasWord = (keywords: string[]) => keywords.some(kw => words.includes(kw));
     
-    // Complex indicators (needs 70B)
-    const complexPatterns = [
-      /\bwhy\b|\bexplain\b|\banalyze\b|\bevaluate\b/i,
-      /pros.*cons|advantages.*disadvantages/i,
-      /multi.*step|reasoning|logic/i,
-      /summarize.*long|synthesize/i,
-    ];
+    // Expert-level keywords (needs Frontier)
+    const expertKeywords = ["write code", "implement", "debug", "refactor", "algorithm", 
+                           "analyze data", "statistical", "regression", "thesis", "dissertation",
+                           "legal analysis", "medical", "scientific"];
     
-    // Moderate indicators (needs 14B)
-    const moderatePatterns = [
-      /how.*to|what.*is.*the.*best/i,
-      /\bdescribe\b|\boutline\b|list.*and.*explain/i,
-      /translate|convert|rewrite/i,
-    ];
+    // Complex keywords (needs 70B) 
+    const complexWords = ["why", "explain", "analyze", "evaluate", "compare", "contrast"];
+    const complexPhrases = ["pros and cons", "advantages and disadvantages", "step by step", 
+                           "in detail", "reasoning", "logic"];
     
-    // Check for expert patterns
-    if (expertPatterns.some(p => p.test(lowerText)) || tokens > 1000) {
-      console.log("Complexity: EXPERT", { lowerText, tokens });
+    // Moderate keywords (needs 14B)
+    const moderateWords = ["describe", "outline", "summarize", "translate", "convert", "rewrite"];
+    const moderatePhrases = ["how to", "what is the best", "list and explain"];
+    
+    // Check for expert level
+    if (hasKeyword(expertKeywords) || tokens > 1000) {
       return "expert";
     }
     
-    // Check for complex patterns
-    if (complexPatterns.some(p => p.test(lowerText)) || tokens > 500) {
-      console.log("Complexity: COMPLEX", { lowerText, tokens });
+    // Check for complex level
+    if (hasWord(complexWords) || hasKeyword(complexPhrases) || tokens > 500) {
       return "complex";
     }
     
-    // Check for moderate patterns
-    if (moderatePatterns.some(p => p.test(lowerText)) || tokens > 200) {
-      console.log("Complexity: MODERATE", { lowerText, tokens });
+    // Check for moderate level
+    if (hasWord(moderateWords) || hasKeyword(moderatePhrases) || tokens > 200) {
       return "moderate";
     }
     
-    // Simple questions
-    if (tokens > 50) {
-      console.log("Complexity: SIMPLE", { lowerText, tokens });
+    // Simple: any non-trivial prompt with some content
+    if (tokens > 20 || words.length > 5) {
       return "simple";
     }
     
-    console.log("Complexity: TRIVIAL", { lowerText, tokens });
     return "trivial";
   }, [prompt, inputTokenEstimate]);
 
@@ -267,40 +257,35 @@ export default function ChatPage() {
       return null;
     }
     
-    // Context window factor: larger context suggests more complex task
-    const contextFactor = contextSize === "1m" ? 2 : contextSize === "128k" ? 1 : 0;
+    // Map complexity to recommended model
+    // Context window boosts the recommendation by 1 tier
+    const contextBoost = contextSize === "1m" ? 2 : contextSize === "128k" ? 1 : 0;
     
-    // Determine minimum model based on prompt complexity + context
-    const getMinModel = () => {
-      switch (promptComplexity) {
-        case "expert":
-          return contextFactor > 0 ? "Frontier" : "70B";
-        case "complex":
-          return contextFactor > 1 ? "70B" : "14B";
-        case "moderate":
-          return contextFactor > 0 ? "14B" : "7B";
-        case "simple":
-          return "7B";
-        case "trivial":
-        default:
-          return "3B";
-      }
+    // Base recommendations by complexity
+    const complexityToModel: Record<string, string> = {
+      "trivial": "3B",
+      "simple": "7B", 
+      "moderate": "14B",
+      "complex": "70B",
+      "expert": "Frontier"
     };
     
-    const minModel = getMinModel();
     const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "14B", "70B", "Frontier"];
-    const minIndex = modelOrder.indexOf(minModel as typeof COLUMNS[number]);
+    const baseModel = complexityToModel[promptComplexity] || "3B";
+    const baseIndex = modelOrder.indexOf(baseModel as typeof COLUMNS[number]);
+    const boostedIndex = Math.min(baseIndex + contextBoost, modelOrder.length - 1);
+    const targetModel = modelOrder[boostedIndex];
     
-    // Find the smallest available model that meets our minimum requirement
-    for (let i = minIndex; i < modelOrder.length; i++) {
+    // Find the target model or next available
+    for (let i = boostedIndex; i < modelOrder.length; i++) {
       const model = modelOrder[i];
       if (available.includes(model)) {
         return model;
       }
     }
     
-    // Fallback: return the largest available model
-    for (let i = modelOrder.length - 1; i >= 0; i--) {
+    // Fallback: find largest available below target
+    for (let i = boostedIndex - 1; i >= 0; i--) {
       const model = modelOrder[i];
       if (available.includes(model)) {
         return model;
