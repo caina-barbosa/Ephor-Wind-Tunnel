@@ -39,12 +39,12 @@ interface ModelResponse {
   cost: number | null;
 }
 
-const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["3B", "7B", "8B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "3B": { id: "together/qwen-2.5-3b-instruct", name: "Qwen 2.5 3B", costPer1k: 0.00005 },
+  "3B": { id: "together/llama-3.2-3b-instruct", name: "Llama 3.2 3B", costPer1k: 0.00006 },
   "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001 },
-  "14B": { id: "together/qwen-2.5-14b-instruct", name: "Qwen 2.5 14B", costPer1k: 0.0002 },
+  "8B": { id: "together/llama-3.1-8b-instruct", name: "Llama 3.1 8B", costPer1k: 0.00018 },
   "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006 },
   "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015 },
 };
@@ -52,7 +52,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
-  "14B": null,
+  "8B": null,
   "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002 },
   "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003 },
 };

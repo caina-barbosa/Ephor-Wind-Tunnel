@@ -80,9 +80,9 @@ export async function createTogetherChatCompletion(
 
 export const TOGETHER_QWEN_MODEL_ID = "Qwen/Qwen2.5-72B-Instruct-Turbo";
 export const TOGETHER_GLM_MODEL_ID = "zai-org/GLM-4.6";
-export const TOGETHER_QWEN_3B_MODEL_ID = "Qwen/Qwen2.5-3B-Instruct";
+export const TOGETHER_LLAMA_3B_MODEL_ID = "meta-llama/Llama-3.2-3B-Instruct-Turbo";
 export const TOGETHER_QWEN_7B_MODEL_ID = "Qwen/Qwen2.5-7B-Instruct-Turbo";
-export const TOGETHER_QWEN_14B_MODEL_ID = "Qwen/Qwen2.5-14B-Instruct";
+export const TOGETHER_LLAMA_8B_MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo";
 export const TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID = "deepseek-ai/DeepSeek-R1-Distill-Llama-70B";
 export const TOGETHER_DEEPSEEK_R1_MODEL_ID = "deepseek-ai/DeepSeek-R1";
 export const TOGETHER_QWQ_32B_MODEL_ID = "Qwen/QwQ-32B";
