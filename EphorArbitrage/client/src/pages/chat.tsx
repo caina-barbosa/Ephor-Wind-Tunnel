@@ -628,7 +628,7 @@ export default function ChatPage() {
 
                         {!showResults && (
                           <div className="text-center mt-auto pt-2">
-                            <div className="w-10 h-10 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
+                            <div className="w-12 h-12 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
                               <span className="text-gray-600 text-xs font-bold">Ready</span>
                             </div>
                           </div>
