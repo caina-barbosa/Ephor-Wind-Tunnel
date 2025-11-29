@@ -1480,6 +1480,44 @@ Format: Natural flowing answer with inline citations.`;
     }
   });
 
+  // ============================================
+  // PUBLIC LEADERBOARD API
+  // ============================================
+
+  // Get all leaderboard entries (newest first)
+  app.get("/api/leaderboard", async (_req, res) => {
+    try {
+      const entries = await storage.getLeaderboardEntries();
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Submit a new leaderboard entry
+  app.post("/api/leaderboard", async (req, res) => {
+    try {
+      const { displayName, prompt, recommendedModel, settings, results } = req.body;
+
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      const entry = await storage.createLeaderboardEntry({
+        displayName: displayName || null,
+        prompt,
+        recommendedModel: recommendedModel || null,
+        settings: settings || null,
+        results: results || null,
+      });
+
+      console.log(`[Leaderboard] New entry from: ${displayName || "Anonymous"}`);
+      res.json(entry);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

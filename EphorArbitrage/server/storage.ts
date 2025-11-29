@@ -8,10 +8,13 @@ import {
   type InsertBenchmark,
   type BenchmarkRun,
   type InsertBenchmarkRun,
+  type LeaderboardEntry,
+  type InsertLeaderboardEntry,
   chats,
   messages,
   benchmarks,
-  benchmarkRuns
+  benchmarkRuns,
+  leaderboardEntries
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -43,6 +46,9 @@ export interface IStorage {
   getBenchmarkRun(id: string): Promise<BenchmarkRun | undefined>;
   createBenchmarkRun(run: InsertBenchmarkRun): Promise<BenchmarkRun>;
   updateBenchmarkRun(id: string, data: Partial<BenchmarkRun>): Promise<BenchmarkRun | undefined>;
+  
+  getLeaderboardEntries(): Promise<LeaderboardEntry[]>;
+  createLeaderboardEntry(entry: InsertLeaderboardEntry): Promise<LeaderboardEntry>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -157,6 +163,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(benchmarkRuns.id, id))
       .returning();
     return result || undefined;
+  }
+
+  async getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
+    return await db.select().from(leaderboardEntries).orderBy(desc(leaderboardEntries.createdAt));
+  }
+
+  async createLeaderboardEntry(insertEntry: InsertLeaderboardEntry): Promise<LeaderboardEntry> {
+    const id = randomUUID();
+    const [entry] = await db.insert(leaderboardEntries).values({
+      ...insertEntry,
+      id,
+      createdAt: new Date(),
+    }).returning();
+    return entry;
   }
 }
 
