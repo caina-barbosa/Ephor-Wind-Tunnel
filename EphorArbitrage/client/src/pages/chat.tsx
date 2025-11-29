@@ -105,7 +105,7 @@ const COLUMN_VISUALS: Record<string, {
     accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "Frontier": {
-    headerSize: "text-3xl font-black text-[#1a3a8f]",
+    headerSize: "text-3xl font-black text-[#EA580C]",
     headerBg: "bg-orange-50",
     cardStyle: "bg-white shadow-lg",
     prominence: "large",
