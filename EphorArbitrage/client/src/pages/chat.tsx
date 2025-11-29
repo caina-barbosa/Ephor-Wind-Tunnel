@@ -44,12 +44,12 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "basic" },
   "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
-  "14B": { id: "together/qwen-2.5-14b-instruct", name: "Qwen 2.5 14B", costPer1k: 0.0002, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "good" },
+  "17B": { id: "meta-llama/llama-4-scout-17b:cerebras", name: "Llama 4 Scout 17B", costPer1k: 0.0002, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
   "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "strong" },
   "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "excellent" },
 };
@@ -57,7 +57,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
-  "14B": null,
+  "17B": null,
   "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "strong" },
   "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "excellent" },
 };
@@ -84,7 +84,7 @@ const COLUMN_VISUALS: Record<string, {
     cardStyle: "bg-gray-50/30 border-gray-200",
     prominence: "small"
   },
-  "14B": {
+  "17B": {
     headerSize: "text-lg font-bold text-gray-600",
     cardStyle: "bg-white border-gray-200 shadow-sm",
     prominence: "medium"
@@ -209,7 +209,7 @@ export default function ChatPage() {
       const modelCosts: Record<string, string> = {
         "3B": "$0.00006/1K tokens",
         "7B": "$0.0001/1K tokens",
-        "14B": "$0.0002/1K tokens",
+        "17B": "$0.0002/1K tokens",
         "70B": "$0.0006/1K tokens",
         "Frontier": "$0.015/1K tokens"
       };
@@ -221,7 +221,7 @@ export default function ChatPage() {
   // Simple recommendation logic: find the CHEAPEST model that fits all constraints
   const recommendedModel = useMemo(() => {
     // Model order from cheapest to most expensive
-    const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "14B", "70B", "Frontier"];
+    const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "17B", "70B", "Frontier"];
     
     // Filter models that fit all constraints
     const available = modelOrder.filter(col => {
@@ -1019,7 +1019,7 @@ export default function ChatPage() {
                         <div className="font-mono text-lg text-gray-900">{inputTokenEstimate.toLocaleString()} tokens</div>
                         <div className="text-xs text-gray-500 mt-1">
                           {inputTokenEstimate < 100 ? "Simple query - small models work well" :
-                           inputTokenEstimate < 500 ? "Moderate query - consider 7B-14B" :
+                           inputTokenEstimate < 500 ? "Moderate query - consider 7B-17B" :
                            "Complex query - larger models recommended"}
                         </div>
                       </div>
@@ -1043,7 +1043,7 @@ export default function ChatPage() {
                         <span className="text-gray-400 text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Reasoning Requires Scale</strong>
-                          <p className="text-gray-600">Small models (3B-14B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
+                          <p className="text-gray-600">Small models (3B-17B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
