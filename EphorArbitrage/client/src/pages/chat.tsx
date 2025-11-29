@@ -356,7 +356,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-2 mb-2 border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-lg p-2 mb-6 border border-gray-200 shadow-sm">
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -405,7 +405,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -481,7 +481,7 @@ export default function ChatPage() {
           <button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
-            className="w-full py-3 text-sm sm:text-base font-bold mb-2 rounded-lg flex items-center justify-center gap-2 text-white disabled:cursor-not-allowed hover:brightness-110 transition-all"
+            className="w-full py-3 text-sm sm:text-base font-bold mb-6 rounded-lg flex items-center justify-center gap-2 text-white disabled:cursor-not-allowed hover:brightness-110 transition-all"
             style={{ backgroundColor: (!prompt.trim() || isRunning) ? '#2a4a9f' : '#1a3a8f' }}
           >
             {isRunning ? (
@@ -704,7 +704,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="mt-4 text-center text-xs sm:text-sm text-gray-500">
+          <div className="mt-6 text-center text-xs sm:text-sm text-gray-500">
             <p className="hidden sm:block">Compare model responses side-by-side. Bigger models = more accurate but slower. Reasoning = deeper thinking but expensive.</p>
             <p className="sm:hidden">Swipe left/right to see all models. Tap a result to view full response.</p>
           </div>
