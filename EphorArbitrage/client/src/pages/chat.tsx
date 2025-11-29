@@ -71,39 +71,45 @@ const CONTEXT_SIZES = [
 
 const COLUMN_VISUALS: Record<string, {
   headerSize: string;
+  headerBg: string;
   cardStyle: string;
   prominence: "small" | "medium" | "large";
   accentBorder: string;
 }> = {
   "3B": {
-    headerSize: "text-base font-semibold text-[#1a3a8f]/70",
+    headerSize: "text-xl font-bold text-gray-600",
+    headerBg: "bg-gray-100",
     cardStyle: "bg-gray-50/50",
     prominence: "small",
-    accentBorder: "border-t-2 border-t-gray-300"
+    accentBorder: "border-t-4 border-t-gray-400"
   },
   "7B": {
-    headerSize: "text-base font-semibold text-[#1a3a8f]/70",
-    cardStyle: "bg-gray-50/30",
+    headerSize: "text-xl font-bold text-blue-700",
+    headerBg: "bg-blue-50",
+    cardStyle: "bg-blue-50/30",
     prominence: "small",
-    accentBorder: "border-t-2 border-t-blue-300"
+    accentBorder: "border-t-4 border-t-blue-400"
   },
   "17B": {
-    headerSize: "text-lg font-bold text-[#1a3a8f]/80",
+    headerSize: "text-2xl font-extrabold text-blue-800",
+    headerBg: "bg-blue-50",
     cardStyle: "bg-white shadow-sm",
     prominence: "medium",
-    accentBorder: "border-t-2 border-t-blue-400"
+    accentBorder: "border-t-4 border-t-blue-500"
   },
   "70B": {
-    headerSize: "text-xl font-bold text-[#1a3a8f]",
+    headerSize: "text-2xl font-extrabold text-emerald-700",
+    headerBg: "bg-emerald-50",
     cardStyle: "bg-white shadow-md",
     prominence: "medium",
-    accentBorder: "border-t-2 border-t-emerald-400"
+    accentBorder: "border-t-4 border-t-emerald-500"
   },
   "Frontier": {
-    headerSize: "text-2xl font-black text-[#1a3a8f]",
+    headerSize: "text-3xl font-black text-[#1a3a8f]",
+    headerBg: "bg-orange-50",
     cardStyle: "bg-white shadow-lg",
     prominence: "large",
-    accentBorder: "border-t-3 border-t-[#f5a623]"
+    accentBorder: "border-t-4 border-t-[#f5a623]"
   }
 };
 
@@ -610,10 +616,10 @@ export default function ChatPage() {
                     return (
                       <div 
                         key={col} 
-                        className={`p-2 sm:p-3 text-center ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : 'bg-white'} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        className={`p-3 sm:p-4 text-center ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-medium ${col === 'Frontier' ? 'text-[#f5a623]/80' : 'text-gray-400'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#f5a623]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-gray-500' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
@@ -743,15 +749,25 @@ export default function ChatPage() {
 
                         {!showResults && !hasContent && !isLoading && !hasError && (
                           <div className="text-center mt-auto pt-3">
-                            <div className={`w-14 h-14 mx-auto rounded-full flex items-center justify-center border-2 ${
-                              cardVisuals.prominence === 'large' ? 'bg-[#1a3a8f]/5 border-[#1a3a8f]/20' : 
-                              cardVisuals.prominence === 'medium' ? 'bg-gray-100 border-gray-300' : 
-                              'bg-gray-50 border-gray-200'
+                            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center border-2 animate-pulse transition-all ${
+                              col === 'Frontier' ? 'bg-orange-100 border-[#f5a623]/40' : 
+                              col === '70B' ? 'bg-emerald-100 border-emerald-400/40' : 
+                              col === '17B' || col === '7B' ? 'bg-blue-100 border-blue-400/40' :
+                              'bg-gray-100 border-gray-300'
                             }`}>
-                              <span className={`text-xs font-bold ${
-                                cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : 'text-gray-500'
-                              }`}>Ready</span>
+                              <Play className={`w-6 h-6 ${
+                                col === 'Frontier' ? 'text-[#f5a623]' : 
+                                col === '70B' ? 'text-emerald-600' : 
+                                col === '17B' || col === '7B' ? 'text-blue-600' :
+                                'text-gray-500'
+                              }`} />
                             </div>
+                            <p className={`text-[10px] mt-1.5 font-semibold ${
+                              col === 'Frontier' ? 'text-[#f5a623]' : 
+                              col === '70B' ? 'text-emerald-600' : 
+                              col === '17B' || col === '7B' ? 'text-blue-600' :
+                              'text-gray-500'
+                            }`}>Ready to test</p>
                           </div>
                         )}
 
