@@ -536,7 +536,7 @@ export default function ChatPage() {
                       return (
                         <Tooltip key={col}>
                           <TooltipTrigger asChild>
-                            <div className={`p-4 min-h-[180px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
+                            <div className={`p-4 h-[220px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
                               <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
                               <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
                                 {isReasoningLocked ? "Reasoning" : model?.name}
@@ -563,7 +563,7 @@ export default function ChatPage() {
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-4 min-h-[180px] transition-all flex flex-col
+                          p-4 h-[220px] transition-all flex flex-col
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${isRecommended ? 'bg-white border-l-4 border-l-[#f5a623]' : 'bg-white'}
                           ${isLoading ? 'bg-gray-50' : ''}
