@@ -72,6 +72,84 @@ export type Chat = typeof chats.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
+// ============================================
+// BENCHMARK TABLES (Model Council Feature)
+// ============================================
+
+// Saved benchmark prompts that can be rerun
+export const benchmarks = pgTable("benchmarks", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  prompt: text("prompt").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Types for JSONB columns
+export interface BenchmarkSettings {
+  contextSize: string;
+  costCap: number;
+  reasoningEnabled: boolean;
+}
+
+export interface ModelResponseData {
+  content: string;
+  latency: number;
+  cost: number;
+  modelId: string;
+  modelName: string;
+}
+
+export interface CouncilEvaluation {
+  judgeColumn: string;
+  judgeName: string;
+  rankings: { column: string; rank: number; critique: string }[];
+}
+
+// Each run of a benchmark (or ad-hoc council run)
+export const benchmarkRuns = pgTable("benchmark_runs", {
+  id: text("id").primaryKey(),
+  benchmarkId: text("benchmark_id").references(() => benchmarks.id, { onDelete: "set null" }),
+  prompt: text("prompt").notNull(),
+  runAt: timestamp("run_at").notNull().defaultNow(),
+  settings: jsonb("settings").$type<BenchmarkSettings>(),
+  responses: jsonb("responses").$type<Record<string, ModelResponseData>>(),
+  councilEvaluations: jsonb("council_evaluations").$type<CouncilEvaluation[]>(),
+  consensusRankings: jsonb("consensus_rankings").$type<string[]>(),
+  chairmanSynthesis: text("chairman_synthesis"),
+});
+
+// Relations
+export const benchmarksRelations = relations(benchmarks, ({ many }) => ({
+  runs: many(benchmarkRuns),
+}));
+
+export const benchmarkRunsRelations = relations(benchmarkRuns, ({ one }) => ({
+  benchmark: one(benchmarks, {
+    fields: [benchmarkRuns.benchmarkId],
+    references: [benchmarks.id],
+  }),
+}));
+
+// Insert schemas
+export const insertBenchmarkSchema = createInsertSchema(benchmarks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertBenchmarkRunSchema = createInsertSchema(benchmarkRuns).omit({
+  id: true,
+  runAt: true,
+});
+
+// Types
+export type InsertBenchmark = z.infer<typeof insertBenchmarkSchema>;
+export type Benchmark = typeof benchmarks.$inferSelect;
+export type InsertBenchmarkRun = z.infer<typeof insertBenchmarkRunSchema>;
+export type BenchmarkRun = typeof benchmarkRuns.$inferSelect;
+
+// ============================================
+
 export const AVAILABLE_MODELS = [
   { id: "auto-router", name: "Auto Router" },
   { id: "all-models", name: "All Models" },
