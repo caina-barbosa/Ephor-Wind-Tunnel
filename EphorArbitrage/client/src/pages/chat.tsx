@@ -563,7 +563,7 @@ export default function ChatPage() {
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-3 min-h-[130px] sm:min-h-[150px] transition-all
+                          p-3 min-h-[150px] transition-all flex flex-col
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${isRecommended ? 'bg-white border-l-4 border-l-[#f5a623]' : 'bg-white'}
                           ${isLoading ? 'bg-gray-50' : ''}
@@ -582,7 +582,7 @@ export default function ChatPage() {
                           )}
                         </div>
 
-                        <div className="space-y-1 mb-2">
+                        <div className="space-y-1 flex-grow">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-gray-500 flex items-center gap-1">
                               <Clock className="w-3 h-3" /> <span className="hidden sm:inline">Latency</span>
@@ -627,7 +627,7 @@ export default function ChatPage() {
                         </div>
 
                         {!showResults && (
-                          <div className="text-center py-2">
+                          <div className="text-center mt-auto pt-2">
                             <div className="w-10 h-10 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
                               <span className="text-gray-600 text-xs font-bold">Ready</span>
                             </div>
