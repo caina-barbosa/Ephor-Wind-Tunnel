@@ -79,35 +79,35 @@ const COLUMN_VISUALS: Record<string, {
   "3B": {
     headerSize: "text-xl font-bold text-[#A3316F]",
     headerBg: "bg-[#fdf2f8]",
-    cardStyle: "bg-[#fdf2f8]/50",
+    cardStyle: "bg-white",
     prominence: "small",
     accentBorder: "border-t-[6px] border-t-[#A3316F]"
   },
   "7B": {
     headerSize: "text-xl font-bold text-blue-700",
     headerBg: "bg-blue-50",
-    cardStyle: "bg-blue-50/30",
+    cardStyle: "bg-white",
     prominence: "small",
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "17B": {
     headerSize: "text-2xl font-extrabold text-blue-800",
     headerBg: "bg-blue-50",
-    cardStyle: "bg-white shadow-sm",
+    cardStyle: "bg-white",
     prominence: "medium",
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "70B": {
     headerSize: "text-2xl font-extrabold text-emerald-700",
     headerBg: "bg-emerald-50",
-    cardStyle: "bg-white shadow-md",
+    cardStyle: "bg-white",
     prominence: "medium",
     accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "Frontier": {
     headerSize: "text-3xl font-black text-[#EA580C]",
     headerBg: "bg-orange-50",
-    cardStyle: "bg-white shadow-lg",
+    cardStyle: "bg-white",
     prominence: "large",
     accentBorder: "border-t-[6px] border-t-[#EA580C]"
   }
