@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Model {
@@ -33,6 +33,11 @@ interface Model {
   expectedLatency: "fast" | "medium" | "slow";
   reasoningDepth: "none" | "shallow" | "deep";
   expectedAccuracy: "basic" | "good" | "strong" | "excellent";
+  benchmarks: {
+    mmlu?: number;
+    humanEval?: number;
+  };
+  modality: "text" | "text+image" | "text+image+audio";
 }
 
 interface ModelResponse {
@@ -47,19 +52,19 @@ interface ModelResponse {
 const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "basic" },
-  "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
-  "17B": { id: "together/llama-4-maverick-17b", name: "Llama 4 Maverick 17B", costPer1k: 0.0002, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
-  "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "strong" },
-  "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "excellent" },
+  "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "basic", benchmarks: { mmlu: 63.4 }, modality: "text" },
+  "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good", benchmarks: { mmlu: 74.2, humanEval: 84.8 }, modality: "text" },
+  "17B": { id: "together/llama-4-maverick-17b", name: "Llama 4 Maverick 17B", costPer1k: 0.0002, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good", benchmarks: { mmlu: 80.5 }, modality: "text+image" },
+  "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "strong", benchmarks: { mmlu: 86.0, humanEval: 88.4 }, modality: "text" },
+  "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "excellent", benchmarks: { mmlu: 86.5, humanEval: 93.7 }, modality: "text+image" },
 };
 
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
   "17B": null,
-  "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "strong" },
-  "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "excellent" },
+  "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "strong", benchmarks: { mmlu: 79.0 }, modality: "text" },
+  "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "excellent", benchmarks: { mmlu: 90.8 }, modality: "text" },
 };
 
 const CONTEXT_SIZES = [
@@ -1004,6 +1009,54 @@ export default function ChatPage() {
                               </span>
                               <span className={`text-sm font-bold ${capabilityConfig.textColor}`}>
                                 {capabilityConfig.label}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
+                                    <BarChart3 className="w-4 h-4" /> Benchmarks
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="max-w-xs">
+                                  <p className="text-xs"><strong>MMLU:</strong> Measures general knowledge across 57 subjects</p>
+                                  <p className="text-xs mt-1"><strong>HumanEval:</strong> Measures coding ability</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <div className="text-right">
+                                <span className="text-xs font-mono text-gray-600">
+                                  MMLU: {model!.benchmarks.mmlu?.toFixed(1) || 'N/A'}%
+                                </span>
+                                <span className="text-xs text-gray-400 mx-1">|</span>
+                                <span className="text-xs font-mono text-gray-600">
+                                  Code: {model!.benchmarks.humanEval?.toFixed(1) || 'N/A'}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
+                                    {model!.modality === "text" ? (
+                                      <FileText className="w-4 h-4" />
+                                    ) : (
+                                      <Image className="w-4 h-4" />
+                                    )}
+                                    Modality
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="left">
+                                  <p className="text-xs">What types of input this model can process</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                                model!.modality === "text" 
+                                  ? "bg-gray-100 text-gray-600" 
+                                  : "bg-purple-100 text-purple-700"
+                              }`}>
+                                {model!.modality === "text" ? "Text Only" : model!.modality === "text+image" ? "Text + Image" : "Multimodal"}
                               </span>
                             </div>
                             
