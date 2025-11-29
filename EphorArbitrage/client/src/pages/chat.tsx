@@ -699,8 +699,8 @@ export default function ChatPage() {
                           ${hasContent ? 'cursor-pointer hover:brightness-[0.98]' : ''}
                         `}
                       >
-                        <div className="text-center mb-2">
-                          <span className={`font-semibold text-gray-800 text-sm ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
+                        <div className="text-center mb-3">
+                          <span className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {model!.name}
                           </span>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
@@ -711,30 +711,30 @@ export default function ChatPage() {
                         </div>
 
                         {!hasResults && (
-                          <div className="space-y-2">
+                          <div className="space-y-2.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-gray-500 flex items-center gap-1 text-xs">
-                                <DollarSign className="w-3 h-3" /> Est. Cost
+                              <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
+                                <DollarSign className="w-4 h-4" /> Est. Cost
                               </span>
-                              <span className={`font-mono ${costConfig.size} ${costConfig.color} ${costConfig.style}`}>
+                              <span className="font-mono text-sm text-gray-700">
                                 ${estimatedCost.toFixed(4)}
                               </span>
                             </div>
                             
                             <div className="flex items-center justify-between">
-                              <span className="text-gray-500 flex items-center gap-1 text-xs">
-                                <Target className="w-3 h-3" /> Capability
+                              <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
+                                <Target className="w-4 h-4" /> Capability
                               </span>
-                              <span className={`text-xs font-bold ${capabilityConfig.textColor}`}>
+                              <span className={`text-sm font-bold ${capabilityConfig.textColor}`}>
                                 {capabilityConfig.label}
                               </span>
                             </div>
                             
                             <div className="flex items-center justify-between">
-                              <span className="text-gray-500 flex items-center gap-1 text-xs">
-                                <Clock className="w-3 h-3" /> Speed
+                              <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
+                                <Clock className="w-4 h-4" /> Speed
                               </span>
-                              <span className="text-xs text-gray-400 italic">
+                              <span className="text-sm text-gray-500 italic">
                                 Run test to measure
                               </span>
                             </div>
