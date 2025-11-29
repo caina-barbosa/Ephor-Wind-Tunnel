@@ -328,8 +328,8 @@ export default function ChatPage() {
 
   return (
     <TooltipProvider>
-      <div className="bg-white text-gray-900 min-h-screen flex flex-col">
-        <div className="w-full px-4 sm:px-[72px] pt-4 sm:pt-6 pb-2 flex-1 flex flex-col">
+      <div className="bg-white text-gray-900">
+        <div className="w-full px-4 sm:px-[72px] pt-4 sm:pt-6 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
               EPHOR WIND TUNNEL
@@ -704,7 +704,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="mt-auto pt-2 pb-3 text-center text-xs sm:text-sm text-gray-500">
+          <div className="mt-4 text-center text-xs sm:text-sm text-gray-500">
             <p className="hidden sm:block">Compare model responses side-by-side. Bigger models = more accurate but slower. Reasoning = deeper thinking but expensive.</p>
             <p className="sm:hidden">Swipe left/right to see all models. Tap a result to view full response.</p>
           </div>
