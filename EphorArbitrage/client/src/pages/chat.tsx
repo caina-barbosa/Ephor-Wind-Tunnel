@@ -218,29 +218,62 @@ export default function ChatPage() {
     return "";
   };
 
-  // Simple recommendation logic: find the CHEAPEST model that fits all constraints
-  const recommendedModel = useMemo(() => {
-    // Model order from cheapest to most expensive
-    const modelOrder: typeof COLUMNS[number][] = ["3B", "7B", "17B", "70B", "Frontier"];
+  // Check if all models have completed running
+  const allModelsComplete = useMemo(() => {
+    if (!showResults) return false;
+    const responseCols = Object.keys(responses);
+    if (responseCols.length === 0) return false;
     
-    // Filter models that fit all constraints
-    const available = modelOrder.filter(col => {
+    // All models must have finished loading (not loading and either have content or error)
+    return responseCols.every(col => {
+      const resp = responses[col];
+      return resp && !resp.loading && (resp.content || resp.error);
+    });
+  }, [showResults, responses]);
+
+  // Recommendation logic: find the CHEAPEST model that fits constraints, tie-break by FASTEST latency
+  // ONLY shows after all models have completed
+  const recommendedModel = useMemo(() => {
+    // Don't show recommendation until all models have completed
+    if (!allModelsComplete) return null;
+    
+    // Get all columns that have successful responses
+    const completedModels = COLUMNS.filter(col => {
+      const resp = responses[col];
       const { disabled } = isModelDisabled(col);
-      return !disabled;
+      // Must not be disabled, must have a response, must not have error
+      return !disabled && resp && !resp.loading && resp.content && !resp.error;
     });
     
-    if (available.length === 0) return null;
+    if (completedModels.length === 0) return null;
     
     // If Reasoning Mode is ON, only consider 70B and Frontier
+    let candidates = completedModels;
     if (reasoningEnabled) {
-      const reasoningModels = available.filter(m => m === "70B" || m === "Frontier");
-      // Return cheapest reasoning model (70B is cheaper than Frontier)
-      return reasoningModels.length > 0 ? reasoningModels[0] : null;
+      candidates = completedModels.filter(m => m === "70B" || m === "Frontier");
+      if (candidates.length === 0) return null;
     }
     
-    // Return the cheapest available model
-    return available[0];
-  }, [costCap, reasoningEnabled, contextSize, inputTokenEstimate]);
+    // Sort by actual cost (ascending), then by actual latency (ascending) to break ties
+    const sorted = [...candidates].sort((a, b) => {
+      const respA = responses[a];
+      const respB = responses[b];
+      const costA = respA?.cost ?? Infinity;
+      const costB = respB?.cost ?? Infinity;
+      
+      // First sort by cost
+      if (costA !== costB) {
+        return costA - costB;
+      }
+      
+      // If costs are equal, sort by latency (faster is better)
+      const latencyA = respA?.latency ?? Infinity;
+      const latencyB = respB?.latency ?? Infinity;
+      return latencyA - latencyB;
+    });
+    
+    return sorted[0] || null;
+  }, [allModelsComplete, responses, reasoningEnabled, costCap, contextSize, inputTokenEstimate]);
 
   const handleRunAll = async () => {
     if (!prompt.trim() || isRunning) return;
