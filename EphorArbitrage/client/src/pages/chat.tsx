@@ -73,31 +73,37 @@ const COLUMN_VISUALS: Record<string, {
   headerSize: string;
   cardStyle: string;
   prominence: "small" | "medium" | "large";
+  accentBorder: string;
 }> = {
   "3B": {
-    headerSize: "text-base font-semibold text-gray-500",
-    cardStyle: "bg-gray-50/50 border-gray-200",
-    prominence: "small"
+    headerSize: "text-base font-semibold text-[#1a3a8f]/70",
+    cardStyle: "bg-gray-50/50",
+    prominence: "small",
+    accentBorder: "border-t-2 border-t-gray-300"
   },
   "7B": {
-    headerSize: "text-base font-semibold text-gray-500",
-    cardStyle: "bg-gray-50/30 border-gray-200",
-    prominence: "small"
+    headerSize: "text-base font-semibold text-[#1a3a8f]/70",
+    cardStyle: "bg-gray-50/30",
+    prominence: "small",
+    accentBorder: "border-t-2 border-t-blue-300"
   },
   "17B": {
-    headerSize: "text-lg font-bold text-gray-600",
-    cardStyle: "bg-white border-gray-200 shadow-sm",
-    prominence: "medium"
+    headerSize: "text-lg font-bold text-[#1a3a8f]/80",
+    cardStyle: "bg-white shadow-sm",
+    prominence: "medium",
+    accentBorder: "border-t-2 border-t-blue-400"
   },
   "70B": {
-    headerSize: "text-xl font-bold text-gray-700",
-    cardStyle: "bg-white border-gray-300 shadow-md",
-    prominence: "medium"
+    headerSize: "text-xl font-bold text-[#1a3a8f]",
+    cardStyle: "bg-white shadow-md",
+    prominence: "medium",
+    accentBorder: "border-t-2 border-t-emerald-400"
   },
   "Frontier": {
     headerSize: "text-2xl font-black text-[#1a3a8f]",
-    cardStyle: "bg-white border-[#1a3a8f]/20 shadow-lg",
-    prominence: "large"
+    cardStyle: "bg-white shadow-lg",
+    prominence: "large",
+    accentBorder: "border-t-3 border-t-[#f5a623]"
   }
 };
 
@@ -125,9 +131,9 @@ const getCostVisuals = (cost: number) => {
 const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
     case "basic": return { bars: 1, color: "bg-gray-300", textColor: "text-gray-500", label: "Basic" };
-    case "good": return { bars: 2, color: "bg-blue-300", textColor: "text-blue-600", label: "Good" };
-    case "strong": return { bars: 3, color: "bg-blue-500", textColor: "text-blue-700", label: "Strong" };
-    case "excellent": return { bars: 4, color: "bg-[#1a3a8f]", textColor: "text-[#1a3a8f]", label: "Excellent" };
+    case "good": return { bars: 2, color: "bg-blue-400", textColor: "text-blue-600", label: "Good" };
+    case "strong": return { bars: 3, color: "bg-emerald-500", textColor: "text-emerald-600", label: "Strong" };
+    case "excellent": return { bars: 4, color: "bg-[#f5a623]", textColor: "text-[#f5a623]", label: "Excellent" };
   }
 };
 
@@ -604,10 +610,10 @@ export default function ChatPage() {
                     return (
                       <div 
                         key={col} 
-                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-[#fff8eb]' : 'bg-white'} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        className={`p-2 sm:p-3 text-center ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : 'bg-white'} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-medium ${col === 'Frontier' ? 'text-[#1a3a8f]/60' : 'text-gray-400'}`}>
+                        <div className={`text-xs font-medium ${col === 'Frontier' ? 'text-[#f5a623]/80' : 'text-gray-400'}`}>
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
@@ -677,9 +683,10 @@ export default function ChatPage() {
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-3 min-h-[280px] max-h-[400px] transition-all flex flex-col overflow-hidden border
+                          p-3 min-h-[280px] max-h-[400px] transition-all flex flex-col overflow-hidden
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${cardVisuals.cardStyle}
+                          ${cardVisuals.accentBorder}
                           ${isRecommended ? 'ring-2 ring-[#f5a623] ring-offset-1 bg-[#fffbf5]' : ''}
                           ${isLoading ? 'bg-gray-50/80' : ''}
                           ${hasError ? 'bg-red-50' : ''}
