@@ -619,8 +619,8 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#f5a623]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-gray-500' : 'text-blue-600'}`}>
-                          {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-gray-500' : 'text-blue-600'}`}>
+                          {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
                           <div className="mt-1.5 flex flex-col items-center gap-1">
