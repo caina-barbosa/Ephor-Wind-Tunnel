@@ -704,13 +704,14 @@ export default function ChatPage() {
                                 <span className="text-gray-500 flex items-center gap-1">
                                   <Clock className="w-3 h-3" /> Speed
                                 </span>
-                                <span className={`text-xs font-medium ${latencyConfig.color.replace('bg-', 'text-')}`}>
-                                  {latencyConfig.label}
+                                <span className="text-xs text-gray-400">
+                                  --
                                 </span>
                               </div>
                               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div className={`h-full ${latencyConfig.width} ${latencyConfig.color} rounded-full transition-all`}></div>
+                                <div className="h-full w-0 bg-gray-300 rounded-full"></div>
                               </div>
+                              <p className="text-[10px] text-gray-400 mt-0.5">Run test to measure</p>
                             </div>
                             
                             <div className="flex items-center justify-between">
@@ -722,23 +723,13 @@ export default function ChatPage() {
                               </span>
                             </div>
                             
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-gray-500 flex items-center gap-1">
-                                  <Target className="w-3 h-3" /> Capability
-                                </span>
-                                <span className={`text-xs font-semibold ${capabilityConfig.textColor}`}>
-                                  {capabilityConfig.label}
-                                </span>
-                              </div>
-                              <div className="flex gap-1">
-                                {[1, 2, 3, 4].map((bar) => (
-                                  <div
-                                    key={bar}
-                                    className={`h-2 flex-1 rounded-sm ${bar <= capabilityConfig.bars ? capabilityConfig.color : 'bg-gray-200'}`}
-                                  />
-                                ))}
-                              </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-500 flex items-center gap-1 text-xs">
+                                <Target className="w-3 h-3" /> Capability
+                              </span>
+                              <span className={`text-xs font-semibold ${capabilityConfig.textColor}`}>
+                                {capabilityConfig.label}
+                              </span>
                             </div>
                           </div>
                         )}
