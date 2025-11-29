@@ -17,16 +17,23 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **2025-11-29**: Educational Dimensions - Benchmarks & Modality
-  - **Benchmark Scores**: Each model now displays MMLU and HumanEval scores
-    - MMLU: Measures general knowledge across 57 subjects (%)
-    - HumanEval: Measures coding ability (%)
-    - Tooltips explain what each benchmark measures
-  - **Modality Indicator**: Shows what input types each model can process
-    - "Text Only" (gray badge) for text-only models
-    - "Text + Image" (purple badge) for multimodal models
-    - Icons: FileText for text, Image for multimodal
-  - **Sourced Data**: Benchmark values from official sources (Meta, Anthropic, Qwen, DeepSeek)
+- **2025-11-29**: Complete 10 Engineering Dimensions Implementation
+  - All 10 LLM engineering dimensions from spec now visible:
+    1. **Architecture**: Dense Transformer vs Sparse MoE (in Technical Details)
+    2. **Parameters & scaling**: Column headers (3B, 7B, 17B, 70B, Frontier)
+    3. **Training data**: Training year + data sources with tooltip (in Technical Details)
+    4. **Context window**: Selector (8K-1M) + Input Gauge showing usage
+    5. **Benchmarks**: MMLU % and HumanEval % per model
+    6. **Fine-tuning methods**: SFT, RLHF, DPO badges (in Technical Details)
+    7. **Inference optimization**: Precision (BF16, FP16, INT8) shown (in Technical Details)
+    8. **Multimodality**: Input row shows "Text" or "Vision"
+    9. **Safety & alignment**: "Aligned" status with methods tooltip (in Technical Details)
+    10. **Deployment economics**: Est. Cost, Speed, Cost Cap slider
+  - **Technical Details Accordion**: Collapsible section per model card
+    - Click to expand/collapse with chevron animation
+    - Shows Architecture, Training, Fine-tuning, Inference, Safety
+    - Tooltips explain each dimension with detailed info
+  - **Clean Grid Layout**: All rows aligned with consistent spacing
 - **2025-11-29**: Public Leaderboard
   - **Share Results**: After running a test, users can click "Share" to publish results to a public leaderboard
   - **Opt-in Sharing**: Confirmation modal shows preview of what will be shared
