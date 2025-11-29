@@ -23,8 +23,32 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2 } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2, ChevronDown, ChevronUp, Cpu, Database, Settings, Shield, Layers } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+
+interface TechnicalProfile {
+  architecture: {
+    type: "Dense Transformer" | "Sparse MoE";
+    attention: string;
+    parameters: string;
+  };
+  training: {
+    dataDate: string;
+    dataSources: string[];
+  };
+  finetuning: {
+    method: "Instruct" | "RLHF" | "DPO" | "ORPO" | "SFT";
+    variants?: string[];
+  };
+  inference: {
+    precision: "FP32" | "FP16" | "BF16" | "INT8" | "INT4";
+    optimizations?: string[];
+  };
+  safety: {
+    aligned: boolean;
+    methods: string[];
+  };
+}
 
 interface Model {
   id: string;
@@ -38,6 +62,7 @@ interface Model {
     humanEval?: number;
   };
   modality: "text" | "text+image" | "text+image+audio";
+  technical: TechnicalProfile;
 }
 
 interface ModelResponse {
@@ -52,19 +77,131 @@ interface ModelResponse {
 const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "basic", benchmarks: { mmlu: 63.4 }, modality: "text" },
-  "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good", benchmarks: { mmlu: 74.2, humanEval: 84.8 }, modality: "text" },
-  "17B": { id: "together/llama-4-maverick-17b", name: "Llama 4 Maverick 17B", costPer1k: 0.0002, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good", benchmarks: { mmlu: 80.5 }, modality: "text+image" },
-  "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "strong", benchmarks: { mmlu: 86.0, humanEval: 88.4 }, modality: "text" },
-  "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "excellent", benchmarks: { mmlu: 86.5, humanEval: 93.7 }, modality: "text+image" },
+  "3B": { 
+    id: "together/llama-3.2-3b-instruct-turbo", 
+    name: "Llama 3.2 3B", 
+    costPer1k: 0.00006, 
+    expectedLatency: "fast", 
+    reasoningDepth: "none", 
+    expectedAccuracy: "basic", 
+    benchmarks: { mmlu: 63.4 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
+      finetuning: { method: "SFT", variants: ["Instruct"] },
+      inference: { precision: "BF16", optimizations: ["Turbo"] },
+      safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
+    }
+  },
+  "7B": { 
+    id: "together/qwen-2.5-7b-instruct-turbo", 
+    name: "Qwen 2.5 7B", 
+    costPer1k: 0.0001, 
+    expectedLatency: "fast", 
+    reasoningDepth: "none", 
+    expectedAccuracy: "good", 
+    benchmarks: { mmlu: 74.2, humanEval: 84.8 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "DPO", variants: ["Instruct"] },
+      inference: { precision: "BF16", optimizations: ["Turbo"] },
+      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+    }
+  },
+  "17B": { 
+    id: "together/llama-4-maverick-17b", 
+    name: "Llama 4 Maverick 17B", 
+    costPer1k: 0.0002, 
+    expectedLatency: "fast", 
+    reasoningDepth: "none", 
+    expectedAccuracy: "good", 
+    benchmarks: { mmlu: 80.5 }, 
+    modality: "text+image",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "GQA", parameters: "17B active / 400B total" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Images", "Multimodal"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Vision"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing"] },
+      safety: { aligned: true, methods: ["RLHF", "Multimodal safety"] }
+    }
+  },
+  "70B": { 
+    id: "meta-llama/llama-3.3-70b-instruct:cerebras", 
+    name: "Llama 3.3 70B", 
+    costPer1k: 0.0006, 
+    expectedLatency: "medium", 
+    reasoningDepth: "none", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 86.0, humanEval: 88.4 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Scientific"] },
+      finetuning: { method: "RLHF", variants: ["Instruct", "Chat"] },
+      inference: { precision: "FP16", optimizations: ["Cerebras WSE"] },
+      safety: { aligned: true, methods: ["RLHF", "Constitutional AI"] }
+    }
+  },
+  "Frontier": { 
+    id: "anthropic/claude-sonnet-4.5", 
+    name: "Claude Sonnet 4.5", 
+    costPer1k: 0.015, 
+    expectedLatency: "slow", 
+    reasoningDepth: "none", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 86.5, humanEval: 93.7 }, 
+    modality: "text+image",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "Undisclosed" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Scientific", "Curated"] },
+      finetuning: { method: "RLHF", variants: ["Constitutional AI", "RLAIF"] },
+      inference: { precision: "BF16" },
+      safety: { aligned: true, methods: ["Constitutional AI", "RLHF", "Red teaming"] }
+    }
+  },
 };
 
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
   "17B": null,
-  "70B": { id: "together/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill 70B", costPer1k: 0.002, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "strong", benchmarks: { mmlu: 79.0 }, modality: "text" },
-  "Frontier": { id: "together/deepseek-r1", name: "DeepSeek R1", costPer1k: 0.003, expectedLatency: "slow", reasoningDepth: "deep", expectedAccuracy: "excellent", benchmarks: { mmlu: 90.8 }, modality: "text" },
+  "70B": { 
+    id: "together/deepseek-r1-distill-llama-70b", 
+    name: "DeepSeek R1 Distill 70B", 
+    costPer1k: 0.002, 
+    expectedLatency: "slow", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 79.0 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B (distilled)" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
+      finetuning: { method: "SFT", variants: ["Distillation", "Chain-of-thought"] },
+      inference: { precision: "BF16", optimizations: ["Long reasoning"] },
+      safety: { aligned: true, methods: ["Reasoning verification"] }
+    }
+  },
+  "Frontier": { 
+    id: "together/deepseek-r1", 
+    name: "DeepSeek R1", 
+    costPer1k: 0.003, 
+    expectedLatency: "slow", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 90.8 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "MLA", parameters: "671B total / 37B active" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Scientific", "Reasoning"] },
+      finetuning: { method: "RLHF", variants: ["RL reasoning", "GRPO"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Long CoT"] },
+      safety: { aligned: true, methods: ["RLHF", "Reasoning safety"] }
+    }
+  },
 };
 
 const CONTEXT_SIZES = [
@@ -186,6 +323,7 @@ export default function ChatPage() {
   const [benchmarkDescription, setBenchmarkDescription] = useState("");
   
   const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [expandedTechDetails, setExpandedTechDetails] = useState<Record<string, boolean>>({});
   const [benchmarks, setBenchmarks] = useState<Array<{
     id: string;
     name: string;
@@ -1070,6 +1208,111 @@ export default function ChatPage() {
                                 Run test
                               </span>
                             </div>
+
+                            <button
+                              onClick={() => setExpandedTechDetails(prev => ({ ...prev, [col]: !prev[col] }))}
+                              className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-700 pt-2 mt-1 border-t border-gray-100"
+                            >
+                              <span className="flex items-center gap-1">
+                                <Layers className="w-3 h-3" />
+                                Technical Details
+                              </span>
+                              {expandedTechDetails[col] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            </button>
+
+                            {expandedTechDetails[col] && (
+                              <div className="space-y-1.5 pt-1 text-xs">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-500 flex items-center gap-1 cursor-help">
+                                        <Cpu className="w-3 h-3" /> Architecture
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">Model architecture type and attention mechanism</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className={`font-medium text-right ${model!.technical.architecture.type === "Sparse MoE" ? "text-purple-600" : "text-gray-600"}`}>
+                                    {model!.technical.architecture.type === "Sparse MoE" ? "MoE" : "Dense"}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-500 flex items-center gap-1 cursor-help">
+                                        <Database className="w-3 h-3" /> Training
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">Training data sources: {model!.technical.training.dataSources.join(", ")}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className="text-gray-600 text-right">
+                                    {model!.technical.training.dataDate}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-500 flex items-center gap-1 cursor-help">
+                                        <Settings className="w-3 h-3" /> Fine-tuning
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">Fine-tuning: {model!.technical.finetuning.method}</p>
+                                      {model!.technical.finetuning.variants && (
+                                        <p className="text-xs mt-1">Variants: {model!.technical.finetuning.variants.join(", ")}</p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className={`font-medium text-right ${
+                                    model!.technical.finetuning.method === "RLHF" ? "text-blue-600" :
+                                    model!.technical.finetuning.method === "DPO" ? "text-green-600" :
+                                    "text-gray-600"
+                                  }`}>
+                                    {model!.technical.finetuning.method}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-500 flex items-center gap-1 cursor-help">
+                                        <Zap className="w-3 h-3" /> Inference
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">Precision: {model!.technical.inference.precision}</p>
+                                      {model!.technical.inference.optimizations && (
+                                        <p className="text-xs mt-1">Optimizations: {model!.technical.inference.optimizations.join(", ")}</p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className="text-gray-600 text-right">
+                                    {model!.technical.inference.precision}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-500 flex items-center gap-1 cursor-help">
+                                        <Shield className="w-3 h-3" /> Safety
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">Safety methods: {model!.technical.safety.methods.join(", ")}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className={`font-medium text-right ${model!.technical.safety.aligned ? "text-green-600" : "text-red-600"}`}>
+                                    {model!.technical.safety.aligned ? "Aligned" : "Unaligned"}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
 
