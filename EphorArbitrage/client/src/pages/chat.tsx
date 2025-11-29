@@ -367,9 +367,14 @@ export default function ChatPage() {
       <div className="bg-white text-gray-900">
         <div className="w-full px-4 sm:px-[72px] pt-4 sm:pt-6 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
-              EPHOR WIND TUNNEL
-            </h1>
+            <div>
+              <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
+                EPHOR WIND TUNNEL
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Learn to pick the right AI model by seeing how size, speed, and cost really work.
+              </p>
+            </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
