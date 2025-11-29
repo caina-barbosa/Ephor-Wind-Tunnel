@@ -17,18 +17,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **2025-11-28**: Complete Timeback Brand Rebrand
-  - Applied Timeback brand colors throughout:
-    - Deep Royal Blue (#1a3a8f): Primary text, buttons, headings
-    - Bright Orange (#f5a623): Warnings, "Higher Cost" badge, Medium latency
-    - Forest Green (#1b7340): "Recommended" highlight, Fast latency, success states
-    - Hot Magenta (#c41c6a): Slow latency, error states, disabled warnings
-    - Sky Blue (#3fb4e5): "Good" capability, Pareto curve line
-    - Cream (#f5e6d3): Background throughout the app
-  - Bold/heavy typography matching Timeback style
-  - Capability badges: Basic (peach), Good (sky blue), Strong (forest green), Excellent (deep blue)
-  - All modals updated with brand colors
-  - Pareto Frontier chart with brand-consistent point colors and curve
+- **2025-11-29**: Minimal Apple-Style Design Refresh
+  - Simplified color palette to minimal scheme:
+    - White (#ffffff): Clean background throughout
+    - Deep Royal Blue (#1a3a8f): Title and main action button only
+    - Orange (#f5a623): "Recommended" highlights only
+    - Gray tones: All other UI elements (borders, badges, icons, text)
+    - Red (Tailwind red-500/600): Error states only
+  - Removed saturated colors from control panels, badges, and modals
+  - Capability and latency badges now use plain gray outline style
+  - Engineering Truths section simplified with gray bullet points
+  - Pareto chart uses gray for available models, orange for recommended
+  - Clean, professional Apple-inspired aesthetic
+- **2025-11-28**: Complete Timeback Brand Rebrand (superseded by minimal design)
 - **2025-11-28**: Simplified recommendation logic for better education
   - Recommendation now picks the CHEAPEST model that fits all constraints
   - No more keyword/complexity detection - transparent filtering only
@@ -58,7 +59,7 @@ Preferred communication style: Simple, everyday language.
 
 **Framework**: React 18+ with TypeScript, built using Vite for fast development with Hot Module Replacement (HMR).
 
-**UI Component System**: The application uses shadcn/ui components built on Radix UI primitives, styled with Tailwind CSS. Features Timeback brand styling with saturated colors (Deep Royal Blue, Bright Orange, Forest Green, Hot Magenta, Sky Blue) on a Cream background.
+**UI Component System**: The application uses shadcn/ui components built on Radix UI primitives, styled with Tailwind CSS. Features a minimal Apple-inspired design with a white background, Deep Royal Blue (#1a3a8f) for primary actions, Orange (#f5a623) for recommended highlights, and neutral gray tones throughout.
 
 **Layout Structure**: Full-screen grid layout with:
 - Prompt input with token count gauge
@@ -168,8 +169,8 @@ Based on the "LLM Wind Tunnel for Kids" specification:
 
 3. **Visual Feedback**: 
    - Progress spinners (not text streaming)
-   - Color-coded latency (green/yellow/red)
-   - Recommended model highlighting
+   - Latency badges (Fast/Medium/Slow) in neutral gray
+   - Orange highlight for recommended model
    - "Why This Model?" explanations
 
 4. **Compare and Learn**: Side-by-side comparison of responses helps students see:
