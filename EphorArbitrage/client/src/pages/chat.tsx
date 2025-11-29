@@ -69,15 +69,43 @@ const CONTEXT_SIZES = [
   { value: "1m", tokens: 1000000, label: "1M" },
 ] as const;
 
-const getLatencyColor = (latency: "fast" | "medium" | "slow") => {
-  return "text-gray-600 bg-transparent border border-gray-300";
+const COLUMN_VISUALS: Record<string, {
+  headerSize: string;
+  cardStyle: string;
+  prominence: "small" | "medium" | "large";
+}> = {
+  "3B": {
+    headerSize: "text-base font-semibold text-gray-500",
+    cardStyle: "bg-gray-50/50 border-gray-200",
+    prominence: "small"
+  },
+  "7B": {
+    headerSize: "text-base font-semibold text-gray-500",
+    cardStyle: "bg-gray-50/30 border-gray-200",
+    prominence: "small"
+  },
+  "14B": {
+    headerSize: "text-lg font-bold text-gray-600",
+    cardStyle: "bg-white border-gray-200 shadow-sm",
+    prominence: "medium"
+  },
+  "70B": {
+    headerSize: "text-xl font-bold text-gray-700",
+    cardStyle: "bg-white border-gray-300 shadow-md",
+    prominence: "medium"
+  },
+  "Frontier": {
+    headerSize: "text-2xl font-black text-[#1a3a8f]",
+    cardStyle: "bg-white border-[#1a3a8f]/20 shadow-lg",
+    prominence: "large"
+  }
 };
 
-const getLatencyLabel = (latency: "fast" | "medium" | "slow") => {
+const getLatencyBarConfig = (latency: "fast" | "medium" | "slow") => {
   switch (latency) {
-    case "fast": return "Fast";
-    case "medium": return "Medium";
-    case "slow": return "Slow";
+    case "fast": return { width: "w-[25%]", color: "bg-emerald-500", label: "Fast" };
+    case "medium": return { width: "w-[55%]", color: "bg-orange-400", label: "Medium" };
+    case "slow": return { width: "w-full", color: "bg-red-500", label: "Slow" };
   }
 };
 
@@ -87,16 +115,19 @@ const getLatencyCategory = (latency: number): "fast" | "medium" | "slow" => {
   return "slow";
 };
 
-const getCapabilityColor = (accuracy: "basic" | "good" | "strong" | "excellent") => {
-  return "text-gray-600";
+const getCostVisuals = (cost: number) => {
+  if (cost < 0.001) return { size: "text-xs", color: "text-gray-400", style: "" };
+  if (cost < 0.005) return { size: "text-sm", color: "text-gray-600", style: "" };
+  if (cost < 0.01) return { size: "text-base font-semibold", color: "text-orange-600", style: "" };
+  return { size: "text-lg font-black", color: "text-red-600", style: "bg-red-50 px-2 py-0.5 rounded" };
 };
 
-const getCapabilityLabel = (accuracy: "basic" | "good" | "strong" | "excellent") => {
+const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "basic": return "Basic";
-    case "good": return "Good";
-    case "strong": return "Strong";
-    case "excellent": return "Excellent";
+    case "basic": return { bars: 1, color: "bg-gray-300", textColor: "text-gray-500", label: "Basic" };
+    case "good": return { bars: 2, color: "bg-blue-300", textColor: "text-blue-600", label: "Good" };
+    case "strong": return { bars: 3, color: "bg-blue-500", textColor: "text-blue-700", label: "Strong" };
+    case "excellent": return { bars: 4, color: "bg-[#1a3a8f]", textColor: "text-[#1a3a8f]", label: "Excellent" };
   }
 };
 
@@ -108,6 +139,11 @@ const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excel
     case "excellent": return "Hardest problems";
   }
 };
+
+const getLatencyColor = () => "text-gray-600";
+const getLatencyLabel = (latency: "fast" | "medium" | "slow") => getLatencyBarConfig(latency).label;
+const getCapabilityColor = () => "text-gray-600";
+const getCapabilityLabel = (accuracy: "basic" | "good" | "strong" | "excellent") => getCapabilityVisuals(accuracy).label;
 
 export default function ChatPage() {
   const [prompt, setPrompt] = useState("");
@@ -504,17 +540,20 @@ export default function ChatPage() {
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const isRecommended = col === recommendedModel;
+                    const visuals = COLUMN_VISUALS[col];
                     return (
                       <div 
                         key={col} 
-                        className={`p-2 sm:p-3 text-center bg-white ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        className={`p-2 sm:p-3 text-center ${isRecommended ? 'bg-[#fff8eb]' : 'bg-white'} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
-                        <div className="font-black text-[#1a3a8f] text-base sm:text-xl tracking-tight">{col}</div>
-                        <div className="text-xs text-gray-500 font-medium">
+                        <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
+                        <div className={`text-xs font-medium ${col === 'Frontier' ? 'text-[#1a3a8f]/60' : 'text-gray-400'}`}>
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
-                          <div className="mt-1 text-xs font-black text-[#f5a623]">★ Recommended</div>
+                          <div className="mt-1.5 inline-block px-2 py-0.5 bg-[#f5a623] text-white text-xs font-black rounded-full shadow-[0_0_12px_rgba(245,166,35,0.5)]">
+                            ★ PICK
+                          </div>
                         )}
                       </div>
                     );
@@ -558,88 +597,101 @@ export default function ChatPage() {
                       );
                     }
 
+                    const cardVisuals = COLUMN_VISUALS[col];
+                    const latencyConfig = getLatencyBarConfig(model!.expectedLatency);
+                    const capabilityConfig = getCapabilityVisuals(model!.expectedAccuracy);
+                    const estimatedCost = estimateCost(model!);
+                    const costConfig = getCostVisuals(estimatedCost);
+
                     return (
                       <div
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-3 min-h-[280px] max-h-[400px] transition-all flex flex-col overflow-hidden
+                          p-3 min-h-[280px] max-h-[400px] transition-all flex flex-col overflow-hidden border
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
-                          ${isRecommended ? 'bg-white border-l-4 border-l-[#f5a623]' : 'bg-white'}
-                          ${isLoading ? 'bg-gray-50' : ''}
+                          ${cardVisuals.cardStyle}
+                          ${isRecommended ? 'ring-2 ring-[#f5a623] ring-offset-1 bg-[#fffbf5]' : ''}
+                          ${isLoading ? 'bg-gray-50/80' : ''}
                           ${hasError ? 'bg-red-50' : ''}
-                          ${hasContent ? 'cursor-pointer hover:bg-gray-50' : ''}
+                          ${hasContent ? 'cursor-pointer hover:brightness-[0.98]' : ''}
                         `}
                       >
-                        <div className="text-center mb-2">
-                          <span className="font-medium text-gray-900 text-xs sm:text-sm">
+                        <div className="text-center mb-3">
+                          <span className={`font-semibold text-gray-800 text-xs sm:text-sm ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {model!.name}
                           </span>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
-                            <span className="ml-1 sm:ml-2 text-xs bg-gray-100 text-gray-600 px-1 sm:px-2 py-0.5 rounded font-medium">
-                              Deep
+                            <span className="ml-1 sm:ml-2 text-xs bg-[#1a3a8f]/10 text-[#1a3a8f] px-1 sm:px-2 py-0.5 rounded font-bold">
+                              DEEP
                             </span>
                           )}
                         </div>
 
                         {!hasContent && (
-                          <div className="space-y-1 flex-grow">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500 flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> <span className="hidden sm:inline">Latency</span>
+                          <div className="space-y-3 flex-grow">
+                            <div>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-gray-500 flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> Speed
+                                </span>
+                                <span className={`text-xs font-medium ${latencyConfig.color.replace('bg-', 'text-')}`}>
+                                  {latencyConfig.label}
+                                </span>
+                              </div>
+                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full ${latencyConfig.width} ${latencyConfig.color} rounded-full transition-all`}></div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-500 flex items-center gap-1 text-xs">
+                                <DollarSign className="w-3 h-3" /> Cost
                               </span>
-                              <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium ${getLatencyColor(model!.expectedLatency)}`}>
-                                {getLatencyLabel(model!.expectedLatency)}
+                              <span className={`font-mono ${costConfig.size} ${costConfig.color} ${costConfig.style}`}>
+                                ${estimatedCost.toFixed(4)}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500 flex items-center gap-1">
-                                <DollarSign className="w-3 h-3" /> <span className="hidden sm:inline">Est. Cost</span>
-                              </span>
-                              <span className="font-mono text-gray-700">
-                                ${estimateCost(model!).toFixed(4)}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500 flex items-center gap-1">
-                                <Brain className="w-3 h-3" /> <span className="hidden sm:inline">Reasoning</span>
-                              </span>
-                              <span className="text-gray-600 text-xs">
-                                {getReasoningDepthLabel(model!.reasoningDepth)}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500 flex items-center gap-1">
-                                <Target className="w-3 h-3" /> <span className="hidden sm:inline">Capability</span>
-                              </span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium cursor-help ${getCapabilityColor(model!.expectedAccuracy)}`}>
-                                      {getCapabilityLabel(model!.expectedAccuracy)}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{getCapabilityDescription(model!.expectedAccuracy)}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                            
+                            <div>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-gray-500 flex items-center gap-1">
+                                  <Target className="w-3 h-3" /> Capability
+                                </span>
+                                <span className={`text-xs font-semibold ${capabilityConfig.textColor}`}>
+                                  {capabilityConfig.label}
+                                </span>
+                              </div>
+                              <div className="flex gap-1">
+                                {[1, 2, 3, 4].map((bar) => (
+                                  <div
+                                    key={bar}
+                                    className={`h-2 flex-1 rounded-sm ${bar <= capabilityConfig.bars ? capabilityConfig.color : 'bg-gray-200'}`}
+                                  />
+                                ))}
+                              </div>
                             </div>
                           </div>
                         )}
 
                         {!showResults && !hasContent && !isLoading && !hasError && (
-                          <div className="text-center mt-auto pt-2">
-                            <div className="w-12 h-12 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
-                              <span className="text-gray-600 text-xs font-bold">Ready</span>
+                          <div className="text-center mt-auto pt-3">
+                            <div className={`w-14 h-14 mx-auto rounded-full flex items-center justify-center border-2 ${
+                              cardVisuals.prominence === 'large' ? 'bg-[#1a3a8f]/5 border-[#1a3a8f]/20' : 
+                              cardVisuals.prominence === 'medium' ? 'bg-gray-100 border-gray-300' : 
+                              'bg-gray-50 border-gray-200'
+                            }`}>
+                              <span className={`text-xs font-bold ${
+                                cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : 'text-gray-500'
+                              }`}>Ready</span>
                             </div>
                           </div>
                         )}
 
                         {isLoading && (
-                          <div className="text-center py-2">
-                            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mx-auto">
-                              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 64 64">
+                          <div className="text-center py-2 mt-auto">
+                            <div className="relative w-16 h-16 mx-auto">
+                              <svg className="w-full h-full transform -rotate-90 animate-pulse" viewBox="0 0 64 64">
                                 <circle
                                   cx="32"
                                   cy="32"
@@ -658,16 +710,24 @@ export default function ChatPage() {
                                   fill="none"
                                   strokeDasharray={175.9}
                                   strokeDashoffset={175.9 - (response.progress / 100) * 175.9}
-                                  className="text-gray-500 transition-all duration-300"
+                                  className={`transition-all duration-300 ${
+                                    cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : 
+                                    cardVisuals.prominence === 'medium' ? 'text-blue-500' : 
+                                    'text-emerald-500'
+                                  }`}
                                 />
                               </svg>
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-mono font-bold text-gray-700">
+                                <span className={`text-sm font-mono font-bold ${
+                                  cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : 'text-gray-700'
+                                }`}>
                                   {Math.round(response.progress)}%
                                 </span>
                               </div>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1 sm:mt-2">Processing...</p>
+                            <p className={`text-xs mt-2 font-medium ${
+                              cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : 'text-gray-500'
+                            }`}>Processing...</p>
                           </div>
                         )}
 
@@ -678,22 +738,54 @@ export default function ChatPage() {
                       </div>
                     )}
 
-                    {hasContent && (
-                      <div className="flex flex-col flex-grow">
-                        <div className="flex items-center justify-between text-xs mb-2 pb-2 border-b border-gray-100">
-                          <span className="font-mono text-gray-600">
-                            {response.latency}ms
-                          </span>
-                          <span className="font-mono text-gray-600">
-                            ${response.cost?.toFixed(4)}
-                          </span>
+                    {hasContent && (() => {
+                      const actualLatencyCategory = getLatencyCategory(response.latency || 0);
+                      const actualLatencyConfig = getLatencyBarConfig(actualLatencyCategory);
+                      const actualCostConfig = getCostVisuals(response.cost || 0);
+                      return (
+                        <div className="flex flex-col flex-grow">
+                          <div className="flex items-center justify-center mb-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              actualLatencyCategory === 'fast' ? 'bg-emerald-100' :
+                              actualLatencyCategory === 'medium' ? 'bg-orange-100' : 'bg-red-100'
+                            }`}>
+                              <CheckCircle2 className={`w-6 h-6 ${
+                                actualLatencyCategory === 'fast' ? 'text-emerald-600' :
+                                actualLatencyCategory === 'medium' ? 'text-orange-500' : 'text-red-500'
+                              }`} />
+                            </div>
+                          </div>
+                          
+                          <div className="mb-3 space-y-2">
+                            <div>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-gray-500">Latency</span>
+                                <span className={`font-mono font-bold ${actualLatencyConfig.color.replace('bg-', 'text-')}`}>
+                                  {response.latency}ms
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full ${actualLatencyConfig.width} ${actualLatencyConfig.color} rounded-full`}></div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">Cost</span>
+                              <span className={`font-mono ${actualCostConfig.size} ${actualCostConfig.color} ${actualCostConfig.style}`}>
+                                ${response.cost?.toFixed(4)}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap break-words flex-grow overflow-hidden line-clamp-4">
+                            {response.content}
+                          </div>
+                          <p className="text-xs text-[#1a3a8f] font-bold mt-2 hover:underline text-center cursor-pointer">
+                            View Full Response →
+                          </p>
                         </div>
-                        <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words flex-grow overflow-hidden">
-                          {response.content}
-                        </div>
-                        <p className="text-xs text-[#1a3a8f] font-semibold mt-2 hover:underline text-center cursor-pointer">Expand</p>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}
