@@ -17,6 +17,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **2025-11-29**: Expert Mode (Override Constraints)
+  - Added "Expert Mode" toggle below control panel
+  - When enabled, users can run models that exceed cost cap or context limits
+  - Overridden models show amber "OVERRIDE" warning badge with tooltip
+  - Helps students learn what happens when they ignore constraints
+  - Note: Reasoning mode restrictions (70B+ requirement) cannot be overridden
 - **2025-11-29**: Model Council and Benchmark Library
   - **Model Council Feature**: All 5 models judge each other's responses (peer review)
     - Each model receives all 5 anonymized responses

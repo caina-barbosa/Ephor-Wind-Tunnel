@@ -193,6 +193,7 @@ export default function ChatPage() {
   const [contextSize, setContextSize] = useState<string>("128k");
   const [costCap, setCostCap] = useState<number>(0.25);
   const [reasoningEnabled, setReasoningEnabled] = useState(false);
+  const [expertMode, setExpertMode] = useState(false);
 
   const inputTokenEstimate = useMemo(() => {
     return Math.ceil(prompt.length / 4);
@@ -213,21 +214,31 @@ export default function ChatPage() {
     return (estimatedTokens / 1000) * model.costPer1k;
   };
 
-  const isModelDisabled = (col: string): { disabled: boolean; reason: string } => {
+  const isModelDisabled = (col: string): { disabled: boolean; reason: string; warning?: string } => {
     const model = getModelForColumn(col);
+    
+    // Reasoning mode on small models truly doesn't work - can't override this
     if (!model) {
       return { disabled: true, reason: "Reasoning requires 70B+" };
     }
     
     // Check if input exceeds selected context window
     if (inputTokenEstimate > selectedContextTokens) {
+      if (expertMode) {
+        return { disabled: false, reason: "", warning: `Input exceeds ${contextSize.toUpperCase()} context` };
+      }
       return { disabled: true, reason: `Input exceeds ${contextSize.toUpperCase()} context` };
     }
     
+    // Check cost cap
     const cost = estimateCost(model);
     if (cost > costCap) {
+      if (expertMode) {
+        return { disabled: false, reason: "", warning: `Exceeds $${costCap.toFixed(2)} cap` };
+      }
       return { disabled: true, reason: `Exceeds $${costCap.toFixed(2)} cap` };
     }
+    
     return { disabled: false, reason: "" };
   };
 
@@ -724,6 +735,31 @@ export default function ChatPage() {
             </div>
           </div>
 
+          <div className="flex items-center justify-end gap-3 mb-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={expertMode}
+                    onCheckedChange={setExpertMode}
+                    disabled={isRunning}
+                    className="data-[state=checked]:bg-amber-500"
+                  />
+                  <span className={`text-sm font-medium ${expertMode ? 'text-amber-600' : 'text-gray-400'}`}>
+                    Expert Mode
+                  </span>
+                  {expertMode && (
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
+                <p className="font-bold">Override Constraints</p>
+                <p className="text-xs mt-1">Run models even if they exceed your cost cap or context limit. Helps you see what happens when you ignore the rules!</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
           <button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
@@ -782,7 +818,7 @@ export default function ChatPage() {
                 <div className="grid grid-cols-5">
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
-                    const { disabled, reason } = isModelDisabled(col);
+                    const { disabled, reason, warning } = isModelDisabled(col);
                     const response = responses[col];
                     const isLoading = response?.loading;
                     const hasError = response?.error;
@@ -848,6 +884,20 @@ export default function ChatPage() {
                             <span className="ml-1 sm:ml-2 text-xs bg-[#1a3a8f]/10 text-[#1a3a8f] px-1 sm:px-2 py-0.5 rounded font-bold">
                               DEEP
                             </span>
+                          )}
+                          {warning && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="ml-2 inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-300">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  OVERRIDE
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white border-gray-200 text-gray-700">
+                                <p className="font-bold text-amber-600">Expert Mode Override</p>
+                                <p className="text-xs mt-1">{warning}</p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
 
