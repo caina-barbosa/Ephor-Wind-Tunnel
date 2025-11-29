@@ -81,35 +81,35 @@ const COLUMN_VISUALS: Record<string, {
     headerBg: "bg-gray-100",
     cardStyle: "bg-gray-50/50",
     prominence: "small",
-    accentBorder: "border-t-4 border-t-gray-400"
+    accentBorder: "border-t-[6px] border-t-[#6B7280]"
   },
   "7B": {
     headerSize: "text-xl font-bold text-blue-700",
     headerBg: "bg-blue-50",
     cardStyle: "bg-blue-50/30",
     prominence: "small",
-    accentBorder: "border-t-4 border-t-blue-400"
+    accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "17B": {
     headerSize: "text-2xl font-extrabold text-blue-800",
     headerBg: "bg-blue-50",
     cardStyle: "bg-white shadow-sm",
     prominence: "medium",
-    accentBorder: "border-t-4 border-t-blue-500"
+    accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "70B": {
     headerSize: "text-2xl font-extrabold text-emerald-700",
     headerBg: "bg-emerald-50",
     cardStyle: "bg-white shadow-md",
     prominence: "medium",
-    accentBorder: "border-t-4 border-t-emerald-500"
+    accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "Frontier": {
     headerSize: "text-3xl font-black text-[#1a3a8f]",
     headerBg: "bg-orange-50",
     cardStyle: "bg-white shadow-lg",
     prominence: "large",
-    accentBorder: "border-t-4 border-t-[#f5a623]"
+    accentBorder: "border-t-[6px] border-t-[#EA580C]"
   }
 };
 
@@ -684,12 +684,15 @@ export default function ChatPage() {
                     const estimatedCost = estimateCost(model!);
                     const costConfig = getCostVisuals(estimatedCost);
 
+                    const hasResults = hasContent || isLoading || hasError;
+                    
                     return (
                       <div
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-3 min-h-[280px] max-h-[400px] transition-all flex flex-col overflow-hidden
+                          p-3 transition-all flex flex-col overflow-hidden
+                          ${hasResults ? 'min-h-[260px]' : 'min-h-[140px]'}
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${cardVisuals.cardStyle}
                           ${cardVisuals.accentBorder}
@@ -699,8 +702,8 @@ export default function ChatPage() {
                           ${hasContent ? 'cursor-pointer hover:brightness-[0.98]' : ''}
                         `}
                       >
-                        <div className="text-center mb-3">
-                          <span className={`font-semibold text-gray-800 text-xs sm:text-sm ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
+                        <div className="text-center mb-2">
+                          <span className={`font-semibold text-gray-800 text-sm ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {model!.name}
                           </span>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
@@ -710,26 +713,11 @@ export default function ChatPage() {
                           )}
                         </div>
 
-                        {!hasContent && (
-                          <div className="space-y-3 flex-grow">
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-gray-500 flex items-center gap-1">
-                                  <Clock className="w-3 h-3" /> Speed
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  --
-                                </span>
-                              </div>
-                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div className="h-full w-0 bg-gray-300 rounded-full"></div>
-                              </div>
-                              <p className="text-[10px] text-gray-400 mt-0.5">Run test to measure</p>
-                            </div>
-                            
+                        {!hasResults && (
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-gray-500 flex items-center gap-1 text-xs">
-                                <DollarSign className="w-3 h-3" /> Cost
+                                <DollarSign className="w-3 h-3" /> Est. Cost
                               </span>
                               <span className={`font-mono ${costConfig.size} ${costConfig.color} ${costConfig.style}`}>
                                 ${estimatedCost.toFixed(4)}
@@ -740,8 +728,17 @@ export default function ChatPage() {
                               <span className="text-gray-500 flex items-center gap-1 text-xs">
                                 <Target className="w-3 h-3" /> Capability
                               </span>
-                              <span className={`text-xs font-semibold ${capabilityConfig.textColor}`}>
+                              <span className={`text-xs font-bold ${capabilityConfig.textColor}`}>
                                 {capabilityConfig.label}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-500 flex items-center gap-1 text-xs">
+                                <Clock className="w-3 h-3" /> Speed
+                              </span>
+                              <span className="text-xs text-gray-400 italic">
+                                Run test to measure
                               </span>
                             </div>
                           </div>
