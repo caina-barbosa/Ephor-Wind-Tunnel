@@ -357,38 +357,50 @@ export default function ChatPage() {
           </div>
 
           <div className="bg-white rounded-lg p-3 mb-3 border border-gray-200 shadow-sm">
-            <div className="flex gap-4">
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Enter your prompt to test across all model sizes..."
-                className="flex-1 h-[60px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm"
-                disabled={isRunning}
-              />
-              <div className={`flex-shrink-0 w-36 sm:w-44 p-2.5 rounded-lg border ${
-                inputTokenEstimate > selectedContextTokens 
-                  ? 'bg-red-50 border-red-300' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="text-xs font-bold text-gray-700 mb-1">INPUT GAUGE</div>
-                <div className={`font-mono text-sm font-bold ${
-                  inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
-                }`}>
-                  {inputTokenEstimate.toLocaleString()} / {selectedContextTokens.toLocaleString()}
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Enter your prompt to test across all model sizes..."
+              className="w-full h-[60px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm"
+              disabled={isRunning}
+            />
+            
+            <div className={`mt-2 p-2.5 rounded-lg border ${
+              inputTokenEstimate > selectedContextTokens 
+                ? 'bg-red-50 border-red-300' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-xs text-gray-900">INPUT GAUGE</span>
+                  {inputTokenEstimate > selectedContextTokens && (
+                    <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded font-bold">
+                      OVERFLOW
+                    </span>
+                  )}
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-1.5">
-                  <div 
-                    className={`h-full transition-all ${
-                      inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-gray-500'
-                    }`}
-                    style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
-                  />
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono text-sm font-bold ${
+                    inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
+                  }`}>{inputTokenEstimate.toLocaleString()}</span>
+                  <span className="text-gray-400">/</span>
+                  <span className="font-mono text-sm text-gray-600">{selectedContextTokens.toLocaleString()}</span>
+                  <span className="text-xs text-gray-500">tokens</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                    inputTokenEstimate > selectedContextTokens ? 'bg-red-500 text-white' :
+                    'bg-gray-200 text-gray-700'
+                  }`}>
+                    {inputTokenEstimate > selectedContextTokens ? 'OVERFLOW!' : `${inputPercentage.toFixed(1)}%`}
+                  </span>
                 </div>
-                <div className={`text-xs mt-1 font-medium ${
-                  inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-500'
-                }`}>
-                  {inputTokenEstimate > selectedContextTokens ? 'OVERFLOW!' : `${inputPercentage.toFixed(1)}% used`}
-                </div>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all ${
+                    inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-gray-500'
+                  }`}
+                  style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
+                />
               </div>
             </div>
           </div>
