@@ -536,7 +536,7 @@ export default function ChatPage() {
                       return (
                         <Tooltip key={col}>
                           <TooltipTrigger asChild>
-                            <div className={`p-4 h-[220px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
+                            <div className={`p-3 min-h-[280px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
                               <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
                               <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
                                 {isReasoningLocked ? "Reasoning" : model?.name}
@@ -563,7 +563,7 @@ export default function ChatPage() {
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-4 h-[220px] transition-all flex flex-col
+                          p-3 min-h-[280px] max-h-[400px] transition-all flex flex-col overflow-hidden
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${isRecommended ? 'bg-white border-l-4 border-l-[#f5a623]' : 'bg-white'}
                           ${isLoading ? 'bg-gray-50' : ''}
@@ -582,51 +582,53 @@ export default function ChatPage() {
                           )}
                         </div>
 
-                        <div className="space-y-1 flex-grow">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> <span className="hidden sm:inline">Latency</span>
-                            </span>
-                            <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium ${getLatencyColor(model!.expectedLatency)}`}>
-                              {getLatencyLabel(model!.expectedLatency)}
-                            </span>
+                        {!hasContent && (
+                          <div className="space-y-1 flex-grow">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500 flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> <span className="hidden sm:inline">Latency</span>
+                              </span>
+                              <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium ${getLatencyColor(model!.expectedLatency)}`}>
+                                {getLatencyLabel(model!.expectedLatency)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500 flex items-center gap-1">
+                                <DollarSign className="w-3 h-3" /> <span className="hidden sm:inline">Est. Cost</span>
+                              </span>
+                              <span className="font-mono text-gray-700">
+                                ${estimateCost(model!).toFixed(4)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500 flex items-center gap-1">
+                                <Brain className="w-3 h-3" /> <span className="hidden sm:inline">Reasoning</span>
+                              </span>
+                              <span className="text-gray-600 text-xs">
+                                {getReasoningDepthLabel(model!.reasoningDepth)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500 flex items-center gap-1">
+                                <Target className="w-3 h-3" /> <span className="hidden sm:inline">Capability</span>
+                              </span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium cursor-help ${getCapabilityColor(model!.expectedAccuracy)}`}>
+                                      {getCapabilityLabel(model!.expectedAccuracy)}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{getCapabilityDescription(model!.expectedAccuracy)}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1">
-                              <DollarSign className="w-3 h-3" /> <span className="hidden sm:inline">Est. Cost</span>
-                            </span>
-                            <span className="font-mono text-gray-700">
-                              ${estimateCost(model!).toFixed(4)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1">
-                              <Brain className="w-3 h-3" /> <span className="hidden sm:inline">Reasoning</span>
-                            </span>
-                            <span className="text-gray-600 text-xs">
-                              {getReasoningDepthLabel(model!.reasoningDepth)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1">
-                              <Target className="w-3 h-3" /> <span className="hidden sm:inline">Capability</span>
-                            </span>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className={`px-1 sm:px-2 py-0.5 rounded text-xs font-medium cursor-help ${getCapabilityColor(model!.expectedAccuracy)}`}>
-                                    {getCapabilityLabel(model!.expectedAccuracy)}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{getCapabilityDescription(model!.expectedAccuracy)}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </div>
+                        )}
 
-                        {!showResults && (
+                        {!showResults && !hasContent && !isLoading && !hasError && (
                           <div className="text-center mt-auto pt-2">
                             <div className="w-12 h-12 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
                               <span className="text-gray-600 text-xs font-bold">Ready</span>
@@ -677,23 +679,19 @@ export default function ChatPage() {
                     )}
 
                     {hasContent && (
-                      <div className="text-center py-2">
-                        <CheckCircle2 className="w-10 h-10 mx-auto text-gray-700 mb-2" />
-                        <div className="space-y-1">
-                          <div className="text-xs">
-                            <span className="text-gray-500">Latency:</span>{" "}
-                            <span className="font-mono font-bold text-gray-900">
-                              {response.latency}ms
-                            </span>
-                          </div>
-                          <div className="text-xs">
-                            <span className="text-gray-500">Cost:</span>{" "}
-                            <span className="font-mono font-bold text-gray-700">
-                              ${response.cost?.toFixed(4)}
-                            </span>
-                          </div>
+                      <div className="flex flex-col flex-grow">
+                        <div className="flex items-center justify-between text-xs mb-2 pb-2 border-b border-gray-100">
+                          <span className="font-mono text-gray-600">
+                            {response.latency}ms
+                          </span>
+                          <span className="font-mono text-gray-600">
+                            ${response.cost?.toFixed(4)}
+                          </span>
                         </div>
-                        <p className="text-xs text-[#1a3a8f] font-semibold mt-2 hover:underline">Click to view response</p>
+                        <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words flex-grow overflow-hidden">
+                          {response.content}
+                        </div>
+                        <p className="text-xs text-[#1a3a8f] font-semibold mt-2 hover:underline text-center cursor-pointer">Expand</p>
                       </div>
                     )}
                   </div>
