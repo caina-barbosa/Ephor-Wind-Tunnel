@@ -4,8 +4,14 @@ import {
   type Message, 
   type InsertMessage,
   type CostStats,
+  type Benchmark,
+  type InsertBenchmark,
+  type BenchmarkRun,
+  type InsertBenchmarkRun,
   chats,
-  messages
+  messages,
+  benchmarks,
+  benchmarkRuns
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -27,6 +33,16 @@ export interface IStorage {
   getMessages(chatId: string): Promise<Message[]>;
   createMessage(message: CreateMessageData): Promise<Message>;
   updateMessageCompeteResults(messageId: string, competeResults: any): Promise<Message | undefined>;
+  
+  getBenchmarks(): Promise<Benchmark[]>;
+  getBenchmark(id: string): Promise<Benchmark | undefined>;
+  createBenchmark(benchmark: InsertBenchmark): Promise<Benchmark>;
+  deleteBenchmark(id: string): Promise<boolean>;
+  
+  getBenchmarkRuns(benchmarkId: string): Promise<BenchmarkRun[]>;
+  getBenchmarkRun(id: string): Promise<BenchmarkRun | undefined>;
+  createBenchmarkRun(run: InsertBenchmarkRun): Promise<BenchmarkRun>;
+  updateBenchmarkRun(id: string, data: Partial<BenchmarkRun>): Promise<BenchmarkRun | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -86,6 +102,59 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db.update(messages)
       .set({ competeResults })
       .where(eq(messages.id, messageId))
+      .returning();
+    return result || undefined;
+  }
+
+  async getBenchmarks(): Promise<Benchmark[]> {
+    return await db.select().from(benchmarks).orderBy(desc(benchmarks.createdAt));
+  }
+
+  async getBenchmark(id: string): Promise<Benchmark | undefined> {
+    const [result] = await db.select().from(benchmarks).where(eq(benchmarks.id, id));
+    return result || undefined;
+  }
+
+  async createBenchmark(insertBenchmark: InsertBenchmark): Promise<Benchmark> {
+    const id = randomUUID();
+    const [benchmark] = await db.insert(benchmarks).values({
+      ...insertBenchmark,
+      id,
+      createdAt: new Date(),
+    }).returning();
+    return benchmark;
+  }
+
+  async deleteBenchmark(id: string): Promise<boolean> {
+    const result = await db.delete(benchmarks).where(eq(benchmarks.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getBenchmarkRuns(benchmarkId: string): Promise<BenchmarkRun[]> {
+    return await db.select().from(benchmarkRuns)
+      .where(eq(benchmarkRuns.benchmarkId, benchmarkId))
+      .orderBy(desc(benchmarkRuns.runAt));
+  }
+
+  async getBenchmarkRun(id: string): Promise<BenchmarkRun | undefined> {
+    const [result] = await db.select().from(benchmarkRuns).where(eq(benchmarkRuns.id, id));
+    return result || undefined;
+  }
+
+  async createBenchmarkRun(insertRun: InsertBenchmarkRun): Promise<BenchmarkRun> {
+    const id = randomUUID();
+    const [run] = await db.insert(benchmarkRuns).values({
+      ...insertRun,
+      id,
+      runAt: new Date(),
+    }).returning();
+    return run;
+  }
+
+  async updateBenchmarkRun(id: string, data: Partial<BenchmarkRun>): Promise<BenchmarkRun | undefined> {
+    const [result] = await db.update(benchmarkRuns)
+      .set(data)
+      .where(eq(benchmarkRuns.id, id))
       .returning();
     return result || undefined;
   }

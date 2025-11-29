@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Model {
@@ -162,6 +162,33 @@ export default function ChatPage() {
   const [selectedModel, setSelectedModel] = useState<{ col: string; model: Model; response: ModelResponse } | null>(null);
   const [showWhyModal, setShowWhyModal] = useState(false);
   const [testRunCount, setTestRunCount] = useState(0);
+  
+  const [councilRunning, setCouncilRunning] = useState(false);
+  const [councilResults, setCouncilResults] = useState<{
+    consensusRankings: string[];
+    councilEvaluations: Array<{
+      judgeColumn: string;
+      judgeName: string;
+      rankings: Array<{ column: string; rank: number; critique: string }>;
+      error?: string;
+    }>;
+    chairmanSynthesis: string | null;
+    runId?: string;
+  } | null>(null);
+  const [showCouncilModal, setShowCouncilModal] = useState(false);
+  const [showSaveBenchmarkModal, setShowSaveBenchmarkModal] = useState(false);
+  const [benchmarkName, setBenchmarkName] = useState("");
+  const [benchmarkDescription, setBenchmarkDescription] = useState("");
+  
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [benchmarks, setBenchmarks] = useState<Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    prompt: string;
+    createdAt: string;
+  }>>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
   
   const [contextSize, setContextSize] = useState<string>("128k");
   const [costCap, setCostCap] = useState<number>(0.25);
@@ -440,6 +467,111 @@ export default function ChatPage() {
     }
   };
 
+  const handleRunCouncil = async () => {
+    if (!allModelsComplete || councilRunning) return;
+    
+    setCouncilRunning(true);
+    setCouncilResults(null);
+    
+    try {
+      const responseData: Record<string, { content: string; modelId: string; modelName: string; latency: number; cost: number }> = {};
+      
+      COLUMNS.forEach(col => {
+        const model = getModelForColumn(col);
+        const resp = responses[col];
+        if (model && resp?.content && !resp.error) {
+          responseData[col] = {
+            content: resp.content,
+            modelId: model.id,
+            modelName: model.name,
+            latency: resp.latency || 0,
+            cost: resp.cost || 0,
+          };
+        }
+      });
+      
+      const response = await apiRequest("POST", "/api/council/run", {
+        prompt,
+        responses: responseData,
+        settings: {
+          contextSize,
+          costCap,
+          reasoningEnabled,
+        },
+      });
+      
+      const result = await response.json();
+      setCouncilResults(result);
+      setShowCouncilModal(true);
+    } catch (err: any) {
+      console.error("Council error:", err);
+      alert("Failed to run council: " + err.message);
+    } finally {
+      setCouncilRunning(false);
+    }
+  };
+
+  const handleSaveBenchmark = async () => {
+    if (!benchmarkName.trim()) {
+      alert("Please enter a name for the benchmark");
+      return;
+    }
+    
+    try {
+      await apiRequest("POST", "/api/benchmarks", {
+        name: benchmarkName,
+        description: benchmarkDescription || null,
+        prompt,
+      });
+      
+      setShowSaveBenchmarkModal(false);
+      setBenchmarkName("");
+      setBenchmarkDescription("");
+      alert("Benchmark saved successfully!");
+    } catch (err: any) {
+      console.error("Save benchmark error:", err);
+      alert("Failed to save benchmark: " + err.message);
+    }
+  };
+
+  const loadBenchmarks = async () => {
+    setLibraryLoading(true);
+    try {
+      const response = await apiRequest("GET", "/api/benchmarks");
+      const data = await response.json();
+      setBenchmarks(data);
+    } catch (err: any) {
+      console.error("Load benchmarks error:", err);
+    } finally {
+      setLibraryLoading(false);
+    }
+  };
+
+  const handleOpenLibrary = async () => {
+    setShowLibraryModal(true);
+    await loadBenchmarks();
+  };
+
+  const handleLoadBenchmark = (benchmarkPrompt: string) => {
+    setPrompt(benchmarkPrompt);
+    setShowLibraryModal(false);
+    setShowResults(false);
+    setResponses({});
+    setCouncilResults(null);
+  };
+
+  const handleDeleteBenchmark = async (id: string) => {
+    if (!confirm("Delete this benchmark?")) return;
+    
+    try {
+      await apiRequest("DELETE", `/api/benchmarks/${id}`);
+      await loadBenchmarks();
+    } catch (err: any) {
+      console.error("Delete benchmark error:", err);
+      alert("Failed to delete benchmark: " + err.message);
+    }
+  };
+
   const getReasoningDepthLabel = (depth: "none" | "shallow" | "deep") => {
     switch (depth) {
       case "none": return "No Reasoning";
@@ -461,6 +593,13 @@ export default function ChatPage() {
                 Learn to think like an AI engineer: balance speed, cost, and capability.
               </p>
             </div>
+            <button
+              onClick={handleOpenLibrary}
+              className="px-4 py-2 border border-[#1a3a8f] text-[#1a3a8f] rounded-lg text-sm font-medium hover:bg-[#1a3a8f]/5 flex items-center gap-2"
+            >
+              <Library className="w-4 h-4" />
+              Benchmark Library
+            </button>
           </div>
 
           <div className="bg-white rounded-lg p-2 mb-6 border border-gray-200 shadow-sm">
@@ -960,6 +1099,64 @@ export default function ChatPage() {
             </div>
           )}
 
+          {showResults && allModelsComplete && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-[#1a3a8f]/5 to-[#f5a623]/5 rounded-lg border border-gray-200">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#1a3a8f]" />
+                    Model Council
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Have all 5 models judge each other's responses. Find the true best answer.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setShowSaveBenchmarkModal(true)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <Bookmark className="w-4 h-4" />
+                        Save
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white border-gray-200 text-gray-700">
+                      Save this prompt as a benchmark to rerun later
+                    </TooltipContent>
+                  </Tooltip>
+                  <button
+                    onClick={handleRunCouncil}
+                    disabled={councilRunning}
+                    className="px-6 py-2 bg-[#1a3a8f] text-white rounded-lg text-sm font-bold hover:bg-[#2a4a9f] disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {councilRunning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Running Council...
+                      </>
+                    ) : (
+                      <>
+                        <Trophy className="w-4 h-4" />
+                        Run Council (~$0.50-2.00)
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              {councilResults && (
+                <button
+                  onClick={() => setShowCouncilModal(true)}
+                  className="mt-3 w-full py-2 bg-[#f5a623]/10 border border-[#f5a623] rounded-lg text-sm font-medium text-[#f5a623] hover:bg-[#f5a623]/20 flex items-center justify-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  View Council Results
+                </button>
+              )}
+            </div>
+          )}
+
         </div>
 
         <Dialog open={!!selectedModel} onOpenChange={() => setSelectedModel(null)}>
@@ -1179,6 +1376,228 @@ export default function ChatPage() {
                     {reasoningEnabled && <li>Turn off <strong>Reasoning Mode</strong> to access cheaper models</li>}
                     {inputPercentage > 100 && <li>Choose a larger <strong>Context Window</strong> or shorten your input</li>}
                   </ul>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showCouncilModal} onOpenChange={setShowCouncilModal}>
+          <DialogContent className="max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <Trophy className="w-5 h-5 text-[#f5a623]" />
+                <span className="text-[#1a3a8f]">Model Council Results</span>
+              </DialogTitle>
+            </DialogHeader>
+            {councilResults && (
+              <div className="space-y-6">
+                <div className="p-4 bg-gradient-to-r from-[#f5a623]/10 to-[#f5a623]/5 border-2 border-[#f5a623] rounded-lg">
+                  <h4 className="font-bold text-[#f5a623] mb-3 flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    Consensus Rankings (by peer vote)
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {councilResults.consensusRankings.map((col, idx) => {
+                      const model = getModelForColumn(col);
+                      return (
+                        <div 
+                          key={col}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                            idx === 0 ? 'bg-[#f5a623]/20 border-[#f5a623] text-[#f5a623]' :
+                            idx === 1 ? 'bg-gray-100 border-gray-300 text-gray-700' :
+                            idx === 2 ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                            'bg-gray-50 border-gray-200 text-gray-500'
+                          }`}
+                        >
+                          <span className="font-black text-lg">#{idx + 1}</span>
+                          <span className="font-bold">{model?.name || col}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {councilResults.chairmanSynthesis && (
+                  <div className="p-4 bg-[#1a3a8f]/5 border border-[#1a3a8f]/30 rounded-lg">
+                    <h4 className="font-bold text-[#1a3a8f] mb-3 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      Chairman Synthesis (Claude's final answer)
+                    </h4>
+                    <pre className="whitespace-pre-wrap text-sm bg-white p-4 rounded-lg border border-gray-200 text-gray-800 max-h-[300px] overflow-y-auto">
+                      {councilResults.chairmanSynthesis}
+                    </pre>
+                  </div>
+                )}
+
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Individual Judge Critiques
+                  </h4>
+                  <div className="space-y-4">
+                    {councilResults.councilEvaluations.map((evaluation, idx) => (
+                      <div key={idx} className="p-3 bg-white rounded-lg border border-gray-200">
+                        <div className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-mono">
+                            {evaluation.judgeColumn}
+                          </span>
+                          {evaluation.judgeName}
+                        </div>
+                        {evaluation.error ? (
+                          <p className="text-sm text-red-500">{evaluation.error}</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {evaluation.rankings
+                              .sort((a, b) => a.rank - b.rank)
+                              .map((r, rIdx) => {
+                                const rankedModel = getModelForColumn(r.column);
+                                return (
+                                  <div key={rIdx} className="flex items-start gap-2 text-sm">
+                                    <span className={`font-bold w-6 ${
+                                      r.rank === 1 ? 'text-[#f5a623]' :
+                                      r.rank === 2 ? 'text-gray-600' :
+                                      r.rank === 3 ? 'text-orange-500' :
+                                      'text-gray-400'
+                                    }`}>#{r.rank}</span>
+                                    <span className="font-medium text-gray-700 w-32">{rankedModel?.name || r.column}</span>
+                                    <span className="text-gray-500 italic flex-1">"{r.critique}"</span>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showSaveBenchmarkModal} onOpenChange={setShowSaveBenchmarkModal}>
+          <DialogContent className="max-w-md bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <Bookmark className="w-5 h-5 text-[#1a3a8f]" />
+                <span className="text-[#1a3a8f]">Save as Benchmark</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={benchmarkName}
+                  onChange={(e) => setBenchmarkName(e.target.value)}
+                  placeholder="e.g., Math Word Problems"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1a3a8f] focus:border-[#1a3a8f]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Description (optional)</label>
+                <Textarea
+                  value={benchmarkDescription}
+                  onChange={(e) => setBenchmarkDescription(e.target.value)}
+                  placeholder="What does this benchmark test?"
+                  className="w-full h-20 resize-none text-sm"
+                />
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 mb-1">Prompt to save:</div>
+                <p className="text-sm text-gray-700 line-clamp-3">{prompt}</p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSaveBenchmarkModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveBenchmark}
+                  className="flex-1 bg-[#1a3a8f] hover:bg-[#2a4a9f]"
+                  disabled={!benchmarkName.trim()}
+                >
+                  Save Benchmark
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showLibraryModal} onOpenChange={setShowLibraryModal}>
+          <DialogContent className="max-w-2xl max-h-[80vh] bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <Library className="w-5 h-5 text-[#1a3a8f]" />
+                <span className="text-[#1a3a8f]">Benchmark Library</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">
+                  Saved prompts you can re-run and compare.
+                </p>
+                <button
+                  onClick={loadBenchmarks}
+                  disabled={libraryLoading}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                >
+                  <RefreshCw className={`w-4 h-4 ${libraryLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              
+              {libraryLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#1a3a8f]" />
+                </div>
+              ) : benchmarks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Library className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="font-medium">No benchmarks saved yet</p>
+                  <p className="text-sm mt-1">Run a test and click "Save" to add one.</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                  {benchmarks.map((benchmark) => (
+                    <div 
+                      key={benchmark.id} 
+                      className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:border-[#1a3a8f]/30 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-gray-900 truncate">{benchmark.name}</h4>
+                          {benchmark.description && (
+                            <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{benchmark.description}</p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(benchmark.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleLoadBenchmark(benchmark.prompt)}
+                            className="px-3 py-1.5 bg-[#1a3a8f] text-white text-sm font-medium rounded hover:bg-[#2a4a9f] flex items-center gap-1"
+                          >
+                            <Play className="w-3 h-3" />
+                            Load
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBenchmark(benchmark.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-2 p-2 bg-white rounded border border-gray-200">
+                        <p className="text-xs text-gray-600 line-clamp-2 font-mono">{benchmark.prompt}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

@@ -1158,6 +1158,328 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
     }
   });
 
+  // ============================================
+  // MODEL COUNCIL API
+  // ============================================
+
+  // Run Model Council: Each model judges all 5 responses
+  app.post("/api/council/run", async (req, res) => {
+    try {
+      const { prompt, responses, settings } = req.body;
+
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+      if (!responses || typeof responses !== "object") {
+        return res.status(400).json({ error: "Responses object is required" });
+      }
+
+      console.log(`[Council] Starting peer review with ${Object.keys(responses).length} responses`);
+
+      const columns = Object.keys(responses);
+      const councilEvaluations: any[] = [];
+
+      // Each model judges all responses (anonymized as Response A, B, C, D, E)
+      const columnLabels = ["A", "B", "C", "D", "E"];
+      const columnToLabel: Record<string, string> = {};
+      const labelToColumn: Record<string, string> = {};
+      columns.forEach((col, i) => {
+        columnToLabel[col] = columnLabels[i];
+        labelToColumn[columnLabels[i]] = col;
+      });
+
+      // Create anonymized response list for judging
+      const anonymizedResponses = columns.map((col, i) => ({
+        label: columnLabels[i],
+        content: responses[col]?.content || "[No response]",
+      }));
+
+      // Each model judges all responses
+      const judgingPromises = columns.map(async (judgeColumn) => {
+        const judgeModelId = responses[judgeColumn]?.modelId;
+        const judgeName = responses[judgeColumn]?.modelName || judgeColumn;
+
+        if (!judgeModelId || !responses[judgeColumn]?.content) {
+          return {
+            judgeColumn,
+            judgeName,
+            rankings: [],
+            error: "Judge model not available",
+          };
+        }
+
+        const judgingPrompt = `You are a judge evaluating AI responses. Here is the original question:
+
+"${prompt}"
+
+Here are 5 different AI responses (anonymized):
+
+${anonymizedResponses.map((r) => `RESPONSE ${r.label}:\n${r.content}`).join("\n\n---\n\n")}
+
+Rank all 5 responses from BEST (1) to WORST (5). For each response, provide:
+1. A rank (1-5, no ties)
+2. A brief 1-sentence critique explaining why
+
+Format your response EXACTLY like this (JSON):
+{
+  "rankings": [
+    {"response": "A", "rank": 1, "critique": "Clear, accurate, and well-structured."},
+    {"response": "B", "rank": 2, "critique": "Good but lacks depth."},
+    {"response": "C", "rank": 3, "critique": "Contains minor errors."},
+    {"response": "D", "rank": 4, "critique": "Incomplete answer."},
+    {"response": "E", "rank": 5, "critique": "Off-topic or incorrect."}
+  ]
+}
+
+Important: Return ONLY the JSON, no other text.`;
+
+        try {
+          const result = await getModelCompletion({
+            model: judgeModelId,
+            messages: [{ role: "user", content: judgingPrompt }],
+            timeoutMs: 90000,
+          });
+
+          // Parse the JSON response
+          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            const rankings = parsed.rankings.map((r: any) => ({
+              column: labelToColumn[r.response],
+              rank: r.rank,
+              critique: r.critique,
+            }));
+            return {
+              judgeColumn,
+              judgeName,
+              rankings,
+            };
+          } else {
+            throw new Error("Could not parse JSON from response");
+          }
+        } catch (error: any) {
+          console.error(`[Council] Judge ${judgeName} error:`, error.message);
+          return {
+            judgeColumn,
+            judgeName,
+            rankings: [],
+            error: error.message,
+          };
+        }
+      });
+
+      const evaluations = await Promise.all(judgingPromises);
+      councilEvaluations.push(...evaluations);
+
+      // Calculate consensus rankings (average rank per column)
+      const rankTotals: Record<string, { sum: number; count: number }> = {};
+      columns.forEach((col) => {
+        rankTotals[col] = { sum: 0, count: 0 };
+      });
+
+      evaluations.forEach((evaluation) => {
+        if (evaluation.rankings && evaluation.rankings.length > 0) {
+          evaluation.rankings.forEach((r: any) => {
+            if (r.column && r.rank) {
+              rankTotals[r.column].sum += r.rank;
+              rankTotals[r.column].count += 1;
+            }
+          });
+        }
+      });
+
+      // Sort by average rank (lowest = best)
+      const consensusRankings = columns
+        .map((col) => ({
+          column: col,
+          averageRank: rankTotals[col].count > 0 
+            ? rankTotals[col].sum / rankTotals[col].count 
+            : 999,
+        }))
+        .sort((a, b) => a.averageRank - b.averageRank)
+        .map((r) => r.column);
+
+      console.log(`[Council] Consensus rankings: ${consensusRankings.join(" > ")}`);
+
+      // Chairman Synthesis - Claude combines the best insights
+      let chairmanSynthesis: string | null = null;
+      try {
+        const rankedResponses = consensusRankings.map((col, i) => ({
+          rank: i + 1,
+          column: col,
+          modelName: responses[col]?.modelName || col,
+          content: responses[col]?.content || "",
+        }));
+
+        const synthesisPrompt = `You are the Chairman synthesizing a council's collective wisdom.
+
+Original question: "${prompt}"
+
+Here are the AI responses ranked by democratic peer review (1st = best, 5th = worst):
+
+${rankedResponses.map((r) => `#${r.rank} ${r.modelName}:\n${r.content}`).join("\n\n---\n\n")}
+
+Peer critiques from the judges:
+${councilEvaluations
+  .filter((e) => !e.error && e.rankings.length > 0)
+  .map((e) => `${e.judgeName}: ${e.rankings.map((r: any) => `${responses[r.column]?.modelName}: "${r.critique}"`).join("; ")}`)
+  .join("\n")}
+
+Create a FINAL SYNTHESIZED ANSWER that:
+1. Incorporates the best insights from top-ranked responses
+2. Cites which model contributed each key point using brackets: [Model Name]
+3. Is better than any single response alone
+
+Format: Natural flowing answer with inline citations.`;
+
+        const synthesisResult = await getModelCompletion({
+          model: "anthropic/claude-sonnet-4.5",
+          messages: [{ role: "user", content: synthesisPrompt }],
+          timeoutMs: 120000,
+        });
+        chairmanSynthesis = synthesisResult.content;
+        console.log(`[Council] Chairman synthesis complete`);
+      } catch (error: any) {
+        console.error(`[Council] Chairman synthesis error:`, error.message);
+        chairmanSynthesis = null;
+      }
+
+      // Create benchmark run record
+      const benchmarkRun = await storage.createBenchmarkRun({
+        benchmarkId: null,
+        prompt,
+        settings: settings || null,
+        responses: responses,
+        councilEvaluations,
+        consensusRankings,
+        chairmanSynthesis,
+      });
+
+      res.json({
+        runId: benchmarkRun.id,
+        consensusRankings,
+        councilEvaluations,
+        chairmanSynthesis,
+      });
+    } catch (error: any) {
+      console.error(`[Council] Error:`, error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================
+  // BENCHMARK LIBRARY API
+  // ============================================
+
+  // Get all benchmarks
+  app.get("/api/benchmarks", async (_req, res) => {
+    try {
+      const benchmarkList = await storage.getBenchmarks();
+      res.json(benchmarkList);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create a new benchmark
+  app.post("/api/benchmarks", async (req, res) => {
+    try {
+      const { name, description, prompt } = req.body;
+
+      if (!name || typeof name !== "string") {
+        return res.status(400).json({ error: "Name is required" });
+      }
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      const benchmark = await storage.createBenchmark({
+        name,
+        description: description || null,
+        prompt,
+      });
+
+      console.log(`[Benchmark] Created: ${benchmark.name}`);
+      res.json(benchmark);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Get a single benchmark with its runs
+  app.get("/api/benchmarks/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const benchmark = await storage.getBenchmark(id);
+
+      if (!benchmark) {
+        return res.status(404).json({ error: "Benchmark not found" });
+      }
+
+      const runs = await storage.getBenchmarkRuns(id);
+
+      res.json({ benchmark, runs });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete a benchmark
+  app.delete("/api/benchmarks/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteBenchmark(id);
+
+      if (!deleted) {
+        return res.status(404).json({ error: "Benchmark not found" });
+      }
+
+      console.log(`[Benchmark] Deleted: ${id}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get a single benchmark run
+  app.get("/api/benchmark-runs/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const run = await storage.getBenchmarkRun(id);
+
+      if (!run) {
+        return res.status(404).json({ error: "Benchmark run not found" });
+      }
+
+      res.json(run);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Link a run to a benchmark (for saving ad-hoc runs)
+  app.post("/api/benchmark-runs/:runId/link", async (req, res) => {
+    try {
+      const { runId } = req.params;
+      const { benchmarkId } = req.body;
+
+      if (!benchmarkId) {
+        return res.status(400).json({ error: "Benchmark ID is required" });
+      }
+
+      const run = await storage.updateBenchmarkRun(runId, { benchmarkId });
+
+      if (!run) {
+        return res.status(404).json({ error: "Run not found" });
+      }
+
+      console.log(`[Benchmark] Linked run ${runId} to benchmark ${benchmarkId}`);
+      res.json(run);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
