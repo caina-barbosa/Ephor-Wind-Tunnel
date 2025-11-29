@@ -170,16 +170,8 @@
     @apply border-border;
   }
 
-  html, body {
-    @apply h-auto;
-  }
-
   body {
     @apply font-sans antialiased bg-background text-foreground;
-  }
-
-  #root {
-    @apply h-auto;
   }
 }
 
