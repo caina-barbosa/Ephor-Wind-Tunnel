@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3 } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Model {
@@ -993,64 +993,58 @@ export default function ChatPage() {
                         </div>
 
                         {!hasResults && (
-                          <div className="space-y-2.5">
-                            <div className="flex items-center justify-between">
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 <DollarSign className="w-4 h-4" /> Est. Cost
                               </span>
-                              <span className="font-mono text-sm text-gray-700">
+                              <span className="font-mono text-sm text-gray-700 tabular-nums text-right">
                                 ${estimatedCost.toFixed(4)}
                               </span>
                             </div>
                             
-                            <div className="flex items-center justify-between">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 <Target className="w-4 h-4" /> Capability
                               </span>
-                              <span className={`text-sm font-bold ${capabilityConfig.textColor}`}>
+                              <span className={`text-sm font-semibold text-right ${capabilityConfig.textColor}`}>
                                 {capabilityConfig.label}
                               </span>
                             </div>
 
-                            <div className="flex items-start justify-between">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                    <BarChart3 className="w-4 h-4" /> Benchmarks
+                                    <BarChart3 className="w-4 h-4" /> MMLU
                                   </span>
                                 </TooltipTrigger>
-                                <TooltipContent side="left" className="max-w-xs">
-                                  <p className="text-xs"><strong>MMLU:</strong> General knowledge (57 subjects)</p>
-                                  <p className="text-xs mt-1"><strong>HumanEval:</strong> Coding ability</p>
+                                <TooltipContent side="left">
+                                  <p className="text-xs">General knowledge (57 subjects)</p>
                                 </TooltipContent>
                               </Tooltip>
-                              <div className="flex flex-col items-end gap-0.5">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="text-xs font-mono text-gray-600 cursor-help">
-                                      {model!.benchmarks.mmlu?.toFixed(0)}% <span className="text-gray-400">MMLU</span>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="left">
-                                    <p className="text-xs">General knowledge score</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                {model!.benchmarks.humanEval && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="text-xs font-mono text-gray-600 cursor-help">
-                                        {model!.benchmarks.humanEval?.toFixed(0)}% <span className="text-gray-400">Code</span>
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="left">
-                                      <p className="text-xs">Coding ability score</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </div>
+                              <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
+                                {model!.benchmarks.mmlu?.toFixed(0)}%
+                              </span>
                             </div>
 
-                            <div className="flex items-center justify-between">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
+                                    <Code2 className="w-4 h-4" /> HumanEval
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="left">
+                                  <p className="text-xs">Coding ability benchmark</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
+                                {model!.benchmarks.humanEval ? `${model!.benchmarks.humanEval.toFixed(0)}%` : "—"}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 {model!.modality === "text" ? (
                                   <FileText className="w-4 h-4" />
@@ -1059,21 +1053,21 @@ export default function ChatPage() {
                                 )}
                                 Input
                               </span>
-                              <span className={`text-xs font-medium ${
+                              <span className={`text-sm font-medium text-right ${
                                 model!.modality === "text" 
                                   ? "text-gray-500" 
                                   : "text-purple-600"
                               }`}>
-                                {model!.modality === "text" ? "Text" : "Text + Vision"}
+                                {model!.modality === "text" ? "Text" : "Vision"}
                               </span>
                             </div>
                             
-                            <div className="flex items-center justify-between">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 <Clock className="w-4 h-4" /> Speed
                               </span>
-                              <span className="text-sm text-gray-500 italic">
-                                Run test to measure
+                              <span className="text-sm text-gray-400 italic text-right">
+                                Run test
                               </span>
                             </div>
                           </div>
