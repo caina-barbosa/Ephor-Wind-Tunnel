@@ -17,17 +17,36 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **2025-11-29**: Minimal Apple-Style Design Refresh
-  - Simplified color palette to minimal scheme:
-    - White (#ffffff): Clean background throughout
-    - Deep Royal Blue (#1a3a8f): Title and main action button only
-    - Orange (#f5a623): "Recommended" highlights only
-    - Gray tones: All other UI elements (borders, badges, icons, text)
-    - Red (Tailwind red-500/600): Error states only
-  - Removed saturated colors from control panels, badges, and modals
-  - Capability and latency badges now use plain gray outline style
-  - Engineering Truths section simplified with gray bullet points
-  - Pareto chart uses gray for available models, orange for recommended
+- **2025-11-29**: Educational Visual Redesign - "Teaching Through Design"
+  - Visual hierarchy in column headers:
+    - 3B/7B: Smaller, lighter gray text (small models feel small)
+    - 14B: Medium size and weight
+    - 70B: Larger, bolder text
+    - Frontier: Largest, boldest, Deep Royal Blue (#1a3a8f)
+  - Visual latency bars (not just text):
+    - Fast (<500ms): Short green bar (w-[25%])
+    - Medium (500-2000ms): Medium orange bar (w-[55%])
+    - Slow (>2000ms): Full-width red bar
+  - Cost scaling visuals:
+    - Cheap models: Small, subtle gray text
+    - Expensive models: Large, bold red text with red background
+  - Capability progression (4-bar visual meter):
+    - Basic: 1 bar, gray
+    - Good: 2 bars, light blue
+    - Strong: 3 bars, medium blue
+    - Excellent: 4 bars, deep royal blue
+  - Prominent recommended badge:
+    - Bright orange pill badge with glow effect
+    - Entire recommended card has orange ring/glow
+  - Card contrast by model size:
+    - Small models (3B/7B): Lighter backgrounds, no shadow
+    - Medium models (14B/70B): White, subtle shadows
+    - Frontier: White with prominent shadow and blue border
+  - Progress and completion states:
+    - Progress circles colored by model prominence
+    - Completion checkmarks colored by actual latency result
+- **2025-11-29**: Minimal Apple-Style Design Refresh (base layer)
+  - Simplified color palette to minimal scheme
   - Clean, professional Apple-inspired aesthetic
 - **2025-11-28**: Complete Timeback Brand Rebrand (superseded by minimal design)
 - **2025-11-28**: Simplified recommendation logic for better education
