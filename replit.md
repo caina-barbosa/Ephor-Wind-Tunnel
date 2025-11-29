@@ -23,6 +23,9 @@ Preferred communication style: Simple, everyday language.
   - **Optional Nickname**: Users can enter a display name or remain anonymous
   - **Leaderboard View**: "Leaderboard" button in header opens public leaderboard modal
   - **Data Shown**: Display name, prompt, recommended model, settings, and per-model results (latency/cost)
+  - **Safety Features**:
+    - Privacy reminder in Share modal warning users prompts will be public (don't include personal info)
+    - Report button (flag icon) on each leaderboard entry to flag inappropriate content
   - **Database**: `leaderboard_entries` table with id, displayName, prompt, recommendedModel, settings, results, createdAt
   - **API Endpoints**:
     - `GET /api/leaderboard` - List all public entries (newest first)

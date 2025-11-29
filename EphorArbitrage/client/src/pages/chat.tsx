@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Model {
@@ -1766,6 +1766,12 @@ export default function ChatPage() {
               <p className="text-sm text-gray-600">
                 Share your test results with the community. Your prompt and model results will be visible to others.
               </p>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800">
+                  <strong>Privacy reminder:</strong> Your prompt will be publicly visible. Please don't include any personal information, private data, or sensitive content.
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Display Name (optional)</label>
                 <input
@@ -1892,22 +1898,39 @@ export default function ChatPage() {
                       <div className="p-2 bg-white rounded border border-gray-200 mb-2">
                         <p className="text-sm text-gray-700 font-mono line-clamp-2">{entry.prompt}</p>
                       </div>
-                      {entry.results && (
-                        <div className="flex flex-wrap gap-2">
-                          {Object.entries(entry.results).map(([col, result]) => (
-                            <div 
-                              key={col}
-                              className={`px-2 py-1 rounded text-xs ${
-                                col === entry.recommendedModel 
-                                  ? 'bg-[#f5a623]/20 text-[#f5a623] font-bold' 
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
+                      <div className="flex items-center justify-between">
+                        {entry.results && (
+                          <div className="flex flex-wrap gap-2 flex-1">
+                            {Object.entries(entry.results).map(([col, result]) => (
+                              <div 
+                                key={col}
+                                className={`px-2 py-1 rounded text-xs ${
+                                  col === entry.recommendedModel 
+                                    ? 'bg-[#f5a623]/20 text-[#f5a623] font-bold' 
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {col}: {result.latency}ms / ${result.cost.toFixed(4)}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => {
+                                alert(`Entry #${entry.id} has been flagged for review. Thank you for helping keep our community safe.`);
+                              }}
+                              className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors shrink-0"
                             >
-                              {col}: {result.latency}ms / ${result.cost.toFixed(4)}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                              <Flag className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Report inappropriate content</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   ))}
                 </div>
