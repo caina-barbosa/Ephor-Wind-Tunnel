@@ -1,0 +1,83 @@
+⭐ 2. THE CORRECT LAYOUT OF THE GRID (engineering truth → UI
+truth)
+🔵 TOP ROW: MODEL FAMILY & PARAMETERS
+Your text says:
+“Across the top - parameters, with reasoning only on the biggest.
+”
+This is exactly right but you need to show WHY visually.
+UI idea:
+Columns:
+3B (no reasoning)
+7B (no reasoning / shallow reasoning disabled)
+13B (shallow reasoning ON)
+70B (deep reasoning ON)
+Frontier (full reasoning ON)
+Each column auto-locks or unlocks reasoning depth.
+This teaches:
+“Small models can’t do deep reasoning.
+”
+“Reasoning mode isn’t universal.
+”
+Kids literally SEE the constraints, which is powerful.
+🟧 SECOND ROW: CONTEXT WINDOW
+Your text:
+“choose smallest context that fits the input. Most queries → max context.
+Engineering truth:
+Yes. 95% of tasks → max context = best context.
+UI idea:
+A slider or a dropdown showing:
+8k / 32k / 128k / 1M
+Next to it: a gauge showing “your input length vs max capacity”
+But the genius UI detail:
+When students increase context window, the cost indicator turns red.
+This teaches:
+memory is expensive
+context ↑ → cost ↑
+context ↑ → latency ↑
+This alone teaches real engineering economics.
+🟡 THIRD ROW: MAX SPEND PER QUERY (hard cap)
+This is brilliant.
+Kids need budget-based reasoning, not “model-based reasoning.
+”
+UI mechanics:
+A slider from $0.00 to $0.25 per query
+As they move it, cells gray out because they are too expensive
+The remaining cells light up green
+The recommended model updates live
+This is exactly how frontier teams choose models internally.
+Teaching effect:
+“Model choice always happens under compute + cost constraints.
+This is the most important engineering intuition.
+🟩 GRID CELLS: Each cell is a real model invocation
+Cell contents:
+progress bar (not text)
+expected latency indicator
+expected cost indicator
+micro “reasoning depth” summary
+click to expand full answer
+This lets students see:
+“Big model reasoning took 4 seconds.
+”
+“Small model non-reasoning was instant but wrong.
+”
+“70B model got it right in 1.2 seconds.
+”
+This is AI engineering embodied in UI.
+🟣 REALTIME STREAMING AS PROGRESS
+Your idea is perfect: do NOT stream text.
+Why?
+Because students confuse:
+more text = better reasoning
+faster text = better model
+Use:
+circular progress spinners
+latency meters
+cost estimate meters
+Make big models feel slower.
+Make reasoning feel significantly slower.
+This builds the physical intuition every good ML engineer has.
+
+
+
+
+
