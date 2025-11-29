@@ -152,8 +152,7 @@ export default function ChatPage() {
   const [showResults, setShowResults] = useState(false);
   const [selectedModel, setSelectedModel] = useState<{ col: string; model: Model; response: ModelResponse } | null>(null);
   const [showWhyModal, setShowWhyModal] = useState(false);
-  const [showParetoModal, setShowParetoModal] = useState(false);
-
+  
   const [contextSize, setContextSize] = useState<string>("128k");
   const [costCap, setCostCap] = useState<number>(0.25);
   const [reasoningEnabled, setReasoningEnabled] = useState(false);
@@ -375,15 +374,6 @@ export default function ChatPage() {
                 Learn to think like an AI engineer: balance speed, cost, and capability.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowParetoModal(true)}
-              className="border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold"
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Cost Curve
-            </Button>
           </div>
 
           <div className="bg-white rounded-lg p-2 mb-6 border border-gray-200 shadow-sm">
@@ -797,6 +787,107 @@ export default function ChatPage() {
             </div>
           </div>
 
+          {/* Inline Pareto Chart - shows after running tests */}
+          {COLUMNS.some(col => responses[col]?.content) && (
+            <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-4 h-4 text-gray-500" />
+                <span className="font-bold text-sm text-gray-900">Cost vs Capability</span>
+                <span className="text-xs text-gray-500">— The Pareto Frontier</span>
+              </div>
+              
+              <div className="relative h-[180px] border-l-2 border-b-2 border-gray-300 ml-8">
+                {/* Y-axis label */}
+                <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-gray-500 font-medium whitespace-nowrap">
+                  Capability →
+                </div>
+                
+                {/* X-axis label */}
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-500 font-medium">
+                  Cost →
+                </div>
+                
+                {/* Plot the 5 models */}
+                {COLUMNS.map(col => {
+                  const model = getModelForColumn(col);
+                  if (!model) return null;
+                  
+                  const { disabled } = isModelDisabled(col);
+                  const isRecommended = col === recommendedModel;
+                  const hasResult = responses[col]?.content;
+                  
+                  // Map capability to Y position (0-100%)
+                  const capabilityMap: Record<string, number> = {
+                    "basic": 15,
+                    "good": 40,
+                    "strong": 65,
+                    "excellent": 90
+                  };
+                  const yPos = 100 - capabilityMap[model.expectedAccuracy];
+                  
+                  // Map cost to X position (logarithmic scale for better distribution)
+                  const cost = estimateCost(model);
+                  const minCost = 0.00005;
+                  const maxCost = 0.015;
+                  const logMin = Math.log(minCost);
+                  const logMax = Math.log(maxCost);
+                  const xPos = ((Math.log(Math.max(cost, minCost)) - logMin) / (logMax - logMin)) * 85 + 5;
+                  
+                  return (
+                    <div
+                      key={col}
+                      className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
+                      style={{ left: `${xPos}%`, top: `${yPos}%` }}
+                    >
+                      <div 
+                        className={`w-4 h-4 rounded-full border-2 transition-all ${
+                          isRecommended 
+                            ? 'bg-[#f5a623] border-[#f5a623] shadow-[0_0_8px_rgba(245,166,35,0.6)] scale-125' 
+                            : disabled
+                              ? 'bg-gray-200 border-gray-300'
+                              : hasResult
+                                ? 'bg-[#1a3a8f] border-[#1a3a8f]'
+                                : 'bg-gray-400 border-gray-500'
+                        }`}
+                      />
+                      <span className={`text-[10px] mt-1 font-bold ${
+                        isRecommended ? 'text-[#f5a623]' : disabled ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {col}
+                      </span>
+                    </div>
+                  );
+                })}
+                
+                {/* Pareto frontier line (approximate) */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+                  <path
+                    d="M 5,85 Q 25,60 45,40 T 90,10"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
+                  />
+                </svg>
+              </div>
+              
+              <div className="mt-6 flex items-center justify-center gap-6 text-xs text-gray-500">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#f5a623] border border-[#f5a623]"></div>
+                  <span>Recommended</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#1a3a8f] border border-[#1a3a8f]"></div>
+                  <span>Tested</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300"></div>
+                  <span>Disabled</span>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
 
         <Dialog open={!!selectedModel} onOpenChange={() => setSelectedModel(null)}>
@@ -1022,185 +1113,6 @@ export default function ChatPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Pareto Frontier / Cost vs Accuracy Curve Modal */}
-        <Dialog open={showParetoModal} onOpenChange={setShowParetoModal}>
-          <DialogContent className="max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
-            <DialogHeader>
-              <DialogTitle className="text-xl flex items-center gap-2 font-black">
-                <TrendingUp className="w-5 h-5 text-[#1a3a8f]" />
-                <span className="text-[#1a3a8f]">Cost vs Capability Tradeoff (Pareto Frontier)</span>
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <strong>The Pareto Frontier:</strong> Every AI system lives on a tradeoff curve. 
-                  You can't get maximum capability at minimum cost—you must choose where on the curve you want to be.
-                </p>
-              </div>
-
-              {/* Visual Chart */}
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="text-sm font-medium text-gray-700 mb-3">Cost vs Capability Curve</div>
-                <div className="relative h-64 border-l-2 border-b-2 border-gray-300">
-                  {/* Y-axis label */}
-                  <div className="absolute -left-12 top-1/2 -rotate-90 text-xs text-gray-500 whitespace-nowrap">
-                    Capability →
-                  </div>
-                  {/* X-axis label */}
-                  <div className="absolute bottom-[-24px] left-1/2 text-xs text-gray-500">
-                    Cost per Query →
-                  </div>
-                  
-                  {/* Plot points for each model */}
-                  {COLUMNS.map((col, index) => {
-                    const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
-                    if (!model) return null;
-                    
-                    const capabilityY = { basic: 20, good: 40, strong: 70, excellent: 95 }[model.expectedAccuracy];
-                    const maxCost = reasoningEnabled ? 0.01 : 0.05;
-                    const costX = Math.min((estimateCost(model) / maxCost) * 90, 95);
-                    const { disabled } = isModelDisabled(col);
-                    const isRecommended = col === recommendedModel;
-                    
-                    return (
-                      <TooltipProvider key={col}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={`absolute w-4 h-4 rounded-full transform -translate-x-1/2 translate-y-1/2 cursor-pointer transition-all ${
-                                isRecommended ? 'w-6 h-6 bg-[#f5a623] ring-4 ring-[#f5a623]/30' :
-                                disabled ? 'bg-gray-300' : 'bg-gray-600 hover:bg-gray-500'
-                              }`}
-                              style={{
-                                left: `${Math.max(costX, 5)}%`,
-                                bottom: `${capabilityY}%`,
-                              }}
-                            >
-                              {isRecommended && (
-                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[#f5a623] whitespace-nowrap">
-                                  ★ Best
-                                </span>
-                              )}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="text-sm">
-                              <div className="font-bold">{model.name}</div>
-                              <div>Size: {col}</div>
-                              <div>Cost: ${estimateCost(model).toFixed(4)}</div>
-                              <div>Capability: {getCapabilityLabel(model.expectedAccuracy)}</div>
-                              {disabled && <div className="text-red-500">Disabled (exceeds budget)</div>}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  })}
-
-                  {/* Pareto curve line (connecting the points) */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                    <path
-                      d="M 5,80 Q 20,60 35,50 T 60,35 T 90,10"
-                      fill="none"
-                      stroke="#9ca3af"
-                      strokeWidth="2"
-                      strokeDasharray="4,4"
-                      opacity="0.7"
-                    />
-                  </svg>
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#f5a623] ring-2 ring-[#f5a623]/30"></div>
-                    <span>Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-gray-600"></div>
-                    <span>Available</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-                    <span>Over Budget</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-6 h-0.5 bg-gray-400" style={{borderStyle: 'dashed'}}></div>
-                    <span>Pareto Frontier</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cost comparison table */}
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="text-sm font-bold text-gray-900 mb-3">
-                  {reasoningEnabled ? "Reasoning Mode: Cost rises dramatically" : "Standard Mode: Cost Comparison"}
-                </div>
-                <div className="space-y-2">
-                  {COLUMNS.map(col => {
-                    const model = getModelForColumn(col);
-                    if (!model) return (
-                      <div key={col} className="flex items-center justify-between p-2 bg-gray-100 rounded text-gray-400">
-                        <span>{col}</span>
-                        <span className="text-xs">Reasoning not available</span>
-                      </div>
-                    );
-                    
-                    const cost = estimateCost(model);
-                    const baseCost = estimateCost(NON_REASONING_MODELS["3B"]);
-                    const multiplier = cost / baseCost;
-                    const { disabled } = isModelDisabled(col);
-                    
-                    return (
-                      <div key={col} className={`flex items-center justify-between p-2 rounded border ${
-                        col === recommendedModel ? 'bg-[#f5a623]/10 border-[#f5a623]' : 
-                        disabled ? 'bg-gray-100 border-gray-200 opacity-50' : 'bg-white border-gray-200'
-                      }`}>
-                        <div className="flex items-center gap-2">
-                          <span className={`font-medium ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
-                            {col}: {model.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className={`text-xs px-2 py-0.5 rounded font-semibold ${getCapabilityColor(model.expectedAccuracy)}`}>
-                            {getCapabilityLabel(model.expectedAccuracy)}
-                          </div>
-                          <div className="text-right">
-                            <div className={`font-mono text-sm font-bold ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
-                              ${cost.toFixed(4)}
-                            </div>
-                            <div className="text-xs font-medium text-gray-500">
-                              {multiplier.toFixed(0)}x base cost
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {reasoningEnabled && (
-                  <div className="mt-3 p-3 bg-gray-100 border border-gray-300 rounded-lg flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-gray-700">
-                      <strong>Reasoning adds 3-5x cost!</strong> Deep chain-of-thought requires more compute. 
-                      Only use when complex multi-step reasoning is truly needed.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <strong>Key Insight:</strong> The "best" model depends on your constraints. 
-                  A 3B model at $0.0001 might be perfect for simple tasks, while a Frontier model at $0.01+ 
-                  is only worth it for the hardest problems. Learn to pick the right tool for the job!
-                </p>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </TooltipProvider>
   );

@@ -17,6 +17,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **2025-11-29**: Integrated Cost vs Capability Chart
+  - Removed Cost Curve button from top right corner
+  - Added inline Pareto frontier chart below model grid (appears after running tests)
+  - Chart plots all 5 models on cost vs capability axes with logarithmic cost scale
+  - Recommended model highlighted in orange, tested models in blue, disabled in gray
+  - Dashed line shows the Pareto frontier curve
+  - Legend explains dot colors (Recommended, Tested, Disabled)
+- **2025-11-29**: Connected "Why?" to Recommended Model
+  - Moved "Why This Model?" from top right button to directly under PICK badge
+  - Small "Why?" link with info icon next to recommended model
+  - Keeps explanation visually connected to the recommendation
 - **2025-11-29**: Educational Visual Redesign - "Teaching Through Design"
   - Visual hierarchy in column headers:
     - 3B/7B: Smaller, lighter gray text (small models feel small)
