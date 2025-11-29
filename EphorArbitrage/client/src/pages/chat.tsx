@@ -255,18 +255,23 @@ export default function ChatPage() {
     }
     
     // Sort by actual cost (ascending), then by actual latency (ascending) to break ties
+    // Round costs to 4 decimal places (what's displayed) so visually-equal costs trigger latency tie-break
     const sorted = [...candidates].sort((a, b) => {
       const respA = responses[a];
       const respB = responses[b];
       const costA = respA?.cost ?? Infinity;
       const costB = respB?.cost ?? Infinity;
       
-      // First sort by cost
-      if (costA !== costB) {
-        return costA - costB;
+      // Round to 4 decimal places (display precision) for comparison
+      const roundedCostA = Math.round(costA * 10000) / 10000;
+      const roundedCostB = Math.round(costB * 10000) / 10000;
+      
+      // First sort by rounded cost
+      if (roundedCostA !== roundedCostB) {
+        return roundedCostA - roundedCostB;
       }
       
-      // If costs are equal, sort by latency (faster is better)
+      // If costs are equal at display precision, sort by latency (faster is better)
       const latencyA = respA?.latency ?? Infinity;
       const latencyB = respB?.latency ?? Infinity;
       return latencyA - latencyB;
