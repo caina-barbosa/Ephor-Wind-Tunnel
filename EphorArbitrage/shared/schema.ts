@@ -149,6 +149,39 @@ export type InsertBenchmarkRun = z.infer<typeof insertBenchmarkRunSchema>;
 export type BenchmarkRun = typeof benchmarkRuns.$inferSelect;
 
 // ============================================
+// PUBLIC LEADERBOARD
+// ============================================
+
+// Type for leaderboard result data
+export interface LeaderboardResult {
+  latency: number;
+  cost: number;
+  modelName: string;
+  modelId: string;
+}
+
+// Public leaderboard entries - shared benchmark results
+export const leaderboardEntries = pgTable("leaderboard_entries", {
+  id: text("id").primaryKey(),
+  displayName: text("display_name"),
+  prompt: text("prompt").notNull(),
+  recommendedModel: text("recommended_model"),
+  settings: jsonb("settings").$type<BenchmarkSettings>(),
+  results: jsonb("results").$type<Record<string, LeaderboardResult>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Insert schema for leaderboard
+export const insertLeaderboardEntrySchema = createInsertSchema(leaderboardEntries).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type InsertLeaderboardEntry = z.infer<typeof insertLeaderboardEntrySchema>;
+export type LeaderboardEntry = typeof leaderboardEntries.$inferSelect;
+
+// ============================================
 
 export const AVAILABLE_MODELS = [
   { id: "auto-router", name: "Auto Router" },
