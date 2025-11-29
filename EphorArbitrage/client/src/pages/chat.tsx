@@ -523,7 +523,7 @@ export default function ChatPage() {
                 <div className="grid grid-cols-5 border-b border-gray-200">
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
-                    const isRecommended = col === recommendedModel;
+                    const isRecommended = showResults && col === recommendedModel;
                     const visuals = COLUMN_VISUALS[col];
                     return (
                       <div 
@@ -561,7 +561,7 @@ export default function ChatPage() {
                     const isLoading = response?.loading;
                     const hasError = response?.error;
                     const hasContent = response?.content;
-                    const isRecommended = col === recommendedModel;
+                    const isRecommended = showResults && col === recommendedModel;
 
                     if (disabled) {
                       const isReasoningLocked = !model;
@@ -813,7 +813,7 @@ export default function ChatPage() {
                   if (!model) return null;
                   
                   const { disabled } = isModelDisabled(col);
-                  const isRecommended = col === recommendedModel;
+                  const isRecommended = showResults && col === recommendedModel;
                   const hasResult = responses[col]?.content;
                   
                   // Map capability to Y position (0-100%)
