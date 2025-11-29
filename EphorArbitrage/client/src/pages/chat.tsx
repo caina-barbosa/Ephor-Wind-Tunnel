@@ -526,8 +526,8 @@ export default function ChatPage() {
                         key={col} 
                         className={`p-2 sm:p-3 text-center bg-white ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
-                        <div className="font-black text-gray-900 text-sm sm:text-base">{col}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className="font-black text-[#1a3a8f] text-base sm:text-xl tracking-tight">{col}</div>
+                        <div className="text-xs text-gray-500 font-medium">
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
