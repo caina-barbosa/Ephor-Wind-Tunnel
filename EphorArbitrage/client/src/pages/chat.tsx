@@ -1012,7 +1012,7 @@ export default function ChatPage() {
                               </span>
                             </div>
 
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-start justify-between">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
@@ -1020,43 +1020,51 @@ export default function ChatPage() {
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="left" className="max-w-xs">
-                                  <p className="text-xs"><strong>MMLU:</strong> Measures general knowledge across 57 subjects</p>
-                                  <p className="text-xs mt-1"><strong>HumanEval:</strong> Measures coding ability</p>
+                                  <p className="text-xs"><strong>MMLU:</strong> General knowledge (57 subjects)</p>
+                                  <p className="text-xs mt-1"><strong>HumanEval:</strong> Coding ability</p>
                                 </TooltipContent>
                               </Tooltip>
-                              <div className="text-right">
-                                <span className="text-xs font-mono text-gray-600">
-                                  MMLU: {model!.benchmarks.mmlu?.toFixed(1) || 'N/A'}%
-                                </span>
-                                <span className="text-xs text-gray-400 mx-1">|</span>
-                                <span className="text-xs font-mono text-gray-600">
-                                  Code: {model!.benchmarks.humanEval?.toFixed(1) || 'N/A'}%
-                                </span>
+                              <div className="flex flex-col items-end gap-0.5">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-xs font-mono text-gray-600 cursor-help">
+                                      {model!.benchmarks.mmlu?.toFixed(0)}% <span className="text-gray-400">MMLU</span>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left">
+                                    <p className="text-xs">General knowledge score</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                {model!.benchmarks.humanEval && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-xs font-mono text-gray-600 cursor-help">
+                                        {model!.benchmarks.humanEval?.toFixed(0)}% <span className="text-gray-400">Code</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">Coding ability score</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
                               </div>
                             </div>
 
                             <div className="flex items-center justify-between">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                    {model!.modality === "text" ? (
-                                      <FileText className="w-4 h-4" />
-                                    ) : (
-                                      <Image className="w-4 h-4" />
-                                    )}
-                                    Modality
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="left">
-                                  <p className="text-xs">What types of input this model can process</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                              <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
+                                {model!.modality === "text" ? (
+                                  <FileText className="w-4 h-4" />
+                                ) : (
+                                  <Image className="w-4 h-4" />
+                                )}
+                                Input
+                              </span>
+                              <span className={`text-xs font-medium ${
                                 model!.modality === "text" 
-                                  ? "bg-gray-100 text-gray-600" 
-                                  : "bg-purple-100 text-purple-700"
+                                  ? "text-gray-500" 
+                                  : "text-purple-600"
                               }`}>
-                                {model!.modality === "text" ? "Text Only" : model!.modality === "text+image" ? "Text + Image" : "Multimodal"}
+                                {model!.modality === "text" ? "Text" : "Text + Vision"}
                               </span>
                             </div>
                             
