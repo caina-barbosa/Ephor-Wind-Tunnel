@@ -328,8 +328,8 @@ export default function ChatPage() {
 
   return (
     <TooltipProvider>
-      <div className="bg-white text-gray-900 min-h-screen flex flex-col">
-        <div className="w-full px-4 sm:px-16 pt-16 pb-4 flex-1 flex flex-col">
+      <div className="bg-white text-gray-900">
+        <div className="w-full px-4 sm:px-[72px] pt-[18px] pb-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
               EPHOR WIND TUNNEL
@@ -536,7 +536,7 @@ export default function ChatPage() {
                       return (
                         <Tooltip key={col}>
                           <TooltipTrigger asChild>
-                            <div className={`p-3 min-h-[130px] sm:min-h-[150px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
+                            <div className={`p-3 min-h-[120px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
                               <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
                               <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
                                 {isReasoningLocked ? "Reasoning" : model?.name}
@@ -563,7 +563,7 @@ export default function ChatPage() {
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-3 min-h-[150px] transition-all flex flex-col
+                          p-3 min-h-[120px] transition-all flex flex-col
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${isRecommended ? 'bg-white border-l-4 border-l-[#f5a623]' : 'bg-white'}
                           ${isLoading ? 'bg-gray-50' : ''}
@@ -704,7 +704,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="mt-auto pt-3 text-center text-xs sm:text-sm text-gray-500">
+          <div className="py-2 text-center text-xs sm:text-sm text-gray-500">
             <p className="hidden sm:block">Compare model responses side-by-side. Bigger models = more accurate but slower. Reasoning = deeper thinking but expensive.</p>
             <p className="sm:hidden">Swipe left/right to see all models. Tap a result to view full response.</p>
           </div>
