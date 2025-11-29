@@ -14,6 +14,7 @@ import {
   TOGETHER_GLM_MODEL_ID,
   TOGETHER_LLAMA_3B_MODEL_ID,
   TOGETHER_QWEN_7B_MODEL_ID,
+  TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_14B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_MODEL_ID,
   TOGETHER_QWQ_32B_MODEL_ID
@@ -32,7 +33,7 @@ const QWEN_72B_MODEL_SELECTOR_ID = "qwen/qwen-2.5-72b-instruct";
 const GLM_4_32B_MODEL_SELECTOR_ID = "z-ai/glm-4-32b";
 const TOGETHER_LLAMA_3B_SELECTOR_ID = "together/llama-3.2-3b-instruct-turbo";
 const TOGETHER_QWEN_7B_SELECTOR_ID = "together/qwen-2.5-7b-instruct-turbo";
-const OPENROUTER_QWEN3_14B_SELECTOR_ID = "openrouter/qwen3-14b";
+const TOGETHER_DEEPSEEK_R1_DISTILL_14B_SELECTOR_ID = "together/deepseek-r1-distill-14b";
 const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
 const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
 const TOGETHER_QWQ_32B_SELECTOR_ID = "together/qwq-32b";
@@ -145,10 +146,10 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
-  if (request.model === OPENROUTER_QWEN3_14B_SELECTOR_ID) {
-    console.log("[API] Using OpenRouter for Qwen3 14B");
-    return createOpenRouterChatCompletion({
-      model: QWEN3_14B_MODEL_ID,
+  if (request.model === TOGETHER_DEEPSEEK_R1_DISTILL_14B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for DeepSeek R1 Distill 14B");
+    return createTogetherChatCompletion({
+      model: TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_14B_MODEL_ID,
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,
@@ -200,7 +201,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   "z-ai/glm-4-32b": "GLM-4.6 (Zhipu)",
   "together/qwen-2.5-3b-instruct": "Qwen 2.5 3B (3B)",
   "together/qwen-2.5-7b-instruct-turbo": "Qwen 2.5 7B Turbo (7B)",
-  "together/qwen-2.5-14b-instruct": "Qwen 2.5 14B (14B)",
+  "together/deepseek-r1-distill-14b": "DeepSeek R1 Distill 14B (14B)",
   "together/deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill 70B (70B, reasoning)",
   "together/deepseek-r1": "DeepSeek R1 (Frontier, reasoning)",
   "together/qwq-32b": "QwQ 32B (Frontier, reasoning)",
@@ -248,9 +249,9 @@ function getActualModelId(modelId: string): string {
     "meta-llama/llama-3.3-70b-instruct:cerebras": "llama-3.3-70b",
     "together/llama-3.2-3b-instruct-turbo": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     "together/qwen-2.5-7b-instruct-turbo": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+    "together/deepseek-r1-distill-14b": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
     "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
-    "openrouter/qwen3-14b": "qwen/qwen3-14b",
   };
   return modelMap[modelId] || modelId;
 }

@@ -106,7 +106,7 @@ Preferred communication style: Simple, everyday language.
 NON-REASONING MODE:
 - **3B Column**: Llama 3.2 3B (Together AI) - Fast, $0.00006/1K tokens
 - **7B Column**: Qwen 2.5 7B (Together AI) - Fast, $0.0001/1K tokens
-- **14B Column**: Qwen3 14B (OpenRouter via Replit AI) - Medium, $0.0002/1K tokens
+- **14B Column**: DeepSeek R1 Distill 14B (Together AI) - Medium, $0.0002/1K tokens
 - **70B Column**: Llama 3.3 70B (Cerebras) - Medium, $0.0006/1K tokens
 - **Frontier Column**: Claude Sonnet 4.5 (Anthropic) - Slow, $0.015/1K tokens
 
@@ -143,11 +143,12 @@ REASONING MODE (toggle ON):
 3. **Together AI API** (`api.together.xyz`)
    - Llama 3.2 3B
    - Qwen 2.5 7B
+   - DeepSeek R1 Distill 14B
    - DeepSeek R1 Distill 70B (reasoning)
    - DeepSeek R1 (reasoning)
 
 4. **Replit AI Integration for OpenRouter**
-   - Qwen3 14B
+   - Kimi K2 (available for other uses)
    - Uses AI_INTEGRATIONS_OPENROUTER_BASE_URL and AI_INTEGRATIONS_OPENROUTER_API_KEY
    - Billed to Replit credits (no separate API key needed)
 
