@@ -686,7 +686,7 @@ export default function ChatPage() {
                 onClick={handleOpenLeaderboard}
                 className="w-[130px] px-4 py-2 bg-[#f5a623] text-white rounded-lg text-sm font-bold hover:bg-[#e09000] flex items-center justify-center gap-2 shadow-sm"
               >
-                <Trophy className="w-4 h-4" />
+                <span className="text-lg">🏆</span>
                 Leaderboard
               </button>
               <button
