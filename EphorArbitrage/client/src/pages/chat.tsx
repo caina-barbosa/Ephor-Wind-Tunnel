@@ -372,7 +372,7 @@ export default function ChatPage() {
                 EPHOR WIND TUNNEL
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                Learn to pick the right AI model by seeing how size, speed, and cost really work.
+                Learn to think like an AI engineer: balance speed, cost, and capability.
               </p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -1197,13 +1197,6 @@ export default function ChatPage() {
                 )}
               </div>
 
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <strong>Key Insight:</strong> The "best" model depends on your constraints. 
-                  A 3B model at $0.0001 might be perfect for simple tasks, while a Frontier model at $0.01+ 
-                  is only worth it for the hardest problems. Learn to pick the right tool for the job!
-                </p>
-              </div>
             </div>
           </DialogContent>
         </Dialog>
