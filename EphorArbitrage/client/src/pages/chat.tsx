@@ -375,26 +375,15 @@ export default function ChatPage() {
                 Learn to think like an AI engineer: balance speed, cost, and capability.
               </p>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowWhyModal(true)}
-                className="border-[#1a3a8f] text-[#1a3a8f] hover:bg-[#1a3a8f]/10 font-semibold flex-1 sm:flex-none"
-              >
-                <Info className="w-4 h-4 mr-2" />
-                Why This Model?
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowParetoModal(true)}
-                className="border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold flex-1 sm:flex-none"
-              >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Cost Curve
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowParetoModal(true)}
+              className="border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Cost Curve
+            </Button>
           </div>
 
           <div className="bg-white rounded-lg p-2 mb-6 border border-gray-200 shadow-sm">
@@ -556,8 +545,17 @@ export default function ChatPage() {
                           {col === "Frontier" ? "Best Quality" : `${col} Parameters`}
                         </div>
                         {isRecommended && (
-                          <div className="mt-1.5 inline-block px-2 py-0.5 bg-[#f5a623] text-white text-xs font-black rounded-full shadow-[0_0_12px_rgba(245,166,35,0.5)]">
-                            ★ PICK
+                          <div className="mt-1.5 flex flex-col items-center gap-1">
+                            <div className="inline-block px-2 py-0.5 bg-[#f5a623] text-white text-xs font-black rounded-full shadow-[0_0_12px_rgba(245,166,35,0.5)]">
+                              ★ PICK
+                            </div>
+                            <button 
+                              onClick={() => setShowWhyModal(true)}
+                              className="text-[10px] text-[#f5a623] hover:text-[#d4890f] font-semibold flex items-center gap-0.5 hover:underline"
+                            >
+                              <Info className="w-3 h-3" />
+                              Why?
+                            </button>
                           </div>
                         )}
                       </div>
