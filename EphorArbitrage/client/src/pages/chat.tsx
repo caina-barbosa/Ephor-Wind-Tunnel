@@ -127,11 +127,8 @@ const getLatencyCategory = (latency: number): "fast" | "medium" | "slow" => {
   return "slow";
 };
 
-const getCostVisuals = (cost: number) => {
-  if (cost < 0.001) return { size: "text-xs", color: "text-gray-400", style: "" };
-  if (cost < 0.005) return { size: "text-sm", color: "text-gray-600", style: "" };
-  if (cost < 0.01) return { size: "text-base font-semibold", color: "text-orange-600", style: "" };
-  return { size: "text-lg font-black", color: "text-red-600", style: "bg-red-50 px-2 py-0.5 rounded" };
+const getCostVisuals = (_cost: number) => {
+  return { size: "text-xs", color: "text-gray-500", style: "font-mono" };
 };
 
 const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent") => {
