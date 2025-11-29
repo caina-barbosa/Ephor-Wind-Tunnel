@@ -140,9 +140,9 @@ const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excel
   }
 };
 
-const getLatencyColor = () => "text-gray-600";
+const getLatencyColor = (_latency?: "fast" | "medium" | "slow") => "text-gray-600";
 const getLatencyLabel = (latency: "fast" | "medium" | "slow") => getLatencyBarConfig(latency).label;
-const getCapabilityColor = () => "text-gray-600";
+const getCapabilityColor = (_accuracy?: "basic" | "good" | "strong" | "excellent") => "text-gray-600";
 const getCapabilityLabel = (accuracy: "basic" | "good" | "strong" | "excellent") => getCapabilityVisuals(accuracy).label;
 
 export default function ChatPage() {
