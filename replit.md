@@ -17,6 +17,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **2025-11-29**: Public Leaderboard
+  - **Share Results**: After running a test, users can click "Share" to publish results to a public leaderboard
+  - **Opt-in Sharing**: Confirmation modal shows preview of what will be shared
+  - **Optional Nickname**: Users can enter a display name or remain anonymous
+  - **Leaderboard View**: "Leaderboard" button in header opens public leaderboard modal
+  - **Data Shown**: Display name, prompt, recommended model, settings, and per-model results (latency/cost)
+  - **Database**: `leaderboard_entries` table with id, displayName, prompt, recommendedModel, settings, results, createdAt
+  - **API Endpoints**:
+    - `GET /api/leaderboard` - List all public entries (newest first)
+    - `POST /api/leaderboard` - Submit a new entry
 - **2025-11-29**: Expert Mode (Override Constraints)
   - Added "Expert Mode" toggle below control panel
   - When enabled, users can run models that exceed cost cap or context limits
