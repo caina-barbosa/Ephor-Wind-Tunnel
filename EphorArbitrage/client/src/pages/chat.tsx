@@ -194,28 +194,66 @@ export default function ChatPage() {
     return { disabled: false, reason: "" };
   };
 
-  const getRecommendationReason = (col: string): string => {
+  const getRecommendationReason = (col: string): React.ReactNode => {
     const model = getModelForColumn(col);
     if (!model) return "";
     
+    const resp = responses[col];
+    const actualCost = resp?.cost ?? 0;
+    const actualLatency = resp?.latency ?? 0;
+    const capability = getCapabilityVisuals(model.expectedAccuracy).label;
+    
+    // Get all completed models' costs rounded to display precision
+    const completedModels = COLUMNS.filter(c => {
+      const r = responses[c];
+      const { disabled } = isModelDisabled(c);
+      return !disabled && r && !r.loading && r.content && !r.error;
+    });
+    
+    // Count how many models have the same rounded cost
+    const roundedCost = Math.round(actualCost * 10000) / 10000;
+    const modelsAtSameCost = completedModels.filter(c => {
+      const r = responses[c];
+      const cost = r?.cost ?? 0;
+      return Math.round(cost * 10000) / 10000 === roundedCost;
+    });
+    
+    const wasTieBreaker = modelsAtSameCost.length > 1;
+    
     if (reasoningEnabled) {
-      if (col === "70B") {
-        return `Cheapest reasoning-capable model. Reasoning mode requires 70B+ parameters. DeepSeek R1 Distill gives deep chain-of-thought at lower cost than Frontier.`;
-      }
-      if (col === "Frontier") {
-        return `Only reasoning model within your budget. DeepSeek R1 has maximum reasoning depth. 70B was filtered out by your cost cap.`;
-      }
-    } else {
-      const modelCosts: Record<string, string> = {
-        "3B": "$0.00006/1K tokens",
-        "7B": "$0.0001/1K tokens",
-        "17B": "$0.0002/1K tokens",
-        "70B": "$0.0006/1K tokens",
-        "Frontier": "$0.015/1K tokens"
-      };
-      return `Cheapest model that fits your constraints. At ${modelCosts[col] || "low cost"}, this is the most cost-efficient option. Run the test to compare quality across all models—upgrade if needed!`;
+      return (
+        <div className="space-y-2">
+          <p className="font-semibold">{model.name} is recommended because:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li>Cost: ${actualCost.toFixed(4)} (within your budget)</li>
+            <li>Speed: {actualLatency}ms</li>
+            <li>Capability: {capability}</li>
+            <li>Reasoning Mode requires 70B+ parameters</li>
+          </ul>
+          <p className="text-sm text-gray-600 mt-2 italic">
+            {col === "70B" 
+              ? "This is the most affordable reasoning-capable model."
+              : "70B was filtered out by your cost cap, so Frontier is the only reasoning option."}
+          </p>
+        </div>
+      );
     }
-    return "";
+    
+    return (
+      <div className="space-y-2">
+        <p className="font-semibold">{model.name} is recommended because:</p>
+        <ul className="list-disc list-inside space-y-1 text-sm">
+          <li>Cost: ${actualCost.toFixed(4)} (within your budget)</li>
+          <li>Speed: {actualLatency}ms{wasTieBreaker ? " (fastest at this price)" : ""}</li>
+          <li>Capability: {capability}</li>
+        </ul>
+        <p className="text-sm text-gray-600 mt-2 italic">
+          {wasTieBreaker 
+            ? `${modelsAtSameCost.length} models cost $${roundedCost.toFixed(4)}, so we picked the fastest one.`
+            : "This is the most affordable model that meets your constraints."}
+        </p>
+      </div>
+    );
   };
 
   // Check if all models have completed running
