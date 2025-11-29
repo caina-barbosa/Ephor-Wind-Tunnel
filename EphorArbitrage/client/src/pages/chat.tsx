@@ -799,10 +799,6 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="mt-6 text-center text-xs sm:text-sm text-gray-500">
-            <p className="hidden sm:block">Compare model responses side-by-side. Bigger models = more accurate but slower. Reasoning = deeper thinking but expensive.</p>
-            <p className="sm:hidden">Swipe left/right to see all models. Tap a result to view full response.</p>
-          </div>
         </div>
 
         <Dialog open={!!selectedModel} onOpenChange={() => setSelectedModel(null)}>
@@ -1197,6 +1193,13 @@ export default function ChatPage() {
                 )}
               </div>
 
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  <strong>Key Insight:</strong> The "best" model depends on your constraints. 
+                  A 3B model at $0.0001 might be perfect for simple tasks, while a Frontier model at $0.01+ 
+                  is only worth it for the hardest problems. Learn to pick the right tool for the job!
+                </p>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
