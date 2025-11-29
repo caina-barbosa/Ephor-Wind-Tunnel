@@ -17,6 +17,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **2025-11-29**: Educational Dimensions - Benchmarks & Modality
+  - **Benchmark Scores**: Each model now displays MMLU and HumanEval scores
+    - MMLU: Measures general knowledge across 57 subjects (%)
+    - HumanEval: Measures coding ability (%)
+    - Tooltips explain what each benchmark measures
+  - **Modality Indicator**: Shows what input types each model can process
+    - "Text Only" (gray badge) for text-only models
+    - "Text + Image" (purple badge) for multimodal models
+    - Icons: FileText for text, Image for multimodal
+  - **Sourced Data**: Benchmark values from official sources (Meta, Anthropic, Qwen, DeepSeek)
 - **2025-11-29**: Public Leaderboard
   - **Share Results**: After running a test, users can click "Share" to publish results to a public leaderboard
   - **Opt-in Sharing**: Confirmation modal shows preview of what will be shared
