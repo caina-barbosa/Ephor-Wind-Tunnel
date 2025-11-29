@@ -747,29 +747,6 @@ export default function ChatPage() {
                           </div>
                         )}
 
-                        {!showResults && !hasContent && !isLoading && !hasError && (
-                          <div className="text-center mt-auto pt-3">
-                            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center border-2 animate-pulse transition-all ${
-                              col === 'Frontier' ? 'bg-orange-100 border-[#f5a623]/40' : 
-                              col === '70B' ? 'bg-emerald-100 border-emerald-400/40' : 
-                              col === '17B' || col === '7B' ? 'bg-blue-100 border-blue-400/40' :
-                              'bg-gray-100 border-gray-300'
-                            }`}>
-                              <Play className={`w-6 h-6 ${
-                                col === 'Frontier' ? 'text-[#f5a623]' : 
-                                col === '70B' ? 'text-emerald-600' : 
-                                col === '17B' || col === '7B' ? 'text-blue-600' :
-                                'text-gray-500'
-                              }`} />
-                            </div>
-                            <p className={`text-[10px] mt-1.5 font-semibold ${
-                              col === 'Frontier' ? 'text-[#f5a623]' : 
-                              col === '70B' ? 'text-emerald-600' : 
-                              col === '17B' || col === '7B' ? 'text-blue-600' :
-                              'text-gray-500'
-                            }`}>Ready to test</p>
-                          </div>
-                        )}
 
                         {isLoading && (
                           <div className="text-center py-2 mt-auto">
