@@ -329,7 +329,7 @@ export default function ChatPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-white text-gray-900">
-        <div className="max-w-7xl mx-auto p-3 sm:p-6">
+        <div className="w-full px-2 sm:px-4 py-3 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
               EPHOR WIND TUNNEL
