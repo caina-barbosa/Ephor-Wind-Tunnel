@@ -103,9 +103,9 @@ const COLUMN_VISUALS: Record<string, {
 
 const getLatencyBarConfig = (latency: "fast" | "medium" | "slow") => {
   switch (latency) {
-    case "fast": return { width: "w-[25%]", color: "bg-emerald-500", label: "Fast" };
-    case "medium": return { width: "w-[55%]", color: "bg-orange-400", label: "Medium" };
-    case "slow": return { width: "w-full", color: "bg-red-500", label: "Slow" };
+    case "fast": return { width: "w-full", color: "bg-emerald-500", label: "Fast" };
+    case "medium": return { width: "w-[50%]", color: "bg-orange-400", label: "Medium" };
+    case "slow": return { width: "w-[20%]", color: "bg-red-500", label: "Slow" };
   }
 };
 
