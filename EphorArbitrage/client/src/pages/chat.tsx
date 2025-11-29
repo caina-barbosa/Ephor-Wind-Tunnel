@@ -329,8 +329,8 @@ export default function ChatPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-white text-gray-900">
-        <div className="w-full px-4 sm:px-16 py-3 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <div className="w-full px-4 sm:px-16 py-2 sm:py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 sm:mb-3">
             <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
               EPHOR WIND TUNNEL
             </h1>
@@ -356,78 +356,58 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-gray-200 shadow-sm">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter your prompt to test across all model sizes..."
-              className="w-full h-[60px] sm:h-[70px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm sm:text-base"
-              disabled={isRunning}
-            />
-            
-            <div className={`mt-3 p-3 sm:p-4 rounded-lg border ${
-              inputTokenEstimate > selectedContextTokens 
-                ? 'bg-red-50 border-red-300' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-bold text-sm text-gray-900">INPUT GAUGE</span>
-                {inputTokenEstimate > selectedContextTokens && (
-                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded font-bold">
-                    OVERFLOW
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`font-mono text-xl font-black ${
-                    inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
-                  }`}>{inputTokenEstimate.toLocaleString()}</span>
-                  <span className="text-gray-400 text-lg">/</span>
-                  <span className="font-mono text-lg text-gray-600">{selectedContextTokens.toLocaleString()}</span>
-                  <span className="text-gray-500">tokens</span>
+          <div className="bg-white rounded-lg p-2 sm:p-3 mb-2 sm:mb-3 border border-gray-200 shadow-sm">
+            <div className="flex gap-3">
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Enter your prompt to test across all model sizes..."
+                className="flex-1 h-[50px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm"
+                disabled={isRunning}
+              />
+              <div className={`flex-shrink-0 w-32 sm:w-40 p-2 rounded-lg border ${
+                inputTokenEstimate > selectedContextTokens 
+                  ? 'bg-red-50 border-red-300' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="text-xs font-bold text-gray-700 mb-1">INPUT GAUGE</div>
+                <div className={`font-mono text-sm font-bold ${
+                  inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
+                }`}>
+                  {inputTokenEstimate.toLocaleString()} / {selectedContextTokens.toLocaleString()}
                 </div>
-                <span className={`text-sm font-bold px-3 py-1 rounded ${
-                  inputTokenEstimate > selectedContextTokens ? 'bg-red-500 text-white' :
-                  'bg-gray-200 text-gray-700'
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-1">
+                  <div 
+                    className={`h-full transition-all ${
+                      inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-gray-500'
+                    }`}
+                    style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
+                  />
+                </div>
+                <div className={`text-xs mt-1 font-medium ${
+                  inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-500'
                 }`}>
                   {inputTokenEstimate > selectedContextTokens ? 'OVERFLOW!' : `${inputPercentage.toFixed(1)}% used`}
-                </span>
-              </div>
-              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full transition-all ${
-                    inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-gray-500'
-                  }`}
-                  style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
-                />
-              </div>
-              <div className={`text-xs mt-2 ${
-                inputTokenEstimate > selectedContextTokens ? 'text-red-600 font-medium' : 'text-gray-500'
-              }`}>
-                {inputTokenEstimate > selectedContextTokens 
-                  ? `Your input exceeds the ${contextSize.toUpperCase()} context window. Increase the context size or shorten your prompt.`
-                  : 'As you type, this gauge shows how much of your context window you\'re using.'
-                }
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <div className="flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-gray-500" />
-                  <span className="font-bold text-gray-900 text-sm sm:text-base">Context Window</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Brain className="w-3.5 h-3.5 text-gray-500" />
+                  <span className="font-bold text-gray-900 text-sm">Context Window</span>
                 </div>
                 {(contextSize === "128k" || contextSize === "1m") && (
-                  <span className="text-xs px-2 py-0.5 rounded font-medium border border-gray-300 text-gray-600">
+                  <span className="text-xs px-1.5 py-0.5 rounded font-medium border border-gray-300 text-gray-600">
                     {contextSize === "1m" ? "Max Cost" : "Higher Cost"}
                   </span>
                 )}
               </div>
               <Select value={contextSize} onValueChange={setContextSize} disabled={isRunning}>
-                <SelectTrigger className="bg-white text-gray-900 border-gray-300">
+                <SelectTrigger className="bg-white text-gray-900 border-gray-300 h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
@@ -438,17 +418,14 @@ export default function ChatPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs mt-2 hidden sm:block text-gray-500">
-                Memory = Cost. Bigger context = more expensive.
-              </p>
             </div>
 
-            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <DollarSign className="w-4 h-4 text-gray-500" />
-                <span className="font-bold text-gray-900 text-sm sm:text-base">Max Cost Per Query</span>
+            <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-gray-500" />
+                <span className="font-bold text-gray-900 text-sm">Max Cost Per Query</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Slider
                   value={[costCap]}
                   onValueChange={([val]) => setCostCap(val)}
@@ -458,47 +435,41 @@ export default function ChatPage() {
                   className="flex-1"
                   disabled={isRunning}
                 />
-                <span className="font-mono text-base sm:text-lg font-bold text-gray-900">
+                <span className="font-mono text-sm font-bold text-gray-900">
                   ${costCap.toFixed(2)}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-2 hidden sm:block">Models exceeding this cap will be disabled.</p>
             </div>
 
-            <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-gray-500" />
-                  <span className="font-bold text-gray-900 text-sm sm:text-base">Reasoning Mode</span>
+            <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-gray-500" />
+                  <span className="font-bold text-gray-900 text-sm">Reasoning Mode</span>
                 </div>
                 {reasoningEnabled && (
-                  <span className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 font-medium">
+                  <span className="text-xs px-1.5 py-0.5 rounded border border-gray-300 text-gray-600 font-medium">
                     3-5x Cost
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Switch
                   checked={reasoningEnabled}
                   onCheckedChange={setReasoningEnabled}
                   disabled={isRunning}
                 />
-                <span className={`font-bold ${reasoningEnabled ? 'text-gray-900' : 'text-gray-400'}`}>
+                <span className={`text-sm font-bold ${reasoningEnabled ? 'text-gray-900' : 'text-gray-400'}`}>
                   {reasoningEnabled ? 'ENABLED' : 'DISABLED'}
                 </span>
               </div>
-              <p className="text-xs mt-2 hidden sm:block text-gray-500">
-                {reasoningEnabled 
-                  ? "Deep reasoning = 3-5x cost. Only 70B+ models."
-                  : "Standard mode. Fast responses, no chain-of-thought."}
-              </p>
             </div>
           </div>
 
           <button
             onClick={handleRunAll}
             disabled={!prompt.trim() || isRunning}
-            className="w-full py-4 sm:py-6 text-base sm:text-lg font-bold mb-4 sm:mb-6 rounded-lg flex items-center justify-center gap-2 text-white disabled:cursor-not-allowed hover:brightness-110 transition-all"
+            className="w-full py-3 sm:py-4 text-sm sm:text-base font-bold mb-2 sm:mb-3 rounded-lg flex items-center justify-center gap-2 text-white disabled:cursor-not-allowed hover:brightness-110 transition-all"
             style={{ backgroundColor: (!prompt.trim() || isRunning) ? '#2a4a9f' : '#1a3a8f' }}
           >
             {isRunning ? (
@@ -553,7 +524,7 @@ export default function ChatPage() {
                       return (
                         <Tooltip key={col}>
                           <TooltipTrigger asChild>
-                            <div className={`p-3 sm:p-4 min-h-[160px] sm:min-h-[180px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
+                            <div className={`p-2 sm:p-3 min-h-[120px] sm:min-h-[140px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
                               <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
                               <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
                                 {isReasoningLocked ? "Reasoning" : model?.name}
@@ -580,7 +551,7 @@ export default function ChatPage() {
                         key={col}
                         onClick={() => response && hasContent && openModal(col, model!, response)}
                         className={`
-                          p-3 sm:p-4 min-h-[160px] sm:min-h-[180px] transition-all
+                          p-2 sm:p-3 min-h-[120px] sm:min-h-[140px] transition-all
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${isRecommended ? 'bg-white border-l-4 border-l-[#f5a623]' : 'bg-white'}
                           ${isLoading ? 'bg-gray-50' : ''}
@@ -588,8 +559,8 @@ export default function ChatPage() {
                           ${hasContent ? 'cursor-pointer hover:bg-gray-50' : ''}
                         `}
                       >
-                        <div className="text-center mb-2 sm:mb-3">
-                          <span className="font-medium text-gray-900 text-xs sm:text-sm">
+                        <div className="text-center mb-1 sm:mb-2">
+                          <span className="font-medium text-gray-900 text-xs">
                             {model!.name}
                           </span>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
@@ -599,7 +570,7 @@ export default function ChatPage() {
                           )}
                         </div>
 
-                        <div className="space-y-1 sm:space-y-2 mb-2 sm:mb-3">
+                        <div className="space-y-0.5 sm:space-y-1 mb-1 sm:mb-2">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-gray-500 flex items-center gap-1">
                               <Clock className="w-3 h-3" /> <span className="hidden sm:inline">Latency</span>
@@ -644,9 +615,9 @@ export default function ChatPage() {
                         </div>
 
                         {!showResults && (
-                          <div className="text-center py-2 sm:py-4">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
-                              <span className="text-gray-600 text-xs font-bold">Ready</span>
+                          <div className="text-center py-1 sm:py-2">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
+                              <span className="text-gray-600 text-[10px] font-bold">Ready</span>
                             </div>
                           </div>
                         )}
