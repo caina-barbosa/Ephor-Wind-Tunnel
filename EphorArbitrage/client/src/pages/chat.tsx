@@ -161,6 +161,7 @@ export default function ChatPage() {
   const [showResults, setShowResults] = useState(false);
   const [selectedModel, setSelectedModel] = useState<{ col: string; model: Model; response: ModelResponse } | null>(null);
   const [showWhyModal, setShowWhyModal] = useState(false);
+  const [testRunCount, setTestRunCount] = useState(0);
   
   const [contextSize, setContextSize] = useState<string>("128k");
   const [costCap, setCostCap] = useState<number>(0.25);
@@ -430,6 +431,7 @@ export default function ChatPage() {
 
     await Promise.all(modelsToRun.map(({ col, model }) => runModel(col, model)));
     setIsRunning(false);
+    setTestRunCount(prev => prev + 1);
   };
 
   const openModal = (col: string, model: Model, response: ModelResponse) => {
@@ -847,6 +849,15 @@ export default function ChatPage() {
               </div>
             </div>
           </div>
+
+          {/* Run Again teaching prompt - shows after first test completes */}
+          {testRunCount === 1 && !isRunning && (
+            <div className="text-center py-4 animate-fade-in">
+              <p className="text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-default">
+                🔁 Run the test again — what changes?
+              </p>
+            </div>
+          )}
 
           {/* Inline Pareto Chart - shows after running tests */}
           {COLUMNS.some(col => responses[col]?.content) && (
