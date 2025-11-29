@@ -684,14 +684,14 @@ export default function ChatPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleOpenLeaderboard}
-                className="w-[130px] px-4 py-2 bg-[#f5a623] text-white rounded-lg text-sm font-bold hover:bg-[#e09000] flex items-center justify-center gap-2 shadow-sm"
+                className="w-[122px] h-10 bg-[#f5a623] text-white rounded-lg text-sm font-bold hover:bg-[#e09000] flex items-center justify-center gap-1.5 shadow-sm"
               >
-                <span className="text-lg">🏆</span>
+                <span className="text-sm leading-none">🏆</span>
                 Leaderboard
               </button>
               <button
                 onClick={handleOpenLibrary}
-                className="w-[130px] px-4 py-2 bg-[#1a3a8f] text-white rounded-lg text-sm font-bold hover:bg-[#2a4a9f] flex items-center justify-center gap-2 shadow-sm"
+                className="w-[122px] h-10 bg-[#1a3a8f] text-white rounded-lg text-sm font-bold hover:bg-[#2a4a9f] flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <Library className="w-4 h-4" />
                 Library
