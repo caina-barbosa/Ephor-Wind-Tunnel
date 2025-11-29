@@ -328,8 +328,8 @@ export default function ChatPage() {
 
   return (
     <TooltipProvider>
-      <div className="bg-white text-gray-900 h-screen flex flex-col overflow-hidden">
-        <div className="w-full px-4 sm:px-[72px] pt-4 pb-2 flex-1 flex flex-col">
+      <div className="bg-white text-gray-900 min-h-screen flex flex-col">
+        <div className="w-full px-[72px] pt-3 pb-0 flex-1 flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
               EPHOR WIND TUNNEL
