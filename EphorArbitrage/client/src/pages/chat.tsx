@@ -49,7 +49,7 @@ const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { id: "together/llama-3.2-3b-instruct-turbo", name: "Llama 3.2 3B", costPer1k: 0.00006, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "basic" },
   "7B": { id: "together/qwen-2.5-7b-instruct-turbo", name: "Qwen 2.5 7B", costPer1k: 0.0001, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
-  "17B": { id: "meta-llama/llama-4-scout-17b:cerebras", name: "Llama 4 Scout 17B", costPer1k: 0.0002, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
+  "17B": { id: "together/llama-4-maverick-17b", name: "Llama 4 Maverick 17B", costPer1k: 0.0002, expectedLatency: "fast", reasoningDepth: "none", expectedAccuracy: "good" },
   "70B": { id: "meta-llama/llama-3.3-70b-instruct:cerebras", name: "Llama 3.3 70B", costPer1k: 0.0006, expectedLatency: "medium", reasoningDepth: "none", expectedAccuracy: "strong" },
   "Frontier": { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", costPer1k: 0.015, expectedLatency: "slow", reasoningDepth: "none", expectedAccuracy: "excellent" },
 };

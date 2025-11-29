@@ -25,7 +25,7 @@ import OpenAI from "openai";
 const CLAUDE_MODEL_ID = "anthropic/claude-sonnet-4.5";
 const GROQ_MODEL_SELECTOR_ID = "meta-llama/llama-4-maverick:groq";
 const CEREBRAS_MODEL_SELECTOR_ID = "meta-llama/llama-3.3-70b-instruct:cerebras";
-const CEREBRAS_LLAMA4_SCOUT_SELECTOR_ID = "meta-llama/llama-4-scout-17b:cerebras";
+const TOGETHER_LLAMA4_MAVERICK_SELECTOR_ID = "together/llama-4-maverick-17b";
 const DEEPSEEK_MODEL_SELECTOR_ID = "deepseek/deepseek-chat";
 const MINIMAX_MODEL_SELECTOR_ID = "minimax/minimax-m2";
 const KIMI_K2_MODEL_SELECTOR_ID = "moonshotai/kimi-k2";
@@ -75,10 +75,10 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
-  if (request.model === CEREBRAS_LLAMA4_SCOUT_SELECTOR_ID) {
-    console.log("[API] Using direct Cerebras API for Llama 4 Scout 17B");
-    return createCerebrasChatCompletion({
-      model: "llama-4-scout-17b-16e-instruct",
+  if (request.model === TOGETHER_LLAMA4_MAVERICK_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Llama 4 Maverick 17B");
+    return createTogetherChatCompletion({
+      model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,
@@ -201,7 +201,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   "z-ai/glm-4-32b": "GLM-4.6 (Zhipu)",
   "together/qwen-2.5-3b-instruct": "Qwen 2.5 3B (3B)",
   "together/qwen-2.5-7b-instruct-turbo": "Qwen 2.5 7B Turbo (7B)",
-  "meta-llama/llama-4-scout-17b:cerebras": "Llama 4 Scout 17B (17B)",
+  "together/llama-4-maverick-17b": "Llama 4 Maverick 17B (17B)",
   "together/deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill 70B (70B, reasoning)",
   "together/deepseek-r1": "DeepSeek R1 (Frontier, reasoning)",
   "together/qwq-32b": "QwQ 32B (Frontier, reasoning)",
@@ -249,7 +249,7 @@ function getActualModelId(modelId: string): string {
     "meta-llama/llama-3.3-70b-instruct:cerebras": "llama-3.3-70b",
     "together/llama-3.2-3b-instruct-turbo": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     "together/qwen-2.5-7b-instruct-turbo": "Qwen/Qwen2.5-7B-Instruct-Turbo",
-    "meta-llama/llama-4-scout-17b:cerebras": "llama-4-scout-17b-16e-instruct",
+    "together/llama-4-maverick-17b": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
   };
