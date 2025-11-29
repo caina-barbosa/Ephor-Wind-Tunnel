@@ -329,7 +329,7 @@ export default function ChatPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-white text-gray-900">
-        <div className="w-full px-2 sm:px-4 py-3 sm:py-6">
+        <div className="w-full px-4 sm:px-12 py-3 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <h1 className="text-2xl sm:text-4xl font-black text-[#1a3a8f] tracking-tight">
               EPHOR WIND TUNNEL
@@ -361,7 +361,7 @@ export default function ChatPage() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Enter your prompt to test across all model sizes..."
-              className="w-full h-[80px] sm:h-[100px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm sm:text-base"
+              className="w-full h-[60px] sm:h-[70px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm sm:text-base"
               disabled={isRunning}
             />
             
@@ -645,8 +645,8 @@ export default function ChatPage() {
 
                         {!showResults && (
                           <div className="text-center py-2 sm:py-4">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
-                              <span className="text-gray-500 text-xs font-medium">Ready</span>
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center">
+                              <span className="text-gray-600 text-xs font-bold">Ready</span>
                             </div>
                           </div>
                         )}
@@ -695,7 +695,7 @@ export default function ChatPage() {
 
                     {hasContent && (
                       <div className="text-center py-2">
-                        <CheckCircle2 className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                        <CheckCircle2 className="w-10 h-10 mx-auto text-gray-700 mb-2" />
                         <div className="space-y-1">
                           <div className="text-xs">
                             <span className="text-gray-500">Latency:</span>{" "}
