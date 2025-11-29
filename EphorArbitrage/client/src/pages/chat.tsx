@@ -190,6 +190,21 @@ export default function ChatPage() {
   }>>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareNickname, setShareNickname] = useState("");
+  const [shareSubmitting, setShareSubmitting] = useState(false);
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<Array<{
+    id: string;
+    displayName: string | null;
+    prompt: string;
+    recommendedModel: string | null;
+    settings: { contextSize: string; costCap: number; reasoningEnabled: boolean } | null;
+    results: Record<string, { latency: number; cost: number; modelName: string; modelId: string }> | null;
+    createdAt: string;
+  }>>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  
   const [contextSize, setContextSize] = useState<string>("128k");
   const [costCap, setCostCap] = useState<number>(0.25);
   const [reasoningEnabled, setReasoningEnabled] = useState(false);
@@ -583,6 +598,68 @@ export default function ChatPage() {
     }
   };
 
+  const handleShareToLeaderboard = async () => {
+    if (!allModelsComplete || shareSubmitting) return;
+    
+    setShareSubmitting(true);
+    
+    try {
+      const resultsData: Record<string, { latency: number; cost: number; modelName: string; modelId: string }> = {};
+      
+      COLUMNS.forEach(col => {
+        const model = getModelForColumn(col);
+        const resp = responses[col];
+        if (model && resp?.content && !resp.error) {
+          resultsData[col] = {
+            latency: resp.latency || 0,
+            cost: resp.cost || 0,
+            modelName: model.name,
+            modelId: model.id,
+          };
+        }
+      });
+      
+      await apiRequest("POST", "/api/leaderboard", {
+        displayName: shareNickname.trim() || null,
+        prompt,
+        recommendedModel,
+        settings: {
+          contextSize,
+          costCap,
+          reasoningEnabled,
+        },
+        results: resultsData,
+      });
+      
+      setShowShareModal(false);
+      setShareNickname("");
+      alert("Shared to leaderboard!");
+    } catch (err: any) {
+      console.error("Share to leaderboard error:", err);
+      alert("Failed to share: " + err.message);
+    } finally {
+      setShareSubmitting(false);
+    }
+  };
+
+  const loadLeaderboard = async () => {
+    setLeaderboardLoading(true);
+    try {
+      const response = await apiRequest("GET", "/api/leaderboard");
+      const data = await response.json();
+      setLeaderboardEntries(data);
+    } catch (err: any) {
+      console.error("Load leaderboard error:", err);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
+  const handleOpenLeaderboard = async () => {
+    setShowLeaderboardModal(true);
+    await loadLeaderboard();
+  };
+
   const getReasoningDepthLabel = (depth: "none" | "shallow" | "deep") => {
     switch (depth) {
       case "none": return "No Reasoning";
@@ -604,13 +681,22 @@ export default function ChatPage() {
                 Learn to think like an AI engineer: balance speed, cost, and capability.
               </p>
             </div>
-            <button
-              onClick={handleOpenLibrary}
-              className="px-4 py-2 border border-[#1a3a8f] text-[#1a3a8f] rounded-lg text-sm font-medium hover:bg-[#1a3a8f]/5 flex items-center gap-2"
-            >
-              <Library className="w-4 h-4" />
-              Benchmark Library
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleOpenLeaderboard}
+                className="px-4 py-2 border border-[#f5a623] text-[#f5a623] rounded-lg text-sm font-medium hover:bg-[#f5a623]/10 flex items-center gap-2"
+              >
+                <Trophy className="w-4 h-4" />
+                Leaderboard
+              </button>
+              <button
+                onClick={handleOpenLibrary}
+                className="px-4 py-2 border border-[#1a3a8f] text-[#1a3a8f] rounded-lg text-sm font-medium hover:bg-[#1a3a8f]/5 flex items-center gap-2"
+              >
+                <Library className="w-4 h-4" />
+                Library
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-lg p-2 mb-6 border border-gray-200 shadow-sm">
@@ -1176,6 +1262,20 @@ export default function ChatPage() {
                       Save this prompt as a benchmark to rerun later
                     </TooltipContent>
                   </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setShowShareModal(true)}
+                        className="px-4 py-2 border border-emerald-500 text-emerald-600 rounded-lg text-sm font-medium hover:bg-emerald-50 flex items-center gap-2"
+                      >
+                        <TrendingUp className="w-4 h-4" />
+                        Share
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white border-gray-200 text-gray-700">
+                      Share this result to the public leaderboard
+                    </TooltipContent>
+                  </Tooltip>
                   <button
                     onClick={handleRunCouncil}
                     disabled={councilRunning}
@@ -1646,6 +1746,168 @@ export default function ChatPage() {
                       <div className="mt-2 p-2 bg-white rounded border border-gray-200">
                         <p className="text-xs text-gray-600 line-clamp-2 font-mono">{benchmark.prompt}</p>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+          <DialogContent className="max-w-md bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <span className="text-emerald-600">Share to Leaderboard</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Share your test results with the community. Your prompt and model results will be visible to others.
+              </p>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Display Name (optional)</label>
+                <input
+                  type="text"
+                  value={shareNickname}
+                  onChange={(e) => setShareNickname(e.target.value)}
+                  placeholder="Enter a nickname or leave blank for Anonymous"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                <div className="text-xs text-gray-500">What will be shared:</div>
+                <div className="text-sm text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                    <span>Your prompt: "{prompt.slice(0, 50)}{prompt.length > 50 ? '...' : ''}"</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                    <span>Recommended model: {recommendedModel || 'None'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                    <span>Settings & results from all models</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowShareModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleShareToLeaderboard}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                  disabled={shareSubmitting}
+                >
+                  {shareSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sharing...
+                    </>
+                  ) : (
+                    'Share to Leaderboard'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showLeaderboardModal} onOpenChange={setShowLeaderboardModal}>
+          <DialogContent className="max-w-3xl max-h-[80vh] bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <Trophy className="w-5 h-5 text-[#f5a623]" />
+                <span className="text-[#f5a623]">Public Leaderboard</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">
+                  See what prompts others are testing and compare results.
+                </p>
+                <button
+                  onClick={loadLeaderboard}
+                  disabled={leaderboardLoading}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                >
+                  <RefreshCw className={`w-4 h-4 ${leaderboardLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              
+              {leaderboardLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#f5a623]" />
+                </div>
+              ) : leaderboardEntries.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Trophy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="font-medium">No entries yet</p>
+                  <p className="text-sm mt-1">Be the first to share your results!</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                  {leaderboardEntries.map((entry) => (
+                    <div 
+                      key={entry.id} 
+                      className="p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">
+                              {entry.displayName || 'Anonymous'}
+                            </span>
+                            {entry.recommendedModel && (
+                              <span className="px-2 py-0.5 bg-[#f5a623]/20 text-[#f5a623] text-xs font-bold rounded">
+                                PICK: {entry.recommendedModel}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {new Date(entry.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        {entry.settings && (
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>{entry.settings.contextSize.toUpperCase()}</span>
+                            <span>|</span>
+                            <span>${entry.settings.costCap.toFixed(2)} cap</span>
+                            {entry.settings.reasoningEnabled && (
+                              <>
+                                <span>|</span>
+                                <Brain className="w-3 h-3" />
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2 bg-white rounded border border-gray-200 mb-2">
+                        <p className="text-sm text-gray-700 font-mono line-clamp-2">{entry.prompt}</p>
+                      </div>
+                      {entry.results && (
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(entry.results).map(([col, result]) => (
+                            <div 
+                              key={col}
+                              className={`px-2 py-1 rounded text-xs ${
+                                col === entry.recommendedModel 
+                                  ? 'bg-[#f5a623]/20 text-[#f5a623] font-bold' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {col}: {result.latency}ms / ${result.cost.toFixed(4)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
