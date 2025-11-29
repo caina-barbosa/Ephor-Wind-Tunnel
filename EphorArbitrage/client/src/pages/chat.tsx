@@ -77,11 +77,11 @@ const COLUMN_VISUALS: Record<string, {
   accentBorder: string;
 }> = {
   "3B": {
-    headerSize: "text-xl font-bold text-gray-600",
-    headerBg: "bg-gray-100",
-    cardStyle: "bg-gray-50/50",
+    headerSize: "text-xl font-bold text-[#A3316F]",
+    headerBg: "bg-[#fdf2f8]",
+    cardStyle: "bg-[#fdf2f8]/50",
     prominence: "small",
-    accentBorder: "border-t-[6px] border-t-[#6B7280]"
+    accentBorder: "border-t-[6px] border-t-[#A3316F]"
   },
   "7B": {
     headerSize: "text-xl font-bold text-blue-700",
@@ -136,7 +136,7 @@ const getCostVisuals = (cost: number) => {
 
 const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "basic": return { bars: 1, color: "bg-gray-300", textColor: "text-gray-500", label: "Basic" };
+    case "basic": return { bars: 1, color: "bg-[#A3316F]", textColor: "text-[#A3316F]", label: "Basic" };
     case "good": return { bars: 2, color: "bg-blue-400", textColor: "text-blue-600", label: "Good" };
     case "strong": return { bars: 3, color: "bg-emerald-500", textColor: "text-emerald-600", label: "Strong" };
     case "excellent": return { bars: 4, color: "bg-[#f5a623]", textColor: "text-[#f5a623]", label: "Excellent" };
@@ -619,7 +619,7 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-gray-500' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
