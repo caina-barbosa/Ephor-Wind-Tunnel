@@ -20,6 +20,14 @@ Students submit a single prompt and watch 5 AI models race to answer it—learni
 
 ---
 
+## A Note on Model Selection: 17B vs 13B
+
+We chose **Llama 4 Maverick 17B** for the mid-tier column instead of a traditional 13B model for several reasons: it's Meta's newest release (April 2025), uses cutting-edge **Mixture of Experts (MoE)** architecture (17B active parameters from 400B total), and is one of the few mid-sized models with **native vision capability**—making it perfect for teaching students about multimodal AI. This also gives us a natural teaching moment: "This model is actually 400 billion parameters, but only uses 17 billion per query—that's why it's fast AND capable."
+
+That said, **the model lineup is fully configurable**. If you'd prefer a 13B model (like Llama 2 13B or Qwen 14B), we can swap it in with a single code change. The architecture is designed to make model updates trivial.
+
+---
+
 ## The 5-Column Model Grid
 
 Students see models organized by size, creating immediate visual hierarchy:
