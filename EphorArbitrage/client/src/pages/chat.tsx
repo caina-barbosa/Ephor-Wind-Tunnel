@@ -1527,11 +1527,40 @@ export default function ChatPage() {
                                     {reason}
                                   </span>
                                 </>
+                              ) : isReasoningLocked ? (
+                                <div className="flex flex-col items-center text-center px-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button className="mb-2 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors group">
+                                        <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-gray-600" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[200px] bg-white border-gray-200 text-gray-700">
+                                      <p className="font-bold text-gray-900 mb-1">Why locked?</p>
+                                      <p className="text-xs text-gray-600">
+                                        Reasoning uses extra compute. Small models usually get slower and worse when forced to reason.
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-1">So we reserve reasoning for 70B+.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className="text-sm font-bold text-gray-600 mb-1">
+                                    Reasoning not available
+                                  </span>
+                                  <span className="text-xs text-gray-500 mb-2">
+                                    This is a <span className="font-semibold">{col}</span> model.
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 leading-tight">
+                                    Small models (3B–17B) can't reason reliably.
+                                  </span>
+                                  <span className="text-[10px] text-[#1a3a8f] font-medium mt-1">
+                                    Try 70B or Frontier →
+                                  </span>
+                                </div>
                               ) : (
                                 <>
                                   <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
                                   <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
-                                    {isReasoningLocked ? "Reasoning" : model?.name}
+                                    {model?.name}
                                   </span>
                                   <span className="text-xs text-gray-400 text-center mt-1">
                                     {reason}
@@ -1541,16 +1570,17 @@ export default function ChatPage() {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent className="bg-white border-gray-200 text-gray-700">
-                            <p>{reason}</p>
-                            {isReasoningLocked && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Small models produce unreliable reasoning chains.
-                              </p>
-                            )}
-                            {isCostExceeded && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Increase your budget cap to use this model.
-                              </p>
+                            {isReasoningLocked ? (
+                              <p className="text-xs text-gray-500">Click the lock icon for details</p>
+                            ) : (
+                              <>
+                                <p>{reason}</p>
+                                {isCostExceeded && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Increase your budget cap to use this model.
+                                  </p>
+                                )}
+                              </>
                             )}
                           </TooltipContent>
                         </Tooltip>
