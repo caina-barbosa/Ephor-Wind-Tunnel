@@ -221,7 +221,8 @@ function getStreamingClient(modelId: string): OpenAI {
     });
   }
   
-  if (modelId === "meta-llama/llama-3.3-70b-instruct:cerebras") {
+  // All Cerebras models (fast inference)
+  if (modelId.startsWith("cerebras/") || modelId === "meta-llama/llama-3.3-70b-instruct:cerebras") {
     return new OpenAI({
       baseURL: "https://api.cerebras.ai/v1",
       apiKey: process.env.CEREBRAS_API_KEY,
@@ -246,13 +247,20 @@ function getStreamingClient(modelId: string): OpenAI {
 function getActualModelId(modelId: string): string {
   const modelMap: Record<string, string> = {
     "anthropic/claude-sonnet-4.5": "claude-sonnet-4-20250514",
+    // Cerebras models (super fast)
+    "cerebras/llama-3.1-8b": "llama3.1-8b",
+    "cerebras/qwen-3-32b": "qwen-3-32b",
+    "cerebras/gpt-oss-120b": "gpt-oss-120b",
     "meta-llama/llama-3.3-70b-instruct:cerebras": "llama-3.3-70b",
+    // Together models
     "together/llama-3.2-3b-instruct-turbo": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     "together/qwen-2.5-7b-instruct-turbo": "Qwen/Qwen2.5-7B-Instruct-Turbo",
     "together/llama-4-maverick-17b": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
+    // OpenRouter
     "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
+    "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
   };
   return modelMap[modelId] || modelId;
 }
