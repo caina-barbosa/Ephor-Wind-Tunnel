@@ -746,19 +746,21 @@ export default function ChatPage() {
         // Fallback: ensure model is marked complete when stream ends
         setResponses((prev) => {
           const current = prev[col];
-          if (current && current.loading && current.content) {
+          if (current && current.loading) {
             return {
               ...prev,
               [col]: {
                 ...current,
                 loading: false,
                 progress: 100,
+                error: current.content ? null : "No response received",
               },
             };
           }
           return prev;
         });
       } catch (err: any) {
+        console.error(`[${col}] Stream error:`, err);
         setResponses((prev) => ({
           ...prev,
           [col]: {
