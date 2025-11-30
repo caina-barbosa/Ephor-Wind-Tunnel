@@ -2,274 +2,58 @@
 
 ## Overview
 
-Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. The application enables users to send a single prompt to 5 AI models simultaneously, organized by model size (3B, 7B, 14B, 70B, Frontier), and compare responses in real-time.
-
-The system teaches key engineering concepts:
-- Model size vs capability tradeoffs
-- Cost vs performance optimization
-- Reasoning mode constraints (only works on 70B+)
-- Context window economics
-- Latency vs accuracy tradeoffs
+Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to five different AI models (3B, 7B, 14B, 70B, Frontier) simultaneously and compare their responses in real-time. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, reasoning mode constraints, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes
-
-- **2025-11-29**: Complete 10 Engineering Dimensions Implementation
-  - All 10 LLM engineering dimensions from spec now visible:
-    1. **Architecture**: Dense Transformer vs Sparse MoE (in Technical Details)
-    2. **Parameters & scaling**: Column headers (3B, 7B, 17B, 70B, Frontier)
-    3. **Training data**: Training year + data sources with tooltip (in Technical Details)
-    4. **Context window**: Selector (8K-1M) + Input Gauge showing usage
-    5. **Benchmarks**: MMLU % and HumanEval % per model
-    6. **Fine-tuning methods**: SFT, RLHF, DPO badges (in Technical Details)
-    7. **Inference optimization**: Precision (BF16, FP16, INT8) shown (in Technical Details)
-    8. **Multimodality**: Input row shows "Text" or "Vision"
-    9. **Safety & alignment**: "Aligned" status with methods tooltip (in Technical Details)
-    10. **Deployment economics**: Est. Cost, Speed, Cost Cap slider
-  - **Technical Details Accordion**: Collapsible section per model card
-    - Click to expand/collapse with chevron animation
-    - Shows Architecture, Training, Fine-tuning, Inference, Safety
-    - Tooltips explain each dimension with detailed info
-  - **Clean Grid Layout**: All rows aligned with consistent spacing
-- **2025-11-29**: Public Leaderboard
-  - **Share Results**: After running a test, users can click "Share" to publish results to a public leaderboard
-  - **Opt-in Sharing**: Confirmation modal shows preview of what will be shared
-  - **Optional Nickname**: Users can enter a display name or remain anonymous
-  - **Leaderboard View**: "Leaderboard" button in header opens public leaderboard modal
-  - **Data Shown**: Display name, prompt, recommended model, settings, and per-model results (latency/cost)
-  - **Safety Features**:
-    - Privacy reminder in Share modal warning users prompts will be public (don't include personal info)
-    - Report button (flag icon) on each leaderboard entry to flag inappropriate content
-  - **Database**: `leaderboard_entries` table with id, displayName, prompt, recommendedModel, settings, results, createdAt
-  - **API Endpoints**:
-    - `GET /api/leaderboard` - List all public entries (newest first)
-    - `POST /api/leaderboard` - Submit a new entry
-- **2025-11-29**: Expert Mode (Override Constraints)
-  - Added "Expert Mode" toggle below control panel
-  - When enabled, users can run models that exceed cost cap or context limits
-  - Overridden models show amber "OVERRIDE" warning badge with tooltip
-  - Helps students learn what happens when they ignore constraints
-  - Note: Reasoning mode restrictions (70B+ requirement) cannot be overridden
-- **2025-11-29**: Benchmark Library
-  - Save and rerun test prompts
-  - "Benchmark Library" button in header opens library modal
-  - Save any prompt with name and optional description
-  - Load saved benchmarks to re-run tests
-  - Delete unwanted benchmarks
-  - **Database Schema**: `benchmarks` table with id, name, description, prompt, createdAt
-  - **API Endpoints**:
-    - `GET /api/benchmarks` - List all saved benchmarks
-    - `POST /api/benchmarks` - Save a new benchmark
-    - `GET /api/benchmarks/:id` - Get benchmark with runs
-    - `DELETE /api/benchmarks/:id` - Delete a benchmark
-- **2025-11-30**: Educational UI Enhancements (Fix A, B, C)
-  - **Context Window Auto-Teaching (Fix A)**:
-    - Auto-selects smallest context tier that fits the prompt (teaches "smallest = cheapest")
-    - Input Gauge shows token count guidance and recommended context tier
-    - Context dropdown shows enhanced labels: "✓ recommended", "— higher cost", "— won't fit"
-    - "Best Value" / "Higher Cost" / "Won't Fit" badges in control panel
-    - Manual override still respected; auto-selection resets when loading benchmarks or challenge prompts
-  - **Budget Cap Visual Feedback (Fix B)**:
-    - Models exceeding cost cap are visibly disabled with clear reason displayed
-    - "No models fit your budget" warning when all models are filtered out
-    - Suggests increasing cost cap or reducing context window
-  - **Prompt Difficulty Nudge (Fix C)**:
-    - Detects when all models handle a prompt easily (short prompt + short/similar responses)
-    - Shows "💡 All models handled this one easily — try a harder prompt" message
-    - "Try a Challenge Prompt" button loads rotating set of 8 educational challenge prompts
-    - Challenge prompts include math proofs, coding problems, and reasoning puzzles
-- **2025-11-30**: Removed Model Council Feature (not in original spec, can restore from git)
-- **2025-11-29**: Integrated Cost vs Capability Chart
-  - Removed Cost Curve button from top right corner
-  - Added inline Pareto frontier chart below model grid (appears after running tests)
-  - Chart plots all 5 models on cost vs capability axes with logarithmic cost scale
-  - Recommended model highlighted in orange, tested models in blue, disabled in gray
-  - Dashed line shows the Pareto frontier curve
-  - Legend explains dot colors (Recommended, Tested, Disabled)
-- **2025-11-29**: Connected "Why?" to Recommended Model
-  - Moved "Why This Model?" from top right button to directly under PICK badge
-  - Small "Why?" link with info icon next to recommended model
-  - Keeps explanation visually connected to the recommendation
-- **2025-11-29**: Educational Visual Redesign - "Teaching Through Design"
-  - Visual hierarchy in column headers:
-    - 3B/7B: Smaller, lighter gray text (small models feel small)
-    - 14B: Medium size and weight
-    - 70B: Larger, bolder text
-    - Frontier: Largest, boldest, Deep Royal Blue (#1a3a8f)
-  - Visual latency bars (not just text):
-    - Fast (<500ms): Short green bar (w-[25%])
-    - Medium (500-2000ms): Medium orange bar (w-[55%])
-    - Slow (>2000ms): Full-width red bar
-  - Cost scaling visuals:
-    - Cheap models: Small, subtle gray text
-    - Expensive models: Large, bold red text with red background
-  - Capability progression (4-bar visual meter):
-    - Basic: 1 bar, gray
-    - Good: 2 bars, light blue
-    - Strong: 3 bars, medium blue
-    - Excellent: 4 bars, deep royal blue
-  - Prominent recommended badge:
-    - Bright orange pill badge with glow effect
-    - Entire recommended card has orange ring/glow
-  - Card contrast by model size:
-    - Small models (3B/7B): Lighter backgrounds, no shadow
-    - Medium models (14B/70B): White, subtle shadows
-    - Frontier: White with prominent shadow and blue border
-  - Progress and completion states:
-    - Progress circles colored by model prominence
-    - Completion checkmarks colored by actual latency result
-- **2025-11-29**: Minimal Apple-Style Design Refresh (base layer)
-  - Simplified color palette to minimal scheme
-  - Clean, professional Apple-inspired aesthetic
-- **2025-11-28**: Complete Timeback Brand Rebrand (superseded by minimal design)
-- **2025-11-28**: Simplified recommendation logic for better education
-  - Recommendation now picks the CHEAPEST model that fits all constraints
-  - No more keyword/complexity detection - transparent filtering only
-  - Logic: (1) Filter by cost cap, (2) Filter by context window, (3) Filter by reasoning mode, (4) Pick cheapest
-  - Students learn by experimenting: start cheap, compare results, upgrade if needed
-  - Title changed to all caps: "EPHOR WIND TUNNEL"
-  - Enhanced INPUT GAUGE with prominent blue styling, large token display, and explanatory text
-  - Added "Estimated Capability" display in "Why This Model?" modal
-  - Added context overflow check: models disabled when input exceeds selected context window
-- **2025-11-28**: Renamed to "Ephor Wind Tunnel" with educational features
-  - Changed latency metric from TTFT to Total Latency (full response time)
-  - Mobile-responsive design: stacked controls, horizontal scrolling grid, touch-friendly dialogs
-  - Enhanced "Input vs Context Capacity" gauge with clear X/Y tokens display and percentage
-  - Added "Capability" indicator per model (Basic/Good/Strong/Excellent) with tooltips
-  - Context window selector (8K/32K/128K/1M) with explanatory text
-  - Cost cap slider ($0.00-$0.25) that disables expensive models
-  - Reasoning mode toggle with 70B+ restriction
-  - Color-coded latency indicators (Fast/Medium/Slow)
-  - Circular progress spinners during model execution
-  - "Why This Model?" explanation dialog
-  - Recommended model highlighting based on constraints
-- **2025-11-28**: Switched OpenRouter to use Replit AI Integration (billed to Replit credits)
-
 ## System Architecture
 
-### Frontend Architecture
+### UI/UX Decisions
 
-**Framework**: React 18+ with TypeScript, built using Vite for fast development with Hot Module Replacement (HMR).
+The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, neutral grays). The layout is a full-screen grid presenting five model columns (3B, 7B, 14B, 70B, Frontier) with visual cues for model size, latency, and cost. Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
 
-**UI Component System**: The application uses shadcn/ui components built on Radix UI primitives, styled with Tailwind CSS. Features a minimal Apple-inspired design with a white background, Deep Royal Blue (#1a3a8f) for primary actions, Orange (#f5a623) for recommended highlights, and neutral gray tones throughout.
+### Technical Implementations
 
-**Layout Structure**: Full-screen grid layout with:
-- Prompt input with token count gauge
-- Control panel: Context Window, Cost Cap Slider, Reasoning Toggle
-- "Run Wind Tunnel Test" button
-- 5-column grid organized by model size: 3B, 7B, 14B, 70B, Frontier
-- Each cell displays: model name, latency indicator, estimated cost, reasoning depth
-- Circular progress spinners during execution
-- Click-to-expand full response modal
-- "Why This Model?" explanation modal
+The application allows users to select context window sizes (8K-1M), set a cost cap slider ($0.00-$0.25), and toggle a reasoning mode (restricted to 70B+ models). An "Expert Mode" enables overriding cost and context limits for experimental learning. A "Benchmark Library" allows saving and rerunning prompts. Results can be shared to a public leaderboard. The system dynamically adjusts model availability and recommendations based on user-defined constraints.
 
-**Model Grid Configuration**:
+### Feature Specifications
 
-NON-REASONING MODE:
-- **3B Column**: Llama 3.2 3B (Together AI) - Fast, $0.00006/1K tokens
-- **7B Column**: Qwen 2.5 7B (Together AI) - Fast, $0.0001/1K tokens
-- **17B Column**: Llama 4 Maverick 17B (Together AI) - Fast, $0.0002/1K tokens
-- **70B Column**: Llama 3.3 70B (Cerebras) - Medium, $0.0006/1K tokens
-- **Frontier Column**: Claude Sonnet 4.5 (Anthropic) - Slow, $0.015/1K tokens
+*   **LLM Engineering Dimensions**: Displays 10 key dimensions including Architecture, Parameters & Scaling, Training Data, Context Window, Benchmarks (MMLU%, HumanEval%), Fine-tuning Methods, Inference Optimization, Multimodality, Safety & Alignment, and Deployment Economics (Est. Cost, Speed).
+*   **Context Window Management**: Auto-selects the smallest appropriate context, visually indicates token usage (used/unused), and provides cost-related feedback.
+*   **Budget Cap**: Filters out models exceeding a user-defined cost cap, with clear visual warnings.
+*   **Public Leaderboard**: Allows users to share test results with optional anonymity, including prompt, recommended model, settings, and performance data.
+*   **Benchmark Library**: Users can save, load, and delete custom prompts for re-testing and comparison.
+*   **Educational Prompts**: Includes a rotating set of challenge prompts to encourage deeper learning.
 
-REASONING MODE (toggle ON):
-- **3B Column**: DISABLED - "Reasoning requires 70B+"
-- **7B Column**: DISABLED - "Reasoning requires 70B+"
-- **14B Column**: DISABLED - "Reasoning requires 70B+"
-- **70B Column**: DeepSeek R1 Distill 70B (Together AI) - Slow, Deep Reasoning
-- **Frontier Column**: DeepSeek R1 (Together AI) - Slow, Deep Reasoning
+### System Design Choices
 
-**State Management**: Local React state manages:
-- Prompt input and token estimation
-- Context size selection
-- Cost cap value
-- Reasoning mode toggle
-- Model responses with loading/error states
-- Recommended model calculation
-
-### Backend Architecture
-
-**Server Framework**: Express.js with TypeScript running on Node.js.
-
-**API Design**: RESTful API with key endpoint:
-- `POST /api/wind-tunnel/run` - Runs a single model with the given prompt, returns content, TTFT, and cost
-
-**AI Integration Strategy**: Multi-provider approach:
-
-1. **Anthropic Direct API** (`api.anthropic.com`)
-   - Claude Sonnet 4.5
-
-2. **Cerebras Direct API** (`api.cerebras.ai`)
-   - Llama 3.3 70B
-
-3. **Together AI API** (`api.together.xyz`)
-   - Llama 3.2 3B
-   - Qwen 2.5 7B
-   - Llama 4 Maverick 17B
-   - DeepSeek R1 Distill 70B (reasoning)
-   - DeepSeek R1 (reasoning)
-
-4. **Replit AI Integration for OpenRouter**
-   - Kimi K2 (available for other uses)
-   - Uses AI_INTEGRATIONS_OPENROUTER_BASE_URL and AI_INTEGRATIONS_OPENROUTER_API_KEY
-   - Billed to Replit credits (no separate API key needed)
-
-**Database Layer**: Drizzle ORM with PostgreSQL via Neon serverless driver (available for future features).
+The architecture is a client-server model with a React frontend and an Express.js backend. State management on the frontend is handled by local React state. The backend uses a RESTful API to manage requests and integrates with multiple AI model providers.
 
 ## External Dependencies
 
 **AI Model Providers**:
-- Anthropic API (`api.anthropic.com`) - Claude Sonnet 4.5
-- Cerebras API (`api.cerebras.ai`) - Llama 3.3 70B
-- Together AI API (`api.together.xyz`) - Llama 3.2 3B, Qwen 2.5 7B, DeepSeek models
-- Replit AI Integration for OpenRouter - Qwen3 14B
+*   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5.
+*   Cerebras API (`api.cerebras.ai`) for Llama 3.3 70B.
+*   Together AI API (`api.together.xyz`) for Llama 3.2 3B, Qwen 2.5 7B, Llama 4 Maverick 17B, DeepSeek R1 Distill 70B, and DeepSeek R1.
+*   Replit AI Integration for OpenRouter (e.g., Qwen3 14B), billed through Replit credits.
 
 **Database Service**:
-- Neon Serverless PostgreSQL
+*   Neon Serverless PostgreSQL (via Drizzle ORM).
 
-**Development Tools**:
-- Vite - Frontend build tool with HMR
-- TypeScript - Type safety across frontend and backend
-- Drizzle ORM - Database operations
+**Development & UI Libraries**:
+*   Vite (Frontend build tool).
+*   TypeScript (Language).
+*   Radix UI (Accessible component primitives).
+*   Tailwind CSS (Styling).
+*   Lucide React (Icons).
+*   Drizzle ORM (Database operations).
 
-**UI Libraries**:
-- Radix UI - Accessible component primitives
-- Tailwind CSS - Utility-first CSS framework
-- Lucide React - Icon library
-
-**Required Environment Variables**:
-- `DATABASE_URL` - PostgreSQL connection string
-- `ANTHROPIC_API_KEY` - Anthropic API authentication
-- `CEREBRAS_API_KEY` - Cerebras API authentication
-- `TOGETHER_API_KEY` - Together AI API authentication
-- `AI_INTEGRATIONS_OPENROUTER_BASE_URL` - Replit AI Integration for OpenRouter (auto-configured)
-- `AI_INTEGRATIONS_OPENROUTER_API_KEY` - Replit AI Integration for OpenRouter (auto-configured)
-
-## Educational Design Principles
-
-Based on the "LLM Wind Tunnel for Kids" specification:
-
-1. **Engineering Truth in UI**: The interface visually teaches that:
-   - Reasoning only works on large models (70B+)
-   - Cost rises nonlinearly with capability
-   - Speed vs accuracy is the real tradeoff
-   - Context = memory = cost
-
-2. **Constraint-Based Learning**: Students must work within:
-   - Budget limits (cost cap slider)
-   - Model capability limits (reasoning restrictions)
-   - Context size limits
-
-3. **Visual Feedback**: 
-   - Progress spinners (not text streaming)
-   - Latency badges (Fast/Medium/Slow) in neutral gray
-   - Orange highlight for recommended model
-   - "Why This Model?" explanations
-
-4. **Compare and Learn**: Side-by-side comparison of responses helps students see:
-   - Quality differences by model size
-   - Speed differences by model type
-   - Cost differences across providers
+**Environment Variables**:
+*   `DATABASE_URL`
+*   `ANTHROPIC_API_KEY`
+*   `CEREBRAS_API_KEY`
+*   `TOGETHER_API_KEY`
+*   `AI_INTEGRATIONS_OPENROUTER_BASE_URL`
+*   `AI_INTEGRATIONS_OPENROUTER_API_KEY`
