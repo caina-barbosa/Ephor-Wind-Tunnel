@@ -1512,8 +1512,15 @@ export default function ChatPage() {
                     const hasError = response?.error;
                     const hasContent = response?.content;
                     const isRecommended = showResults && col === recommendedModel;
+                    
+                    // IMPORTANT: If we have results (content, loading, or error), 
+                    // ALWAYS show them even if model would be "disabled" under current settings.
+                    // This preserves results from Expert Mode runs when Expert Mode is later toggled off.
+                    // EXCEPTION: If model is null (e.g., reasoning mode on small models), always show disabled state
+                    // because we can't render results without model metadata.
+                    const hasResults = hasContent || isLoading || hasError;
 
-                    if (disabled) {
+                    if (!model || (disabled && !hasResults)) {
                       const isReasoningLocked = !model;
                       const isCostExceeded = reason.includes("Exceeds");
                       return (
@@ -1598,8 +1605,6 @@ export default function ChatPage() {
                     const capabilityConfig = getCapabilityVisuals(model!.expectedAccuracy);
                     const estimatedCost = estimateCost(model!);
                     const costConfig = getCostVisuals(estimatedCost);
-
-                    const hasResults = hasContent || isLoading || hasError;
                     
                     return (
                       <div
