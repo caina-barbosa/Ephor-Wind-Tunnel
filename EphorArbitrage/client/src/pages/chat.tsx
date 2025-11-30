@@ -1940,6 +1940,7 @@ export default function ChatPage() {
                       const actualCostConfig = getCostVisuals(response.cost || 0);
                       return (
                         <div className="flex flex-col flex-grow">
+                          {/* Success indicator */}
                           <div className="flex items-center justify-center mb-3">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                               actualLatencyCategory === 'fast' ? 'bg-emerald-100' :
@@ -1952,6 +1953,7 @@ export default function ChatPage() {
                             </div>
                           </div>
                           
+                          {/* 1. Latency & Cost metrics (always shown) */}
                           <div className="mb-3 space-y-2">
                             <div>
                               <div className="flex items-center justify-between text-xs mb-1">
@@ -1972,17 +1974,10 @@ export default function ChatPage() {
                               </span>
                             </div>
                           </div>
-                          
-                          <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap break-words flex-grow overflow-hidden line-clamp-4">
-                            {response.content}
-                          </div>
-                          <p className="text-xs text-[#1a3a8f] font-bold mt-2 hover:underline text-center cursor-pointer">
-                            View Full Response →
-                          </p>
 
-                          {/* Expert Mode: Show technical details WITH results */}
+                          {/* 2. Expert Mode: Benchmarks & Technical Details (BEFORE response) */}
                           {expertMode && (
-                            <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                            <div className="mb-3 space-y-2 pt-2 border-t border-gray-100">
                               <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -2074,6 +2069,16 @@ export default function ChatPage() {
                               )}
                             </div>
                           )}
+                          
+                          {/* 3. Response content (at the END) */}
+                          <div className={`${expertMode ? 'pt-2 border-t border-gray-200' : ''}`}>
+                            <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap break-words flex-grow overflow-hidden line-clamp-4">
+                              {response.content}
+                            </div>
+                            <p className="text-xs text-[#1a3a8f] font-bold mt-2 hover:underline text-center cursor-pointer">
+                              View Full Response →
+                            </p>
+                          </div>
                         </div>
                       );
                     })()}
