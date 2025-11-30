@@ -34,6 +34,12 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query for server state, local React state for UI interactions.
 - **Layout Pattern**: Fixed left sidebar, centered main content with responsive design.
 - **Chat Management**: Features chat deletion with accessibility support, confirmation dialogs, and toast notifications.
+- **Context Window Education**: Deliberate UX that teaches context window tradeoffs:
+  - Inline mismatch card appears when prompt exceeds selected context
+  - "Won't Fit" modal requires deliberate checkbox confirmation for truncation
+  - "Auto (8K) — smallest that fits" dropdown label explains cost optimization
+  - "Why?" tooltips provide context window concept explanations
+  - Engineering Truth toasts fire on context upgrades
 
 ### Backend Architecture
 - **Server Framework**: Express.js with TypeScript.
