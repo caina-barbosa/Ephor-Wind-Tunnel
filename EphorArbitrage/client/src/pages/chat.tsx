@@ -305,19 +305,6 @@ export default function ChatPage() {
   const [showWhyModal, setShowWhyModal] = useState(false);
   const [testRunCount, setTestRunCount] = useState(0);
   
-  const [councilRunning, setCouncilRunning] = useState(false);
-  const [councilResults, setCouncilResults] = useState<{
-    consensusRankings: string[];
-    councilEvaluations: Array<{
-      judgeColumn: string;
-      judgeName: string;
-      rankings: Array<{ column: string; rank: number; critique: string }>;
-      error?: string;
-    }>;
-    chairmanSynthesis: string | null;
-    runId?: string;
-  } | null>(null);
-  const [showCouncilModal, setShowCouncilModal] = useState(false);
   const [showSaveBenchmarkModal, setShowSaveBenchmarkModal] = useState(false);
   const [benchmarkName, setBenchmarkName] = useState("");
   const [benchmarkDescription, setBenchmarkDescription] = useState("");
@@ -636,50 +623,6 @@ export default function ChatPage() {
     }
   };
 
-  const handleRunCouncil = async () => {
-    if (!allModelsComplete || councilRunning) return;
-    
-    setCouncilRunning(true);
-    setCouncilResults(null);
-    
-    try {
-      const responseData: Record<string, { content: string; modelId: string; modelName: string; latency: number; cost: number }> = {};
-      
-      COLUMNS.forEach(col => {
-        const model = getModelForColumn(col);
-        const resp = responses[col];
-        if (model && resp?.content && !resp.error) {
-          responseData[col] = {
-            content: resp.content,
-            modelId: model.id,
-            modelName: model.name,
-            latency: resp.latency || 0,
-            cost: resp.cost || 0,
-          };
-        }
-      });
-      
-      const response = await apiRequest("POST", "/api/council/run", {
-        prompt,
-        responses: responseData,
-        settings: {
-          contextSize,
-          costCap,
-          reasoningEnabled,
-        },
-      });
-      
-      const result = await response.json();
-      setCouncilResults(result);
-      setShowCouncilModal(true);
-    } catch (err: any) {
-      console.error("Council error:", err);
-      alert("Failed to run council: " + err.message);
-    } finally {
-      setCouncilRunning(false);
-    }
-  };
-
   const handleSaveBenchmark = async () => {
     if (!benchmarkName.trim()) {
       alert("Please enter a name for the benchmark");
@@ -726,7 +669,6 @@ export default function ChatPage() {
     setShowLibraryModal(false);
     setShowResults(false);
     setResponses({});
-    setCouncilResults(null);
   };
 
   const handleDeleteBenchmark = async (id: string) => {
@@ -1538,11 +1480,11 @@ export default function ChatPage() {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-center sm:text-left">
                   <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[#1a3a8f]" />
-                    Model Council
+                    <Bookmark className="w-5 h-5 text-[#1a3a8f]" />
+                    Save & Share Results
                   </h3>
                   <p className="text-xs text-gray-500 mt-1">
-                    Have all 5 models judge each other's responses. Find the true best answer.
+                    Save this test as a benchmark or share to the public leaderboard.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1574,34 +1516,8 @@ export default function ChatPage() {
                       Share this result to the public leaderboard
                     </TooltipContent>
                   </Tooltip>
-                  <button
-                    onClick={handleRunCouncil}
-                    disabled={councilRunning}
-                    className="px-6 py-2 bg-[#1a3a8f] text-white rounded-lg text-sm font-bold hover:bg-[#2a4a9f] disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {councilRunning ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Running Council...
-                      </>
-                    ) : (
-                      <>
-                        <Trophy className="w-4 h-4" />
-                        Run Council (~$0.50-2.00)
-                      </>
-                    )}
-                  </button>
                 </div>
               </div>
-              {councilResults && (
-                <button
-                  onClick={() => setShowCouncilModal(true)}
-                  className="mt-3 w-full py-2 bg-[#f5a623]/10 border border-[#f5a623] rounded-lg text-sm font-medium text-[#f5a623] hover:bg-[#f5a623]/20 flex items-center justify-center gap-2"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  View Council Results
-                </button>
-              )}
             </div>
           )}
 
@@ -1827,100 +1743,6 @@ export default function ChatPage() {
                 </div>
               )}
             </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showCouncilModal} onOpenChange={setShowCouncilModal}>
-          <DialogContent className="max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
-            <DialogHeader>
-              <DialogTitle className="text-xl flex items-center gap-2 font-black">
-                <Trophy className="w-5 h-5 text-[#f5a623]" />
-                <span className="text-[#1a3a8f]">Model Council Results</span>
-              </DialogTitle>
-            </DialogHeader>
-            {councilResults && (
-              <div className="space-y-6">
-                <div className="p-4 bg-gradient-to-r from-[#f5a623]/10 to-[#f5a623]/5 border-2 border-[#f5a623] rounded-lg">
-                  <h4 className="font-bold text-[#f5a623] mb-3 flex items-center gap-2">
-                    <Trophy className="w-4 h-4" />
-                    Consensus Rankings (by peer vote)
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {councilResults.consensusRankings.map((col, idx) => {
-                      const model = getModelForColumn(col);
-                      return (
-                        <div 
-                          key={col}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
-                            idx === 0 ? 'bg-[#f5a623]/20 border-[#f5a623] text-[#f5a623]' :
-                            idx === 1 ? 'bg-gray-100 border-gray-300 text-gray-700' :
-                            idx === 2 ? 'bg-orange-50 border-orange-200 text-orange-700' :
-                            'bg-gray-50 border-gray-200 text-gray-500'
-                          }`}
-                        >
-                          <span className="font-black text-lg">#{idx + 1}</span>
-                          <span className="font-bold">{model?.name || col}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {councilResults.chairmanSynthesis && (
-                  <div className="p-4 bg-[#1a3a8f]/5 border border-[#1a3a8f]/30 rounded-lg">
-                    <h4 className="font-bold text-[#1a3a8f] mb-3 flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Chairman Synthesis (Claude's final answer)
-                    </h4>
-                    <pre className="whitespace-pre-wrap text-sm bg-white p-4 rounded-lg border border-gray-200 text-gray-800 max-h-[300px] overflow-y-auto">
-                      {councilResults.chairmanSynthesis}
-                    </pre>
-                  </div>
-                )}
-
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Individual Judge Critiques
-                  </h4>
-                  <div className="space-y-4">
-                    {councilResults.councilEvaluations.map((evaluation, idx) => (
-                      <div key={idx} className="p-3 bg-white rounded-lg border border-gray-200">
-                        <div className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-mono">
-                            {evaluation.judgeColumn}
-                          </span>
-                          {evaluation.judgeName}
-                        </div>
-                        {evaluation.error ? (
-                          <p className="text-sm text-red-500">{evaluation.error}</p>
-                        ) : (
-                          <div className="space-y-1">
-                            {evaluation.rankings
-                              .sort((a, b) => a.rank - b.rank)
-                              .map((r, rIdx) => {
-                                const rankedModel = getModelForColumn(r.column);
-                                return (
-                                  <div key={rIdx} className="flex items-start gap-2 text-sm">
-                                    <span className={`font-bold w-6 ${
-                                      r.rank === 1 ? 'text-[#f5a623]' :
-                                      r.rank === 2 ? 'text-gray-600' :
-                                      r.rank === 3 ? 'text-orange-500' :
-                                      'text-gray-400'
-                                    }`}>#{r.rank}</span>
-                                    <span className="font-medium text-gray-700 w-32">{rankedModel?.name || r.column}</span>
-                                    <span className="text-gray-500 italic flex-1">"{r.critique}"</span>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </DialogContent>
         </Dialog>
 

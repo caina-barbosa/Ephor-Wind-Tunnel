@@ -53,28 +53,19 @@ Preferred communication style: Simple, everyday language.
   - Overridden models show amber "OVERRIDE" warning badge with tooltip
   - Helps students learn what happens when they ignore constraints
   - Note: Reasoning mode restrictions (70B+ requirement) cannot be overridden
-- **2025-11-29**: Model Council and Benchmark Library
-  - **Model Council Feature**: All 5 models judge each other's responses (peer review)
-    - Each model receives all 5 anonymized responses
-    - Each model ranks and critiques all responses (1-5 ranking with reasoning)
-    - Consensus rankings calculated by averaging all judges' votes
-    - Claude (Chairman) synthesizes a final answer from the best insights
-    - ~$0.50-$2.00 per council run (31 API calls total)
-  - **Benchmark Library**: Save and rerun test prompts
-    - "Benchmark Library" button in header opens library modal
-    - Save any prompt with name and optional description
-    - Load saved benchmarks to re-run tests
-    - Delete unwanted benchmarks
-  - **Database Schema**: New tables for benchmarks and runs
-    - `benchmarks` table: id, name, description, prompt, createdAt
-    - `benchmark_runs` table: id, benchmarkId, prompt, runAt, settings, responses, councilEvaluations, consensusRankings, chairmanSynthesis
+- **2025-11-29**: Benchmark Library
+  - Save and rerun test prompts
+  - "Benchmark Library" button in header opens library modal
+  - Save any prompt with name and optional description
+  - Load saved benchmarks to re-run tests
+  - Delete unwanted benchmarks
+  - **Database Schema**: `benchmarks` table with id, name, description, prompt, createdAt
   - **API Endpoints**:
-    - `POST /api/council/run` - Run the Model Council peer review
     - `GET /api/benchmarks` - List all saved benchmarks
     - `POST /api/benchmarks` - Save a new benchmark
     - `GET /api/benchmarks/:id` - Get benchmark with runs
     - `DELETE /api/benchmarks/:id` - Delete a benchmark
-    - `GET /api/benchmark-runs/:id` - Get a specific run
+- **2025-11-30**: Removed Model Council Feature (not in original spec, can restore from git)
 - **2025-11-29**: Integrated Cost vs Capability Chart
   - Removed Cost Curve button from top right corner
   - Added inline Pareto frontier chart below model grid (appears after running tests)
