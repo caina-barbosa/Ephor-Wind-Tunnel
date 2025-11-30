@@ -1015,10 +1015,11 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       return res.status(400).json({ error: "Prompt is required" });
     }
 
-    // Set up SSE headers
+    // Set up SSE headers with better connection handling
     res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
     console.log(`[Wind Tunnel Stream] Running model: ${modelId}`);
@@ -1027,37 +1028,107 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       const messages: ChatMessage[] = [{ role: "user", content: prompt }];
       const startTime = Date.now();
       
-      // Anthropic requires special handling - use non-streaming fallback
+      // Anthropic with streaming for real-time progress
       if (modelId === "anthropic/claude-sonnet-4.5") {
-        console.log("[Wind Tunnel] Claude path - calling getModelCompletion");
-        // Use existing non-streaming completion for Anthropic
-        const result = await getModelCompletion({
-          model: modelId,
-          messages,
-          maxTokens: 1024,
-          timeoutMs: 60000,
-        });
+        console.log("[Wind Tunnel] Claude path - streaming");
+        const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+        if (!anthropicApiKey) {
+          throw new Error("ANTHROPIC_API_KEY not configured");
+        }
         
-        console.log("[Wind Tunnel] Claude result:", { 
-          contentLength: result.content?.length, 
-          inputTokens: result.inputTokens, 
-          outputTokens: result.outputTokens 
+        const anthropicMessages = messages.map(msg => ({
+          role: msg.role === "assistant" ? "assistant" : "user",
+          content: msg.content,
+        }));
+
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": anthropicApiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 512,
+            messages: anthropicMessages,
+            stream: true,
+          }),
         });
-        
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Anthropic API error: ${response.status} - ${errorText}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("No reader available");
+
+        const decoder = new TextDecoder();
+        let content = "";
+        let tokenCount = 0;
+        let inputTokens = 0;
+        let outputTokens = 0;
+        let buffer = "";
+        let firstTokenTime = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6);
+              if (data === "[DONE]") continue;
+              
+              try {
+                const parsed = JSON.parse(data);
+                
+                if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                  if (firstTokenTime === 0) {
+                    firstTokenTime = Date.now() - startTime;
+                  }
+                  content += parsed.delta.text;
+                  tokenCount++;
+                  
+                  res.write(`data: ${JSON.stringify({ 
+                    type: 'token', 
+                    content: parsed.delta.text,
+                    tokenCount,
+                    elapsed: Date.now() - startTime
+                  })}\n\n`);
+                }
+                
+                if (parsed.type === "message_delta" && parsed.usage) {
+                  outputTokens = parsed.usage.output_tokens || 0;
+                }
+                if (parsed.type === "message_start" && parsed.message?.usage) {
+                  inputTokens = parsed.message.usage.input_tokens || 0;
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
+          }
+        }
+
         const latency = Date.now() - startTime;
-        const cost = calculateCost(modelId, result.inputTokens, result.outputTokens);
+        const cost = calculateCost(modelId, inputTokens, outputTokens);
         
-        // Send complete message directly
         res.write(`data: ${JSON.stringify({ 
           type: 'complete',
-          content: result.content,
-          inputTokens: result.inputTokens,
-          outputTokens: result.outputTokens,
+          content,
+          inputTokens,
+          outputTokens,
           latency,
           cost
         })}\n\n`);
         res.end();
-        console.log("[Wind Tunnel] Claude complete - sent SSE response");
+        console.log(`[Wind Tunnel] Claude complete in ${latency}ms - ${outputTokens} tokens`);
         return;
       }
       
