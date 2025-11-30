@@ -1,0 +1,98 @@
+GAP 1: Context Window Auto-Recommendation ("smallest that fits")
+The system needs to teach students: "don't buy more context than you need."
+Part A: Add recommendation text under Input Gauge
+Directly below the Input Gauge, add two lines:
+
+Line 1: "Your prompt uses [X] tokens."
+Line 2: "Recommended context: [tier] (cheapest that fits)."
+
+Examples:
+
+Short prompt: "Your prompt uses 3 tokens. Recommended context: 8K (cheapest that fits)."
+Long prompt: "Your prompt uses 27K tokens. Recommended context: 32K (smallest that fits)."
+
+Update these in real-time as user types.
+Part B: Update dropdown to show fit status + cost
+Each tier in the dropdown should show its status relative to the prompt size.
+For a short prompt (3 tokens):
+
+"8K tokens — ✅ Recommended"
+"32K tokens — Higher cost"
+"128K tokens — Much higher cost"
+"1M tokens — Extreme cost"
+
+For a long prompt (27K tokens):
+
+"8K tokens — ❌ Won't fit"
+"32K tokens — ✅ Recommended"
+"128K tokens — Higher cost"
+"1M tokens — Extreme cost"
+
+Part C: Warn when selected context is too small
+If student selects a context tier smaller than their prompt size:
+
+Show warning badge next to Run button: "Warning: selected context too small. Input will be truncated."
+Gray out model columns that can't fit the prompt
+Show "Doesn't fit your prompt" on those grayed-out models
+
+Part D: Auto-select recommended tier
+When user types or pastes a prompt, automatically select the smallest tier that fits.
+Student can still manually override to a larger (or smaller) tier.
+Part E: Edge cases
+If prompt exceeds 1M tokens:
+
+Show: "Prompt exceeds max context. Please shorten."
+Disable the Run button
+
+If prompt is close to tier cap (e.g. 7.8K for an 8K tier):
+
+Show: "8K fits, but tight — risk of truncation if you add more."
+
+
+GAP 2: Expert Mode Scaffolding (hide benchmarks by default)
+Novice students shouldn't see raw benchmark numbers — it's overwhelming and meaningless without context.
+Part A: Default state (Expert Mode OFF)
+Hide:
+
+MMLU %
+HumanEval %
+Architecture
+Training
+Fine-tuning
+Inference
+Safety
+
+Show only:
+
+Capability tier (Basic / Good / Strong / Excellent)
+One plain-English skill tag per model
+Est. Cost
+Input type (Text / Vision)
+Speed (after run)
+
+Skill tag examples:
+
+3B (Basic): "Best for simple Q&A"
+7B (Good): "Solid general assistant"
+17B (Good): "Good at longer documents"
+70B (Strong): "Great at multi-step reasoning"
+Frontier (Excellent): "Best at coding & complex tasks"
+
+Part B: Expert Mode ON
+Reveal:
+
+Benchmarks section: MMLU %, HumanEval %
+Technical Details section: Architecture, Training, Fine-tuning, Inference, Safety
+
+Part C: Add tooltips for benchmark terms
+Even in Expert Mode, add tooltips so students learn what these mean:
+
+MMLU (ⓘ): "School-style knowledge & reasoning. Higher % = smarter."
+HumanEval (ⓘ): "How well it writes correct code. Higher % = better coder."
+
+Show tooltip on hover (desktop) or tap (mobile).
+
+Summary:
+
+Gap 1 teaches: "Pick the smallest context that fits — bigger = more expensive"
+Gap 2 teaches: "Start simple, go deeper when ready"

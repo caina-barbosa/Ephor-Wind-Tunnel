@@ -302,6 +302,32 @@ const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excel
   }
 };
 
+const getSkillTag = (col: string): string => {
+  switch (col) {
+    case "3B": return "Best for simple Q&A";
+    case "7B": return "Solid general assistant";
+    case "17B": return "Good at longer documents";
+    case "70B": return "Great at multi-step reasoning";
+    case "Frontier": return "Best at coding & complex tasks";
+    default: return "";
+  }
+};
+
+const getContextTightFitWarning = (tokenCount: number, selectedTokens: number): string | null => {
+  if (tokenCount <= 0) return null;
+  const percentUsed = (tokenCount / selectedTokens) * 100;
+  if (percentUsed >= 90 && percentUsed <= 100) {
+    return "Fits, but tight — risk of truncation if you add more.";
+  }
+  return null;
+};
+
+const formatTokenCount = (count: number): string => {
+  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+  return count.toString();
+};
+
 const getLatencyColor = (_latency?: "fast" | "medium" | "slow") => "text-gray-600";
 const getLatencyLabel = (latency: "fast" | "medium" | "slow") => getLatencyBarConfig(latency).label;
 const getCapabilityColor = (_accuracy?: "basic" | "good" | "strong" | "excellent") => "text-gray-600";
@@ -321,11 +347,11 @@ const getContextTierLabel = (tierValue: string, tokenCount: number, recommendedT
   if (!tier) return { label: tierValue, status: "higher" };
   
   if (tokenCount > tier.tokens) {
-    return { label: `${tier.label} — won't fit`, status: "wontfit" };
+    return { label: `${tier.label} tokens — ❌ Won't fit`, status: "wontfit" };
   }
   
   if (tierValue === recommendedTier) {
-    return { label: `${tier.label} ✓ recommended`, status: "recommended" };
+    return { label: `${tier.label} tokens — ✅ Recommended`, status: "recommended" };
   }
   
   const tierIndex = CONTEXT_SIZES.findIndex(s => s.value === tierValue);
@@ -333,11 +359,11 @@ const getContextTierLabel = (tierValue: string, tokenCount: number, recommendedT
   
   if (tierIndex > recIndex) {
     const costDiff = tierIndex - recIndex;
-    const costLabel = costDiff === 1 ? "higher cost" : costDiff === 2 ? "much higher cost" : "extreme cost";
-    return { label: `${tier.label} — ${costLabel}`, status: "higher" };
+    const costLabel = costDiff === 1 ? "Higher cost" : costDiff === 2 ? "Much higher cost" : "Extreme cost";
+    return { label: `${tier.label} tokens — ${costLabel}`, status: "higher" };
   }
   
-  return { label: `${tier.label}`, status: "higher" };
+  return { label: `${tier.label} tokens`, status: "higher" };
 };
 
 export default function ChatPage() {
@@ -400,6 +426,15 @@ export default function ChatPage() {
       setContextSize(recommendedContextTier);
     }
   }, [recommendedContextTier, contextAutoSelected, isRunning]);
+
+  // GAP 1D: Re-engage auto-select when user edits prompt and recommended tier changes
+  useEffect(() => {
+    // Re-engage auto-select when prompt changes and current selection doesn't fit
+    const currentTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
+    if (inputTokenEstimate > currentTokens && contextSize !== recommendedContextTier) {
+      setContextAutoSelected(true);
+    }
+  }, [inputTokenEstimate, recommendedContextTier]);
 
   const handleContextSizeChange = (value: string) => {
     // Check if user is selecting a larger-than-recommended tier
@@ -1000,8 +1035,31 @@ export default function ChatPage() {
             <div className={`mt-2 p-2.5 rounded-lg border ${
               inputTokenEstimate > selectedContextTokens 
                 ? 'bg-red-50 border-red-300' 
-                : 'bg-gray-50 border-gray-200'
+                : inputTokenEstimate > 1000000
+                  ? 'bg-red-50 border-red-300'
+                  : 'bg-gray-50 border-gray-200'
             }`}>
+              {/* GAP 1A: Token count and recommendation */}
+              <div className="mb-2 text-sm">
+                <div className="font-medium text-gray-900">
+                  Your prompt uses <span className="font-bold text-[#1a3a8f]">{inputTokenEstimate.toLocaleString()}</span> tokens.
+                </div>
+                {inputTokenEstimate > 1000000 ? (
+                  <div className="text-red-600 font-bold mt-0.5">
+                    Prompt exceeds max context (1M tokens). Please shorten.
+                  </div>
+                ) : inputTokenEstimate > 0 && (
+                  <div className="text-emerald-600 mt-0.5">
+                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> (cheapest that fits)
+                  </div>
+                )}
+                {getContextTightFitWarning(inputTokenEstimate, selectedContextTokens) && (
+                  <div className="text-amber-600 font-medium mt-0.5">
+                    {contextSize.toUpperCase()} {getContextTightFitWarning(inputTokenEstimate, selectedContextTokens)}
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-xs text-gray-900">INPUT GAUGE</span>
@@ -1027,14 +1085,12 @@ export default function ChatPage() {
                 </div>
               </div>
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden relative">
-                {/* Used portion (blue) - z-10 to stay on top */}
                 <div 
                   className={`h-full transition-all absolute left-0 z-10 ${
                     inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-[#1a3a8f]'
                   }`}
                   style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
                 />
-                {/* Unused/wasted portion indicator (gray striped pattern when larger than recommended) */}
                 {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
                   <div 
                     className="h-full absolute bg-gray-300 opacity-60"
@@ -1046,28 +1102,9 @@ export default function ChatPage() {
                   />
                 )}
               </div>
-              {inputTokenEstimate > 0 && (
-                <div className="mt-2 text-xs space-y-0.5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-[#1a3a8f]"></span>
-                      <span className="text-gray-600">Used: <span className="font-bold text-gray-900">{inputTokenEstimate.toLocaleString()}</span></span>
-                    </span>
-                    {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-gray-300"></span>
-                        <span className="text-gray-500">Unused: <span className="font-medium">{(selectedContextTokens - inputTokenEstimate).toLocaleString()}</span></span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-emerald-600 font-medium">
-                    Recommended: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> (lowest cost)
-                  </div>
-                  {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
-                    <div className="text-amber-600 font-medium">
-                      You're paying for {(selectedContextTokens - inputTokenEstimate).toLocaleString()} unused tokens
-                    </div>
-                  )}
+              {inputTokenEstimate > 0 && contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
+                <div className="mt-2 text-xs text-amber-600 font-medium">
+                  You're paying for {(selectedContextTokens - inputTokenEstimate).toLocaleString()} unused tokens
                 </div>
               )}
             </div>
@@ -1194,16 +1231,29 @@ export default function ChatPage() {
             </Tooltip>
           </div>
 
+          {/* GAP 1C: Warning when context too small */}
+          {inputTokenEstimate > selectedContextTokens && !expertMode && (
+            <div className="mb-2 p-2 bg-red-50 border border-red-300 rounded-lg flex items-center gap-2 text-red-600 text-sm font-medium">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              Warning: selected context too small. Input will be truncated.
+            </div>
+          )}
+
           <button
             onClick={handleRunAll}
-            disabled={!prompt.trim() || isRunning}
+            disabled={!prompt.trim() || isRunning || inputTokenEstimate > 1000000}
             className="w-full py-3 text-sm sm:text-base font-bold mb-6 rounded-lg flex items-center justify-center gap-2 text-white disabled:cursor-not-allowed hover:brightness-110 transition-all"
-            style={{ backgroundColor: (!prompt.trim() || isRunning) ? '#2a4a9f' : '#1a3a8f' }}
+            style={{ backgroundColor: (!prompt.trim() || isRunning || inputTokenEstimate > 1000000) ? '#2a4a9f' : '#1a3a8f' }}
           >
             {isRunning ? (
               <>
                 <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 animate-spin" />
                 Testing All Models...
+              </>
+            ) : inputTokenEstimate > 1000000 ? (
+              <>
+                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                Prompt Too Long (Max 1M tokens)
               </>
             ) : (
               <>
@@ -1385,37 +1435,47 @@ export default function ChatPage() {
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                    <BarChart3 className="w-4 h-4" /> MMLU <Info className="w-3 h-3 text-gray-400" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="left" className="max-w-[200px]">
-                                  <p className="text-xs">MMLU: General knowledge + reasoning test. Higher % = smarter model.</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
-                                {model!.benchmarks.mmlu?.toFixed(0)}%
-                              </span>
+                            {/* GAP 2A: Skill tag - always visible */}
+                            <div className="text-xs text-gray-500 italic py-1 border-t border-gray-100 mt-1">
+                              {getSkillTag(col)}
                             </div>
 
-                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                    <Code2 className="w-4 h-4" /> HumanEval <Info className="w-3 h-3 text-gray-400" />
+                            {/* GAP 2B: Benchmarks - Expert Mode only */}
+                            {expertMode && (
+                              <>
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2 mt-1">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
+                                        <BarChart3 className="w-4 h-4" /> MMLU <Info className="w-3 h-3 text-gray-400" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-[200px]">
+                                      <p className="text-xs">MMLU: School-style knowledge & reasoning. Higher % = smarter.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
+                                    {model!.benchmarks.mmlu?.toFixed(0)}%
                                   </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="left" className="max-w-[200px]">
-                                  <p className="text-xs">HumanEval: Coding test. Higher % = better at writing code.</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
-                                {model!.benchmarks.humanEval ? `${model!.benchmarks.humanEval.toFixed(0)}%` : "—"}
-                              </span>
-                            </div>
+                                </div>
+
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
+                                        <Code2 className="w-4 h-4" /> HumanEval <Info className="w-3 h-3 text-gray-400" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-[200px]">
+                                      <p className="text-xs">HumanEval: How well it writes correct code. Higher % = better coder.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
+                                    {model!.benchmarks.humanEval ? `${model!.benchmarks.humanEval.toFixed(0)}%` : "—"}
+                                  </span>
+                                </div>
+                              </>
+                            )}
 
                             <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
@@ -1444,18 +1504,21 @@ export default function ChatPage() {
                               </span>
                             </div>
 
-                            <button
-                              onClick={() => setExpandedTechDetails(prev => ({ ...prev, [col]: !prev[col] }))}
-                              className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-700 pt-2 mt-1 border-t border-gray-100"
-                            >
-                              <span className="flex items-center gap-1">
-                                <Layers className="w-3 h-3" />
-                                Technical Details
-                              </span>
-                              {expandedTechDetails[col] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                            </button>
+                            {/* GAP 2B: Technical Details - Expert Mode only */}
+                            {expertMode && (
+                              <button
+                                onClick={() => setExpandedTechDetails(prev => ({ ...prev, [col]: !prev[col] }))}
+                                className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-700 pt-2 mt-1 border-t border-gray-100"
+                              >
+                                <span className="flex items-center gap-1">
+                                  <Layers className="w-3 h-3" />
+                                  Technical Details
+                                </span>
+                                {expandedTechDetails[col] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                            )}
 
-                            {expandedTechDetails[col] && (
+                            {expertMode && expandedTechDetails[col] && (
                               <div className="space-y-1.5 pt-1 text-xs">
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                                   <Tooltip>
