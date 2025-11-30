@@ -1975,9 +1975,35 @@ export default function ChatPage() {
                             </div>
                           </div>
 
-                          {/* 2. Expert Mode: Benchmarks & Technical Details (BEFORE response) */}
+                          {/* 2. Expert Mode: Full model details (BEFORE response) */}
                           {expertMode && (
                             <div className="mb-3 space-y-2 pt-2 border-t border-gray-100">
+                              {/* Est. Cost */}
+                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium">
+                                  <DollarSign className="w-3 h-3" /> Est. Cost
+                                </span>
+                                <span className="font-mono text-xs tabular-nums text-right text-gray-700">
+                                  ${estimatedCost.toFixed(4)}
+                                </span>
+                              </div>
+
+                              {/* Capability */}
+                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium">
+                                  <Target className="w-3 h-3" /> Capability
+                                </span>
+                                <span className={`text-xs font-semibold text-right ${capabilityConfig.textColor}`}>
+                                  {capabilityConfig.label}
+                                </span>
+                              </div>
+
+                              {/* Skill tag */}
+                              <div className="text-xs text-gray-500 italic py-1 border-t border-gray-100">
+                                {getSkillTag(col)}
+                              </div>
+
+                              {/* MMLU */}
                               <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
