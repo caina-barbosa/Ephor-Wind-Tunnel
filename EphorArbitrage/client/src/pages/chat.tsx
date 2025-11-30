@@ -1393,6 +1393,11 @@ export default function ChatPage() {
                   {reasoningEnabled ? 'ENABLED' : 'DISABLED'}
                 </span>
               </div>
+              {reasoningEnabled && (
+                <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">
+                  Reasoning works best on 70B+ models. Smaller ones are locked.
+                </p>
+              )}
             </div>
           </div>
 
@@ -1529,32 +1534,33 @@ export default function ChatPage() {
                                 </>
                               ) : isReasoningLocked ? (
                                 <div className="flex flex-col items-center text-center px-2">
+                                  <div className="flex items-center gap-1.5 mb-2">
+                                    <Lock className="w-4 h-4 text-gray-400" />
+                                    <span className="text-sm font-bold text-gray-600">Reasoning Locked</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 mb-2 leading-relaxed">
+                                    This model is too small to "think step-by-step."
+                                  </p>
+                                  <div className="text-[10px] text-gray-400 leading-relaxed mb-2 space-y-0.5">
+                                    <p>Reasoning uses extra compute (3–5× cost).</p>
+                                    <p>Small models don't have enough parameters to do it reliably.</p>
+                                  </div>
+                                  <p className="text-[11px] text-[#1a3a8f] font-medium">
+                                    Try reasoning on 70B or Frontier instead.
+                                  </p>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <button className="mb-2 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors group">
-                                        <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-gray-600" />
+                                      <button className="mt-2 text-[10px] text-gray-400 hover:text-gray-600 underline">
+                                        Learn more
                                       </button>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[200px] bg-white border-gray-200 text-gray-700">
-                                      <p className="font-bold text-gray-900 mb-1">Why locked?</p>
-                                      <p className="text-xs text-gray-600">
-                                        Reasoning uses extra compute. Small models usually get slower and worse when forced to reason.
+                                    <TooltipContent side="bottom" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
+                                      <p className="text-xs">
+                                        <span className="font-semibold">Reasoning</span> = the model shows its work before answering. 
+                                        It needs a big model to be accurate.
                                       </p>
-                                      <p className="text-xs text-gray-500 mt-1">So we reserve reasoning for 70B+.</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <span className="text-sm font-bold text-gray-600 mb-1">
-                                    Reasoning not available
-                                  </span>
-                                  <span className="text-xs text-gray-500 mb-2">
-                                    This is a <span className="font-semibold">{col}</span> model.
-                                  </span>
-                                  <span className="text-[10px] text-gray-400 leading-tight">
-                                    Small models (3B–17B) can't reason reliably.
-                                  </span>
-                                  <span className="text-[10px] text-[#1a3a8f] font-medium mt-1">
-                                    Try 70B or Frontier →
-                                  </span>
                                 </div>
                               ) : (
                                 <>
@@ -1616,9 +1622,20 @@ export default function ChatPage() {
                             {model!.name}
                           </span>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
-                            <span className="ml-1 sm:ml-2 text-xs bg-[#1a3a8f]/10 text-[#1a3a8f] px-1 sm:px-2 py-0.5 rounded font-bold">
-                              DEEP
-                            </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="ml-1 sm:ml-2 inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-1.5 sm:px-2 py-0.5 rounded font-bold border border-emerald-200 cursor-help">
+                                  <Brain className="w-3 h-3" />
+                                  Reasoning Ready
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
+                                <p className="font-semibold text-gray-900 mb-1">Why this works</p>
+                                <p className="text-xs text-gray-600">
+                                  Big models have enough parameters to keep multi-step thoughts consistent.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                           {warning && (
                             <Tooltip>
@@ -1635,6 +1652,15 @@ export default function ChatPage() {
                             </Tooltip>
                           )}
                         </div>
+                        
+                        {/* Reasoning Ready explanation for 70B/Frontier */}
+                        {reasoningEnabled && (col === "70B" || col === "Frontier") && !hasResults && (
+                          <div className="mb-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-center">
+                            <p className="text-xs text-emerald-700 font-medium">Reasoning ON for this model</p>
+                            <p className="text-[10px] text-emerald-600 mt-0.5">It will think step-by-step before answering.</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Higher quality, slower + 3–5× cost.</p>
+                          </div>
+                        )}
 
                         {!hasResults && (
                           <div className="space-y-2">
