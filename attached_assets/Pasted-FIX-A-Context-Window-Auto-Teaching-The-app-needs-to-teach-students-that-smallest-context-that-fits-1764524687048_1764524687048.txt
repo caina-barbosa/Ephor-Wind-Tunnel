@@ -1,0 +1,84 @@
+FIX A: Context Window Auto-Teaching
+The app needs to teach students that "smallest context that fits = cheapest." Right now the dropdown is manual with no guidance.
+
+Below the Input Gauge, add two lines of text:
+
+Line 1: "Your prompt uses ~[X] tokens"
+Line 2: "Recommended context: [smallest tier that fits] (lowest cost)"
+
+
+Update the Context Window dropdown labels:
+
+If prompt fits in 8K: "8K ✅ recommended"
+"32K — higher cost"
+"128K — much higher cost"
+"1M — extreme cost"
+
+
+If the prompt token count exceeds a tier's capacity:
+
+Show that option in red text
+Add "— won't fit" after the label
+Make it unselectable or show warning if selected
+
+
+Auto-select the smallest context tier that fits the prompt by default. Student can still override manually.
+
+
+FIX B: Budget Cap Visibly Disables Models
+The Max Cost slider needs to be a hard constraint, not just informational. Models that exceed the cap should be visually disabled.
+
+When a model's estimated cost exceeds the current Max Cost slider value:
+
+Gray out that model's entire card/column
+Overlay or badge on the card: "Exceeds $[X.XX] cap"
+Exclude that model from PICK badge consideration
+
+
+The PICK badge should automatically shift to the best model still under budget
+If ALL models exceed the budget cap:
+
+Show a message below the cards: "No models fit your budget — increase cost cap or reduce context window"
+No PICK badge should appear
+
+
+As the user moves the cost slider, cards should gray out or light up in real-time
+
+
+FIX C: Prompt Difficulty Nudge
+Easy prompts (like "What is 2+2?" or "What is the capital of France?") make all models look equal, which undermines the capability labels (Basic → Excellent). Students need a nudge to try harder prompts.
+
+After a test run completes, check if all models returned similar/correct answers
+If yes, show a subtle prompt below the model cards (above the Pareto chart):
+
+"💡 All models handled this one — try a harder prompt to see real capability differences"
+
+
+Optional: Add a "Try a Challenge Prompt" button next to that message
+
+Clicking it loads a pre-set harder prompt into the input field
+Example prompts:
+
+"Explain why 0.999... equals 1"
+"Write a Python function to find the longest palindromic substring"
+"A bat and ball cost $1.10 total. The bat costs $1 more than the ball. How much does the ball cost? Explain your reasoning."
+
+
+Rotate through different challenge prompts each time
+
+
+Styling for the nudge:
+
+Muted text color
+Centered
+Smaller font (14px)
+Fade in after results load
+
+
+
+
+Summary of changes:
+
+Fix A teaches context optimization automatically
+Fix B makes budget a real constraint students can see and feel
+Fix C pushes students toward discovering capability differences

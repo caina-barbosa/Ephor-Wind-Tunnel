@@ -65,6 +65,22 @@ Preferred communication style: Simple, everyday language.
     - `POST /api/benchmarks` - Save a new benchmark
     - `GET /api/benchmarks/:id` - Get benchmark with runs
     - `DELETE /api/benchmarks/:id` - Delete a benchmark
+- **2025-11-30**: Educational UI Enhancements (Fix A, B, C)
+  - **Context Window Auto-Teaching (Fix A)**:
+    - Auto-selects smallest context tier that fits the prompt (teaches "smallest = cheapest")
+    - Input Gauge shows token count guidance and recommended context tier
+    - Context dropdown shows enhanced labels: "✓ recommended", "— higher cost", "— won't fit"
+    - "Best Value" / "Higher Cost" / "Won't Fit" badges in control panel
+    - Manual override still respected; auto-selection resets when loading benchmarks or challenge prompts
+  - **Budget Cap Visual Feedback (Fix B)**:
+    - Models exceeding cost cap are visibly disabled with clear reason displayed
+    - "No models fit your budget" warning when all models are filtered out
+    - Suggests increasing cost cap or reducing context window
+  - **Prompt Difficulty Nudge (Fix C)**:
+    - Detects when all models handle a prompt easily (short prompt + short/similar responses)
+    - Shows "💡 All models handled this one easily — try a harder prompt" message
+    - "Try a Challenge Prompt" button loads rotating set of 8 educational challenge prompts
+    - Challenge prompts include math proofs, coding problems, and reasoning puzzles
 - **2025-11-30**: Removed Model Council Feature (not in original spec, can restore from git)
 - **2025-11-29**: Integrated Cost vs Capability Chart
   - Removed Cost Curve button from top right corner

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -211,6 +211,17 @@ const CONTEXT_SIZES = [
   { value: "1m", tokens: 1000000, label: "1M" },
 ] as const;
 
+const CHALLENGE_PROMPTS = [
+  "Explain why 0.999... (repeating) equals exactly 1. Provide a rigorous mathematical proof.",
+  "Write a Python function to find the longest palindromic substring in a given string. Explain your approach and time complexity.",
+  "A bat and ball cost $1.10 total. The bat costs $1 more than the ball. How much does the ball cost? Show your reasoning step by step.",
+  "Explain the Monty Hall problem and why switching doors gives you a 2/3 chance of winning. Most people get this wrong!",
+  "Write a recursive function to generate all valid combinations of n pairs of parentheses. Explain the logic.",
+  "A farmer has 17 sheep. All but 9 run away. How many sheep does the farmer have left? Explain your reasoning.",
+  "Explain why the sum of all positive integers (1+2+3+4+...) is sometimes said to equal -1/12. Is this real math?",
+  "Write a function to detect if a linked list has a cycle, using O(1) space. Explain the algorithm.",
+];
+
 const COLUMN_VISUALS: Record<string, {
   headerSize: string;
   headerBg: string;
@@ -296,6 +307,39 @@ const getLatencyLabel = (latency: "fast" | "medium" | "slow") => getLatencyBarCo
 const getCapabilityColor = (_accuracy?: "basic" | "good" | "strong" | "excellent") => "text-gray-600";
 const getCapabilityLabel = (accuracy: "basic" | "good" | "strong" | "excellent") => getCapabilityVisuals(accuracy).label;
 
+const getRecommendedContextTier = (tokenCount: number): string => {
+  for (const size of CONTEXT_SIZES) {
+    if (tokenCount <= size.tokens) {
+      return size.value;
+    }
+  }
+  return "1m";
+};
+
+const getContextTierLabel = (tierValue: string, tokenCount: number, recommendedTier: string): { label: string; status: "recommended" | "higher" | "wontfit" } => {
+  const tier = CONTEXT_SIZES.find(s => s.value === tierValue);
+  if (!tier) return { label: tierValue, status: "higher" };
+  
+  if (tokenCount > tier.tokens) {
+    return { label: `${tier.label} — won't fit`, status: "wontfit" };
+  }
+  
+  if (tierValue === recommendedTier) {
+    return { label: `${tier.label} ✓ recommended`, status: "recommended" };
+  }
+  
+  const tierIndex = CONTEXT_SIZES.findIndex(s => s.value === tierValue);
+  const recIndex = CONTEXT_SIZES.findIndex(s => s.value === recommendedTier);
+  
+  if (tierIndex > recIndex) {
+    const costDiff = tierIndex - recIndex;
+    const costLabel = costDiff === 1 ? "higher cost" : costDiff === 2 ? "much higher cost" : "extreme cost";
+    return { label: `${tier.label} — ${costLabel}`, status: "higher" };
+  }
+  
+  return { label: `${tier.label}`, status: "higher" };
+};
+
 export default function ChatPage() {
   const [prompt, setPrompt] = useState("");
   const [responses, setResponses] = useState<Record<string, ModelResponse>>({});
@@ -335,14 +379,31 @@ export default function ChatPage() {
   }>>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   
-  const [contextSize, setContextSize] = useState<string>("128k");
+  const [contextSize, setContextSize] = useState<string>("8k");
+  const [contextAutoSelected, setContextAutoSelected] = useState(true);
   const [costCap, setCostCap] = useState<number>(0.25);
   const [reasoningEnabled, setReasoningEnabled] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
+  const [challengePromptIndex, setChallengePromptIndex] = useState(0);
 
   const inputTokenEstimate = useMemo(() => {
     return Math.ceil(prompt.length / 4);
   }, [prompt]);
+
+  const recommendedContextTier = useMemo(() => {
+    return getRecommendedContextTier(inputTokenEstimate);
+  }, [inputTokenEstimate]);
+
+  useEffect(() => {
+    if (contextAutoSelected && !isRunning) {
+      setContextSize(recommendedContextTier);
+    }
+  }, [recommendedContextTier, contextAutoSelected, isRunning]);
+
+  const handleContextSizeChange = (value: string) => {
+    setContextSize(value);
+    setContextAutoSelected(false);
+  };
 
   const selectedContextTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 128000;
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
@@ -461,6 +522,71 @@ export default function ChatPage() {
       return resp && !resp.loading && (resp.content || resp.error);
     });
   }, [showResults, responses]);
+
+  // Detect if the prompt was "easy" - all models handled it successfully with similar answers
+  const isEasyPrompt = useMemo(() => {
+    if (!allModelsComplete) return false;
+    
+    // Get all responses that were attempted (not disabled models)
+    const attemptedResponses = Object.entries(responses);
+    if (attemptedResponses.length < 2) return false;
+    
+    // All attempted models must have successful responses (no errors)
+    const allSuccessful = attemptedResponses.every(([_, r]) => 
+      r.content && !r.error && r.content.length > 0
+    );
+    if (!allSuccessful) return false;
+    
+    const successfulResponses = attemptedResponses.map(([_, r]) => r);
+    
+    // Check 1: All responses are very short (under 300 chars suggests trivial answer)
+    const allShort = successfulResponses.every(r => r.content.length < 300);
+    
+    // Check 2: Prompt itself is very short (under 80 chars suggests simple question)
+    const shortPrompt = prompt.length < 80;
+    
+    // Check 3: All responses have similar lengths (within 3x of each other)
+    const lengths = successfulResponses.map(r => r.content.length);
+    const minLen = Math.min(...lengths);
+    const maxLen = Math.max(...lengths);
+    const similarLengths = maxLen < minLen * 3;
+    
+    // Only nudge if: short prompt AND (all short answers OR similar length answers)
+    return shortPrompt && (allShort || (similarLengths && minLen < 500));
+  }, [allModelsComplete, responses, prompt]);
+
+  // Check if no models fit the budget (specifically due to cost cap, not context or reasoning)
+  const noModelsInBudget = useMemo(() => {
+    // Get only the models that exist in the current mode
+    const availableModels = COLUMNS.map(col => ({
+      col,
+      model: getModelForColumn(col)
+    })).filter(({ model }) => model !== null);
+    
+    // If no models are available (shouldn't happen in practice), return false
+    if (availableModels.length === 0) return false;
+    
+    // Only true if EVERY available model is blocked specifically due to cost cap
+    const estimatedTokens = Math.max(inputTokenEstimate, 100) + 500;
+    
+    const allBlockedByCost = availableModels.every(({ model }) => {
+      // Calculate the estimated cost for this model
+      const cost = (estimatedTokens / 1000) * model!.costPer1k;
+      
+      // Check if this model exceeds cost cap
+      return cost > costCap;
+    });
+    
+    return allBlockedByCost;
+  }, [costCap, inputTokenEstimate, reasoningEnabled]);
+
+  const loadChallengePrompt = () => {
+    setPrompt(CHALLENGE_PROMPTS[challengePromptIndex]);
+    setChallengePromptIndex((prev) => (prev + 1) % CHALLENGE_PROMPTS.length);
+    setShowResults(false);
+    setResponses({});
+    setContextAutoSelected(true);
+  };
 
   // Recommendation logic: find the CHEAPEST model that fits constraints, tie-break by FASTEST latency
   // ONLY shows after all models have completed
@@ -669,6 +795,7 @@ export default function ChatPage() {
     setShowLibraryModal(false);
     setShowResults(false);
     setResponses({});
+    setContextAutoSelected(true);
   };
 
   const handleDeleteBenchmark = async (id: string) => {
@@ -830,6 +957,16 @@ export default function ChatPage() {
                   style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
                 />
               </div>
+              {inputTokenEstimate > 0 && (
+                <div className="mt-2 text-xs space-y-0.5">
+                  <div className="text-gray-600">
+                    Your prompt uses ~<span className="font-bold text-gray-900">{inputTokenEstimate.toLocaleString()}</span> tokens
+                  </div>
+                  <div className="text-emerald-600 font-medium">
+                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> (lowest cost)
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -840,22 +977,43 @@ export default function ChatPage() {
                   <Brain className="w-4 h-4 text-gray-500" />
                   <span className="font-bold text-gray-900 text-sm">Context Window</span>
                 </div>
-                {(contextSize === "128k" || contextSize === "1m") && (
-                  <span className="text-xs px-2 py-0.5 rounded font-medium border border-gray-300 text-gray-600">
-                    {contextSize === "1m" ? "Max Cost" : "Higher Cost"}
+                {contextSize !== recommendedContextTier && (
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium border ${
+                    inputTokenEstimate > selectedContextTokens 
+                      ? 'border-red-300 text-red-600 bg-red-50' 
+                      : 'border-amber-300 text-amber-600 bg-amber-50'
+                  }`}>
+                    {inputTokenEstimate > selectedContextTokens ? "Won't Fit" : "Higher Cost"}
+                  </span>
+                )}
+                {contextSize === recommendedContextTier && (
+                  <span className="text-xs px-2 py-0.5 rounded font-medium border border-emerald-300 text-emerald-600 bg-emerald-50">
+                    Best Value
                   </span>
                 )}
               </div>
-              <Select value={contextSize} onValueChange={setContextSize} disabled={isRunning}>
+              <Select value={contextSize} onValueChange={handleContextSizeChange} disabled={isRunning}>
                 <SelectTrigger className="bg-white text-gray-900 border-gray-300 h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
-                  {CONTEXT_SIZES.map(size => (
-                    <SelectItem key={size.value} value={size.value} className="text-gray-900 hover:bg-gray-100">
-                      {size.label} tokens
-                    </SelectItem>
-                  ))}
+                  {CONTEXT_SIZES.map(size => {
+                    const tierInfo = getContextTierLabel(size.value, inputTokenEstimate, recommendedContextTier);
+                    return (
+                      <SelectItem 
+                        key={size.value} 
+                        value={size.value} 
+                        className={`hover:bg-gray-100 ${
+                          tierInfo.status === "wontfit" ? "text-red-500" :
+                          tierInfo.status === "recommended" ? "text-emerald-600 font-medium" :
+                          "text-gray-600"
+                        }`}
+                        disabled={tierInfo.status === "wontfit" && !expertMode}
+                      >
+                        {tierInfo.label}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -1365,8 +1523,36 @@ export default function ChatPage() {
             </div>
           </div>
 
+          {/* No Models Fit Budget Warning */}
+          {noModelsInBudget && !isRunning && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+              <div className="flex items-center justify-center gap-2 text-amber-700 mb-2">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-bold">No models fit your budget</span>
+              </div>
+              <p className="text-sm text-amber-600">
+                Increase the cost cap slider or select a smaller context window to enable models.
+              </p>
+            </div>
+          )}
+
+          {/* Difficulty Nudge - suggests harder prompts when all models give similar answers */}
+          {isEasyPrompt && allModelsComplete && (
+            <div className="mt-4 text-center animate-fade-in">
+              <p className="text-sm text-gray-500 mb-2">
+                💡 All models handled this one easily — try a harder prompt to see real capability differences
+              </p>
+              <button
+                onClick={loadChallengePrompt}
+                className="text-sm text-[#1a3a8f] hover:text-[#2a4a9f] font-medium hover:underline"
+              >
+                Try a Challenge Prompt →
+              </button>
+            </div>
+          )}
+
           {/* Run Again teaching prompt - shows after first test completes */}
-          {testRunCount === 1 && !isRunning && (
+          {testRunCount === 1 && !isRunning && !isEasyPrompt && (
             <div className="text-center py-4 animate-fade-in">
               <p className="text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-default">
                 🔁 Run the test again — what changes?
