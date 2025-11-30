@@ -1147,6 +1147,10 @@ export default function ChatPage() {
             )}
           </button>
 
+          <p className="text-center text-xs text-gray-500 mb-3">
+            For each size band, we auto-pick the best model that fits your cost + context constraints.
+          </p>
+
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <div className="min-w-[700px] sm:min-w-0">
@@ -1319,11 +1323,11 @@ export default function ChatPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                    <BarChart3 className="w-4 h-4" /> MMLU
+                                    <BarChart3 className="w-4 h-4" /> MMLU <Info className="w-3 h-3 text-gray-400" />
                                   </span>
                                 </TooltipTrigger>
-                                <TooltipContent side="left">
-                                  <p className="text-xs">General knowledge (57 subjects)</p>
+                                <TooltipContent side="left" className="max-w-[200px]">
+                                  <p className="text-xs">MMLU: General knowledge + reasoning test. Higher % = smarter model.</p>
                                 </TooltipContent>
                               </Tooltip>
                               <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
@@ -1335,11 +1339,11 @@ export default function ChatPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                    <Code2 className="w-4 h-4" /> HumanEval
+                                    <Code2 className="w-4 h-4" /> HumanEval <Info className="w-3 h-3 text-gray-400" />
                                   </span>
                                 </TooltipTrigger>
-                                <TooltipContent side="left">
-                                  <p className="text-xs">Coding ability benchmark</p>
+                                <TooltipContent side="left" className="max-w-[200px]">
+                                  <p className="text-xs">HumanEval: Coding test. Higher % = better at writing code.</p>
                                 </TooltipContent>
                               </Tooltip>
                               <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
