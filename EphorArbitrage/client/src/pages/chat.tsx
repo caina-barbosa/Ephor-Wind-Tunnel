@@ -1631,9 +1631,13 @@ export default function ChatPage() {
           {/* Run Again teaching prompt - shows after first test completes */}
           {testRunCount === 1 && !isRunning && !isEasyPrompt && (
             <div className="text-center py-4 animate-fade-in">
-              <p className="text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-default">
-                🔁 Run the test again — what changes?
-              </p>
+              <button 
+                onClick={handleRunAll}
+                className="text-sm text-gray-500 hover:text-[#1a3a8f] hover:bg-gray-100 transition-all px-4 py-2 rounded-lg border border-gray-200 hover:border-[#1a3a8f]/30 cursor-pointer flex items-center gap-2 mx-auto"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Run the test again — what changes?
+              </button>
             </div>
           )}
 
