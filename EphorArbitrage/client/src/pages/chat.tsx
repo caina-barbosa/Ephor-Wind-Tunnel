@@ -694,110 +694,70 @@ export default function ChatPage() {
         const decoder = new TextDecoder();
         let accumulatedContent = "";
         let tokenCount = 0;
-        let buffer = "";
-        let receivedComplete = false;
-        let finalLatency: number | null = null;
-        let finalCost: number | null = null;
 
         while (true) {
           const { done, value } = await reader.read();
-          
-          if (value) {
-            buffer += decoder.decode(value, { stream: true });
-            const parts = buffer.split("\n\n");
-            buffer = parts.pop() || "";
+          if (done) break;
 
-            for (const line of parts) {
-              if (!line.startsWith("data: ")) continue;
-              
-              try {
-                const data = JSON.parse(line.slice(6));
-                
-                if (data.type === "token") {
-                  accumulatedContent += data.content;
-                  tokenCount = data.tokenCount;
-                  
-                  const estimatedProgress = Math.min((tokenCount / 100) * 100, 95);
-                  
-                  setResponses((prev) => ({
-                    ...prev,
-                    [col]: {
-                      ...prev[col],
-                      content: accumulatedContent,
-                      progress: estimatedProgress,
-                    },
-                  }));
-                } else if (data.type === "complete") {
-                  receivedComplete = true;
-                  finalLatency = data.latency;
-                  finalCost = data.cost;
-                  accumulatedContent = data.content;
-                  
-                  setResponses((prev) => ({
-                    ...prev,
-                    [col]: {
-                      content: data.content,
-                      loading: false,
-                      error: null,
-                      latency: data.latency,
-                      cost: data.cost,
-                      progress: 100,
-                    },
-                  }));
-                } else if (data.type === "error") {
-                  throw new Error(data.error);
-                }
-              } catch (parseErr) {
-                // Ignore parse errors for incomplete chunks
-              }
-            }
-          }
-          
-          if (done) {
-            // Process any remaining buffer
-            if (buffer.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(buffer.slice(6));
-                if (data.type === "complete") {
-                  receivedComplete = true;
-                  finalLatency = data.latency;
-                  finalCost = data.cost;
-                  accumulatedContent = data.content;
-                  
-                  setResponses((prev) => ({
-                    ...prev,
-                    [col]: {
-                      content: data.content,
-                      loading: false,
-                      error: null,
-                      latency: data.latency,
-                      cost: data.cost,
-                      progress: 100,
-                    },
-                  }));
-                }
-              } catch (e) {
-                // Ignore
-              }
-            }
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n\n");
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
             
-            // Ensure we mark complete even if we missed the complete event
-            if (!receivedComplete && accumulatedContent) {
-              setResponses((prev) => ({
-                ...prev,
-                [col]: {
-                  content: accumulatedContent,
-                  loading: false,
-                  error: null,
-                  latency: finalLatency,
-                  cost: finalCost,
-                  progress: 100,
-                },
-              }));
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === "token") {
+                accumulatedContent += data.content;
+                tokenCount = data.tokenCount;
+                
+                const estimatedProgress = Math.min((tokenCount / 100) * 100, 95);
+                
+                setResponses((prev) => ({
+                  ...prev,
+                  [col]: {
+                    ...prev[col],
+                    content: accumulatedContent,
+                    progress: estimatedProgress,
+                  },
+                }));
+              } else if (data.type === "complete") {
+                setResponses((prev) => ({
+                  ...prev,
+                  [col]: {
+                    content: data.content,
+                    loading: false,
+                    error: null,
+                    latency: data.latency,
+                    cost: data.cost,
+                    progress: 100,
+                  },
+                }));
+              } else if (data.type === "error") {
+                throw new Error(data.error);
+              }
+            } catch (parseErr) {
+              // Ignore parse errors for incomplete chunks
             }
-            break;
           }
         }
+        
+        // Fallback: ensure model is marked complete when stream ends
+        setResponses((prev) => {
+          const current = prev[col];
+          if (current && current.loading && current.content) {
+            return {
+              ...prev,
+              [col]: {
+                ...current,
+                loading: false,
+                progress: 100,
+              },
+            };
+          }
+          return prev;
+        });
       } catch (err: any) {
         setResponses((prev) => ({
           ...prev,
