@@ -694,52 +694,108 @@ export default function ChatPage() {
         const decoder = new TextDecoder();
         let accumulatedContent = "";
         let tokenCount = 0;
+        let buffer = "";
+        let receivedComplete = false;
+        let finalLatency: number | null = null;
+        let finalCost: number | null = null;
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split("\n\n");
+            buffer = parts.pop() || "";
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n\n");
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            
-            try {
-              const data = JSON.parse(line.slice(6));
+            for (const line of parts) {
+              if (!line.startsWith("data: ")) continue;
               
-              if (data.type === "token") {
-                accumulatedContent += data.content;
-                tokenCount = data.tokenCount;
+              try {
+                const data = JSON.parse(line.slice(6));
                 
-                const estimatedProgress = Math.min((tokenCount / 100) * 100, 95);
-                
-                setResponses((prev) => ({
-                  ...prev,
-                  [col]: {
-                    ...prev[col],
-                    content: accumulatedContent,
-                    progress: estimatedProgress,
-                  },
-                }));
-              } else if (data.type === "complete") {
-                setResponses((prev) => ({
-                  ...prev,
-                  [col]: {
-                    content: data.content,
-                    loading: false,
-                    error: null,
-                    latency: data.latency,
-                    cost: data.cost,
-                    progress: 100,
-                  },
-                }));
-              } else if (data.type === "error") {
-                throw new Error(data.error);
+                if (data.type === "token") {
+                  accumulatedContent += data.content;
+                  tokenCount = data.tokenCount;
+                  
+                  const estimatedProgress = Math.min((tokenCount / 100) * 100, 95);
+                  
+                  setResponses((prev) => ({
+                    ...prev,
+                    [col]: {
+                      ...prev[col],
+                      content: accumulatedContent,
+                      progress: estimatedProgress,
+                    },
+                  }));
+                } else if (data.type === "complete") {
+                  receivedComplete = true;
+                  finalLatency = data.latency;
+                  finalCost = data.cost;
+                  accumulatedContent = data.content;
+                  
+                  setResponses((prev) => ({
+                    ...prev,
+                    [col]: {
+                      content: data.content,
+                      loading: false,
+                      error: null,
+                      latency: data.latency,
+                      cost: data.cost,
+                      progress: 100,
+                    },
+                  }));
+                } else if (data.type === "error") {
+                  throw new Error(data.error);
+                }
+              } catch (parseErr) {
+                // Ignore parse errors for incomplete chunks
               }
-            } catch (parseErr) {
-              // Ignore parse errors for incomplete chunks
             }
+          }
+          
+          if (done) {
+            // Process any remaining buffer
+            if (buffer.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(buffer.slice(6));
+                if (data.type === "complete") {
+                  receivedComplete = true;
+                  finalLatency = data.latency;
+                  finalCost = data.cost;
+                  accumulatedContent = data.content;
+                  
+                  setResponses((prev) => ({
+                    ...prev,
+                    [col]: {
+                      content: data.content,
+                      loading: false,
+                      error: null,
+                      latency: data.latency,
+                      cost: data.cost,
+                      progress: 100,
+                    },
+                  }));
+                }
+              } catch (e) {
+                // Ignore
+              }
+            }
+            
+            // Ensure we mark complete even if we missed the complete event
+            if (!receivedComplete && accumulatedContent) {
+              setResponses((prev) => ({
+                ...prev,
+                [col]: {
+                  content: accumulatedContent,
+                  loading: false,
+                  error: null,
+                  latency: finalLatency,
+                  cost: finalCost,
+                  progress: 100,
+                },
+              }));
+            }
+            break;
           }
         }
       } catch (err: any) {
