@@ -1,0 +1,72 @@
+QA Fixes Needed — Prioritized
+P0 - Critical (fix first):
+
+Missing HumanEval Benchmark for 3B and 17B Models
+
+Location: client/src/pages/chat.tsx lines 87, 121
+Fix: Add humanEval values to benchmarks object for 3B and 17B, or explicitly show "N/A"
+
+
+Missing HumanEval for Reasoning Models
+
+Location: client/src/pages/chat.tsx lines 178, 195
+Fix: Add humanEval values for DeepSeek R1 Distill 70B and DeepSeek R1, or show "N/A"
+
+
+
+P1 - High Priority (fix after P0):
+
+Pricing Mismatch Between Frontend and Backend
+
+Frontend (chat.tsx) uses costPer1k
+Backend (schema.ts) uses MODEL_PRICING per 1M tokens
+Fix: Reconcile so cost estimates match actual server-side costs
+
+
+Dependency Mismatch in useEffect
+
+Location: client/src/pages/chat.tsx line 437
+Fix: Add contextSize to dependency array, or refactor to avoid stale closure
+
+
+Missing OpenRouter Model Mapping
+
+Location: server/routes.ts lines 246-256
+Fix: Add OpenRouter models to getActualModelId() mapping
+
+
+PostCSS Warning
+
+Fix: Update PostCSS plugin config to pass "from" option
+
+
+
+P2 - Medium Priority (fix after P1):
+
+Token estimation uses rough Math.ceil(text.length / 4) — consider noting this is approximate
+getSkillTag() returns empty string for unknown columns — add fallback
+Cost cap slider max is $0.25 — Frontier with large prompts can exceed this
+Replace alert() calls with toast notifications (lines 867, 880, 921, 960, etc.)
+Remove unused QWEN3_14B_MODEL_ID import from server/routes.ts
+
+P3 - Low Priority (polish, do later):
+
+17B column uses MoE model (17B active / 400B total) — consider clarifying for educational accuracy
+min-w-[700px] forces horizontal scroll on mobile
+Flag button only shows alert, doesn't actually flag
+No seed data in Benchmark Library
+No pagination for Leaderboard/Library
+Latency shows full response time, not TTFT
+Bundle size is 2.1mb — consider optimization
+Replace confirm() with proper modal for delete
+Add React error boundary at app root
+
+Data Accuracy (verify when possible):
+
+Claude Sonnet 4.5 MMLU/HumanEval — verify against official Anthropic data
+Llama 4 Maverick benchmarks — verify accuracy
+
+Security (address before production):
+
+Add rate limiting to API endpoints
+Add input sanitization for leaderboard prompts

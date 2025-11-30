@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -84,7 +85,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 63.4 }, 
+    benchmarks: { mmlu: 63.4, humanEval: 45.4 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
@@ -118,7 +119,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "good", 
-    benchmarks: { mmlu: 80.5 }, 
+    benchmarks: { mmlu: 80.5, humanEval: 75.2 }, 
     modality: "text+image",
     technical: {
       architecture: { type: "Sparse MoE", attention: "GQA", parameters: "17B active / 400B total" },
@@ -175,7 +176,7 @@ const REASONING_MODELS: Record<string, Model | null> = {
     expectedLatency: "slow", 
     reasoningDepth: "deep", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 79.0 }, 
+    benchmarks: { mmlu: 79.0, humanEval: 57.5 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B (distilled)" },
@@ -192,7 +193,7 @@ const REASONING_MODELS: Record<string, Model | null> = {
     expectedLatency: "slow", 
     reasoningDepth: "deep", 
     expectedAccuracy: "excellent", 
-    benchmarks: { mmlu: 90.8 }, 
+    benchmarks: { mmlu: 90.8, humanEval: 97.3 }, 
     modality: "text",
     technical: {
       architecture: { type: "Sparse MoE", attention: "MLA", parameters: "671B total / 37B active" },
@@ -309,7 +310,7 @@ const getSkillTag = (col: string): string => {
     case "17B": return "Good at longer documents";
     case "70B": return "Great at multi-step reasoning";
     case "Frontier": return "Best at coding & complex tasks";
-    default: return "";
+    default: return "General purpose model";
   }
 };
 
@@ -367,6 +368,7 @@ const getContextTierLabel = (tierValue: string, tokenCount: number, recommendedT
 };
 
 export default function ChatPage() {
+  const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
   const [responses, setResponses] = useState<Record<string, ModelResponse>>({});
   const [isRunning, setIsRunning] = useState(false);
@@ -434,7 +436,7 @@ export default function ChatPage() {
     if (inputTokenEstimate > currentTokens && contextSize !== recommendedContextTier) {
       setContextAutoSelected(true);
     }
-  }, [inputTokenEstimate, recommendedContextTier]);
+  }, [inputTokenEstimate, recommendedContextTier, contextSize]);
 
   const handleContextSizeChange = (value: string) => {
     // Check if user is selecting a larger-than-recommended tier
@@ -863,7 +865,11 @@ export default function ChatPage() {
 
   const handleSaveBenchmark = async () => {
     if (!benchmarkName.trim()) {
-      alert("Please enter a name for the benchmark");
+      toast({
+        title: "Name required",
+        description: "Please enter a name for the benchmark",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -877,10 +883,17 @@ export default function ChatPage() {
       setShowSaveBenchmarkModal(false);
       setBenchmarkName("");
       setBenchmarkDescription("");
-      alert("Benchmark saved successfully!");
+      toast({
+        title: "Saved",
+        description: "Benchmark saved successfully!",
+      });
     } catch (err: any) {
       console.error("Save benchmark error:", err);
-      alert("Failed to save benchmark: " + err.message);
+      toast({
+        title: "Save failed",
+        description: "Failed to save benchmark: " + err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -918,7 +931,11 @@ export default function ChatPage() {
       await loadBenchmarks();
     } catch (err: any) {
       console.error("Delete benchmark error:", err);
-      alert("Failed to delete benchmark: " + err.message);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete benchmark: " + err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -957,10 +974,17 @@ export default function ChatPage() {
       
       setShowShareModal(false);
       setShareNickname("");
-      alert("Shared to leaderboard!");
+      toast({
+        title: "Shared!",
+        description: "Your result has been shared to the leaderboard",
+      });
     } catch (err: any) {
       console.error("Share to leaderboard error:", err);
-      alert("Failed to share: " + err.message);
+      toast({
+        title: "Share failed",
+        description: "Failed to share: " + err.message,
+        variant: "destructive",
+      });
     } finally {
       setShareSubmitting(false);
     }
@@ -2427,7 +2451,10 @@ export default function ChatPage() {
                           <TooltipTrigger asChild>
                             <button
                               onClick={() => {
-                                alert(`Entry #${entry.id} has been flagged for review. Thank you for helping keep our community safe.`);
+                                toast({
+                                  title: "Flagged for review",
+                                  description: "Thank you for helping keep our community safe.",
+                                });
                               }}
                               className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors shrink-0"
                             >

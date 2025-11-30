@@ -7,7 +7,7 @@ import { createCerebrasChatCompletion, CEREBRAS_MODEL_ID } from "./cerebras";
 import { createDeepSeekChatCompletion, DEEPSEEK_MODEL_ID } from "./deepseek";
 import { createMiniMaxChatCompletion, MINIMAX_MODEL_ID } from "./minimax";
 import { createAnthropicChatCompletion, ANTHROPIC_MODEL_ID } from "./anthropic";
-import { createOpenRouterChatCompletion, KIMI_K2_MODEL_ID, QWEN3_14B_MODEL_ID } from "./openrouter";
+import { createOpenRouterChatCompletion, KIMI_K2_MODEL_ID } from "./openrouter";
 import { 
   createTogetherChatCompletion, 
   TOGETHER_QWEN_MODEL_ID, 
@@ -252,6 +252,7 @@ function getActualModelId(modelId: string): string {
     "together/llama-4-maverick-17b": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
+    "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
   };
   return modelMap[modelId] || modelId;
 }
