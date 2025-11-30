@@ -420,6 +420,7 @@ export default function ChatPage() {
   const [reasoningEnabled, setReasoningEnabled] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
   const [challengePromptIndex, setChallengePromptIndex] = useState(0);
+  const [showReasoningExplainModal, setShowReasoningExplainModal] = useState(false);
 
   const inputTokenEstimate = useMemo(() => {
     return Math.ceil(prompt.length / 4);
@@ -1555,19 +1556,15 @@ export default function ChatPage() {
                                   <p className="text-[11px] text-[#1a3a8f] font-medium">
                                     Try reasoning on 70B or Frontier instead.
                                   </p>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <button className="mt-2 text-[10px] text-gray-400 hover:text-gray-600 underline">
-                                        Learn more
-                                      </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
-                                      <p className="text-xs">
-                                        <span className="font-semibold">Reasoning</span> = the model shows its work before answering. 
-                                        It needs a big model to be accurate.
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowReasoningExplainModal(true);
+                                    }}
+                                    className="mt-2 text-[10px] text-[#1a3a8f] hover:text-[#2a4a9f] underline font-medium"
+                                  >
+                                    Learn more
+                                  </button>
                                 </div>
                               ) : (
                                 <>
@@ -2386,6 +2383,86 @@ export default function ChatPage() {
                   </ul>
                 </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showReasoningExplainModal} onOpenChange={setShowReasoningExplainModal}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 font-black">
+                <Brain className="w-5 h-5 text-[#1a3a8f]" />
+                <span className="text-[#1a3a8f]">Why Reasoning Mode Needs Big Models</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800 font-medium">
+                  Reasoning mode is locked for 3B, 7B, and 17B models because they lack the capacity to "think step-by-step" reliably.
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-bold text-gray-900">What is Reasoning Mode?</h4>
+                <p className="text-sm text-gray-700">
+                  When reasoning mode is enabled, the model "shows its work" before giving an answer. It breaks down complex problems into steps, checks its logic, and explains its thinking process.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-bold text-gray-900">Why Do Small Models Fail at Reasoning?</h4>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex gap-3">
+                    <span className="text-[#1a3a8f] font-bold">1.</span>
+                    <div>
+                      <strong>Limited Working Memory</strong> — Small models can only hold a few concepts in mind at once. Multi-step reasoning requires juggling many pieces of information simultaneously.
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-[#1a3a8f] font-bold">2.</span>
+                    <div>
+                      <strong>Shallow Pattern Matching</strong> — With fewer parameters, small models rely on surface-level patterns rather than deep logical connections. They guess rather than reason.
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-[#1a3a8f] font-bold">3.</span>
+                    <div>
+                      <strong>Error Compounding</strong> — Each reasoning step has some error rate. In small models, errors compound quickly, leading to completely wrong conclusions.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-bold text-gray-900">The Parameter Threshold</h4>
+                <p className="text-sm text-gray-700">
+                  Research shows that chain-of-thought reasoning becomes reliable around <strong>70 billion parameters</strong>. Below this threshold, models often generate plausible-sounding but incorrect reasoning chains.
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 bg-red-50 border border-red-200 rounded text-center">
+                    <div className="font-bold text-red-600">3B - 17B</div>
+                    <div className="text-red-500">Too small for reliable reasoning</div>
+                  </div>
+                  <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-center">
+                    <div className="font-bold text-emerald-600">70B+</div>
+                    <div className="text-emerald-500">Large enough for deep reasoning</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-bold text-gray-900">Cost Trade-off</h4>
+                <p className="text-sm text-gray-700">
+                  Reasoning mode typically costs <strong>3-5× more</strong> because the model generates more tokens while thinking. This is why we recommend using reasoning only when you need it for complex problems like math, logic puzzles, or multi-step analysis.
+                </p>
+              </div>
+
+              <Button 
+                onClick={() => setShowReasoningExplainModal(false)}
+                className="w-full bg-[#1a3a8f] hover:bg-[#2a4a9f]"
+              >
+                Got it
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
