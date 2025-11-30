@@ -381,6 +381,7 @@ export default function ChatPage() {
   
   const [contextSize, setContextSize] = useState<string>("8k");
   const [contextAutoSelected, setContextAutoSelected] = useState(true);
+  const [costFlash, setCostFlash] = useState(false);
   const [costCap, setCostCap] = useState<number>(0.25);
   const [reasoningEnabled, setReasoningEnabled] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
@@ -401,6 +402,16 @@ export default function ChatPage() {
   }, [recommendedContextTier, contextAutoSelected, isRunning]);
 
   const handleContextSizeChange = (value: string) => {
+    // Check if user is selecting a larger-than-recommended tier
+    const recommendedTokens = CONTEXT_SIZES.find(c => c.value === recommendedContextTier)?.tokens || 8000;
+    const selectedTokens = CONTEXT_SIZES.find(c => c.value === value)?.tokens || 8000;
+    
+    if (selectedTokens > recommendedTokens && inputTokenEstimate <= recommendedTokens) {
+      // User is choosing a larger context than needed - flash cost warning
+      setCostFlash(true);
+      setTimeout(() => setCostFlash(false), 1500);
+    }
+    
     setContextSize(value);
     setContextAutoSelected(false);
   };
@@ -949,22 +960,48 @@ export default function ChatPage() {
                   </span>
                 </div>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden relative">
+                {/* Used portion (blue) - z-10 to stay on top */}
                 <div 
-                  className={`h-full transition-all ${
-                    inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-gray-500'
+                  className={`h-full transition-all absolute left-0 z-10 ${
+                    inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-[#1a3a8f]'
                   }`}
                   style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
                 />
+                {/* Unused/wasted portion indicator (gray striped pattern when larger than recommended) */}
+                {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
+                  <div 
+                    className="h-full absolute bg-gray-300 opacity-60"
+                    style={{ 
+                      left: `${Math.min(Math.max(inputPercentage, 2), 100)}%`,
+                      width: `${100 - Math.min(Math.max(inputPercentage, 2), 100)}%`,
+                      backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)'
+                    }}
+                  />
+                )}
               </div>
               {inputTokenEstimate > 0 && (
                 <div className="mt-2 text-xs space-y-0.5">
-                  <div className="text-gray-600">
-                    Your prompt uses ~<span className="font-bold text-gray-900">{inputTokenEstimate.toLocaleString()}</span> tokens
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#1a3a8f]"></span>
+                      <span className="text-gray-600">Used: <span className="font-bold text-gray-900">{inputTokenEstimate.toLocaleString()}</span></span>
+                    </span>
+                    {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-gray-300"></span>
+                        <span className="text-gray-500">Unused: <span className="font-medium">{(selectedContextTokens - inputTokenEstimate).toLocaleString()}</span></span>
+                      </span>
+                    )}
                   </div>
                   <div className="text-emerald-600 font-medium">
-                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> (lowest cost)
+                    Recommended: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> (lowest cost)
                   </div>
+                  {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
+                    <div className="text-amber-600 font-medium">
+                      You're paying for {(selectedContextTokens - inputTokenEstimate).toLocaleString()} unused tokens
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -978,10 +1015,12 @@ export default function ChatPage() {
                   <span className="font-bold text-gray-900 text-sm">Context Window</span>
                 </div>
                 {contextSize !== recommendedContextTier && (
-                  <span className={`text-xs px-2 py-0.5 rounded font-medium border ${
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium border transition-all ${
                     inputTokenEstimate > selectedContextTokens 
                       ? 'border-red-300 text-red-600 bg-red-50' 
-                      : 'border-amber-300 text-amber-600 bg-amber-50'
+                      : costFlash 
+                        ? 'border-amber-500 text-amber-700 bg-amber-200 scale-110 shadow-md' 
+                        : 'border-amber-300 text-amber-600 bg-amber-50'
                   }`}>
                     {inputTokenEstimate > selectedContextTokens ? "Won't Fit" : "Higher Cost"}
                   </span>
@@ -1156,17 +1195,34 @@ export default function ChatPage() {
 
                     if (disabled) {
                       const isReasoningLocked = !model;
+                      const isCostExceeded = reason.includes("Exceeds");
                       return (
                         <Tooltip key={col}>
                           <TooltipTrigger asChild>
-                            <div className={`p-3 min-h-[280px] flex flex-col items-center justify-center bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
-                              <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
-                              <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
-                                {isReasoningLocked ? "Reasoning" : model?.name}
-                              </span>
-                              <span className="text-xs text-gray-400 text-center mt-1">
-                                {reason}
-                              </span>
+                            <div className={`p-3 min-h-[280px] flex flex-col items-center justify-center ${
+                              isCostExceeded ? 'bg-red-50' : 'bg-gray-50'
+                            } ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
+                              {isCostExceeded ? (
+                                <>
+                                  <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-red-400" />
+                                  <span className="text-xs sm:text-sm font-medium text-gray-500 text-center mb-2">
+                                    {model?.name}
+                                  </span>
+                                  <span className="text-xs font-bold text-red-600 bg-red-100 border border-red-300 px-2 py-1 rounded text-center">
+                                    {reason}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
+                                  <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
+                                    {isReasoningLocked ? "Reasoning" : model?.name}
+                                  </span>
+                                  <span className="text-xs text-gray-400 text-center mt-1">
+                                    {reason}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </TooltipTrigger>
                           <TooltipContent className="bg-white border-gray-200 text-gray-700">
@@ -1174,6 +1230,11 @@ export default function ChatPage() {
                             {isReasoningLocked && (
                               <p className="text-xs text-gray-500 mt-1">
                                 Small models produce unreliable reasoning chains.
+                              </p>
+                            )}
+                            {isCostExceeded && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Increase your budget cap to use this model.
                               </p>
                             )}
                           </TooltipContent>
@@ -1232,11 +1293,15 @@ export default function ChatPage() {
 
                         {!hasResults && (
                           <div className="space-y-2">
-                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                            <div className={`grid grid-cols-[1fr_auto] items-center gap-x-2 transition-all rounded px-1 -mx-1 ${
+                              costFlash ? 'bg-amber-100 scale-[1.02]' : ''
+                            }`}>
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 <DollarSign className="w-4 h-4" /> Est. Cost
                               </span>
-                              <span className="font-mono text-sm text-gray-700 tabular-nums text-right">
+                              <span className={`font-mono text-sm tabular-nums text-right transition-all ${
+                                costFlash ? 'text-amber-700 font-bold' : 'text-gray-700'
+                              }`}>
                                 ${estimatedCost.toFixed(4)}
                               </span>
                             </div>
