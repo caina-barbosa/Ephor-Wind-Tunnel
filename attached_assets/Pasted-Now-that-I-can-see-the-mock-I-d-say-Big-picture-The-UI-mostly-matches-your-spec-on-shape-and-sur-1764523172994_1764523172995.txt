@@ -1,0 +1,285 @@
+Now that I can see the mock, I’d say:
+
+Big picture:
+The UI mostly matches your spec on shape and surface details (prompt → constraints → model grid), but it misses a few important teaching beats: how reasoning ties to model size, how context really constrains choices, and how the “wind tunnel” experiment plays out visually.
+
+I’d call it ~80% aligned. Here’s a detailed pass.
+
+1. Direct spec‑vs‑UI comparison
+✅ “Across the top – parameters…”
+
+Spec:
+
+Across the top – parameters, with reasoning only on the biggest.
+
+UI:
+
+Top of the grid has: 3B, 7B, 17B, 70B, Frontier, with “Open Source / Closed Source” under each → good for “model size” + “open vs closed.”
+
+Each column shows:
+
+Est. cost
+
+Capability (Basic / Good / Strong / Excellent)
+
+MMLU %
+
+HumanEval %
+
+Input type (Text vs Vision)
+
+Match:
+
+You’re clearly teaching:
+
+Size bands (3B, 7B, 17B, 70B, Frontier)
+
+Open vs closed
+
+Benchmarks (MMLU, HumanEval)
+
+Multi‑modal (Vision vs Text)
+
+Cost differences
+
+Mismatch:
+
+Reasoning is global, not tied to size:
+
+“Reasoning Mode” is a single toggle in the top control bar, not something that is visually only available for the 70B / Frontier columns.
+
+That loses your explicit teaching goal: “reasoning only on the biggest (good to teach kids why this is true).”
+
+👉 Fix: Keep the global toggle, but show the consequence per column:
+
+When Reasoning Mode is ON:
+
+3B/7B columns show “Reasoning unreliable / disabled” (greyed out icon).
+
+17B/70B/Frontier columns show “Reasoning enabled.”
+
+Maybe add a small text under the grid:
+
+“Deep reasoning only works well on large models (70B and Frontier).”
+
+That ties the abstract idea (“big models reason better”) to a concrete visual.
+
+✅/⚠️ “2nd row – context size – choose smallest that fits context submitted…”
+
+Spec:
+
+“2nd row – context size – choose smallest that fits context submitted.”
+
+Students can override and choose a bigger window.
+
+They should feel that bigger context → higher cost.
+
+UI:
+
+You have an “INPUT GAUGE” under the prompt showing 0 / 128,000 tokens 0.0%.
+
+You have a “Context Window” control with a dropdown set to 128K tokens and a tag “Higher Cost.”
+
+Match:
+
+Context is clearly present as a primary control.
+
+The “Higher Cost” tag hints that context size = money.
+
+What’s missing for your spec:
+
+There is no visible notion of “minimum context that fits” versus “you’re over‑allocating.”
+
+Kids don’t see “we auto‑picked 128K because your prompt is X tokens; you can reduce/increase it.”
+
+👉 Fix ideas:
+
+Show two things near the Context Window:
+
+“Your input: 18K tokens”
+
+“Minimum required context: 32K” (highlighted)
+
+Make the dropdown or pill group show tiers: 8K / 32K / 128K / 1M, with the smallest valid one auto‑selected and a little label:
+
+“This is the smallest window that fits your input. Larger windows cost more.”
+
+Use the Input Gauge bar to color the “wasted” part of the window (e.g., 18K used in a 128K context → lots of empty grey).
+
+That turns context size from “weird number in a dropdown” into a felt constraint.
+
+✅ “Explicit cost per query”
+
+Spec:
+
+should have an explicit – cost per query that the user wants to be max spend per query
+
+UI:
+
+You have a “Max Cost Per Query” slider with a dollar amount (e.g., $0.25).
+
+Each model card shows “Est. Cost” for that model (per run or per 1k tokens—however you’ve defined it).
+
+Match:
+
+This is very close to the spec, and nicely literal.
+
+What’s missing to fully land the lesson:
+
+The UI doesn’t yet show which models are in‑budget vs out‑of‑budget.
+
+Kids don’t see “I lowered my budget → Frontier is now greyed out.”
+
+👉 Fix:
+
+As the slider moves, dynamically:
+
+Dim/lock any cards whose Est. Cost exceeds the max.
+
+Label them “Over budget.”
+
+Maybe add small markers on the cost slider showing where each model “enters” the budget range.
+
+Now “deployment economics” is tangible: change budget → watch your lineup change.
+
+⚠️ “System should then pick the best suggested model for each cell on the grid”
+
+Spec:
+
+The system, given cost + context + size, should suggest the “best” model per cell.
+
+Grid should feel like “one cell = one model instance under these constraints.”
+
+UI:
+
+Each column has a single model (e.g., Llama 3.2 3B, Qwen 2.5 7B, etc.).
+
+Nothing in the UI explains why those models were chosen or how they might change with constraints.
+
+Partial match:
+
+You are basically doing “best model per size bucket,” but it’s not explained as such.
+
+To a student, it just looks like a static hand‑picked lineup.
+
+👉 Fix:
+
+Add a thin line of copy right above the grid:
+
+“For each size band, we auto‑pick the best model that fits your cost + context constraints.”
+
+When constraints change and a model switches (e.g., from one 7B model to another), highlight that change:
+
+“Qwen 2.5 7B selected (best 7B within your budget).”
+
+That makes the selection logic itself part of the learning.
+
+⚠️ “System should realtime stream the answers to each cell… progress meter … click the cell to get the complete answer”
+
+Spec:
+
+No token‑by‑token text stream.
+
+Instead:
+
+Per‑cell progress meters (so you feel latency differences).
+
+Finished cells are clickable to open the full answer in a popup.
+
+UI:
+
+Right now, each card just has a “Speed – Run test” row.
+
+There’s no visible place (in the static state) where:
+
+Progress would appear.
+
+A “view answer” affordance would live.
+
+Assuming you implement this behavior later, the layout has enough room, but the educational moment isn’t visible yet.
+
+👉 Fix:
+
+Turn the “Speed” row into a stateful area:
+
+Idle: Run test
+
+Running: a circular progress indicator + elapsed seconds
+
+Done: Finished in 3.2s – View answer
+
+Clicking anywhere on the card (or a button) should open a modal with:
+
+The model’s answer
+
+Cost & token usage for this run
+
+Maybe a simple rubric (teacher or student graded).
+
+This is what will really make it feel like a wind tunnel rather than a static comparison chart.
+
+2. How well does it cover your “engineering dimensions” curriculum?
+
+From your outline, students should eventually learn:
+
+Open vs closed → ✅ surfaced at the top of each column.
+
+Model size / parameters → ✅ 3B / 7B / 17B / 70B / Frontier.
+
+Max context size → ✅ in Context Window + Input Gauge, but needs clearer teaching (see above).
+
+Benchmarks → ✅ MMLU + HumanEval.
+
+Multimodal → ✅ “Input: Vision/Text”.
+
+Reasoning vs non‑reasoning → ⚠️ present as a global toggle but not tied to size.
+
+Cost → ✅ Est. Cost + Max Cost slider.
+
+Inference speed → ⚠️ implied via “Speed / Run test” but not yet visualized.
+
+The more advanced items (architecture, training data, fine‑tuning, safety, RAG, etc.) can live nicely behind each column’s “Technical Details” dropdown and/or in Expert Mode. That’s actually a good separation: basic grid for intuition; deep dives for older/advanced kids.
+
+3. Concrete tweaks that would make this perfectly match your spec
+
+If I were handing a punch‑list to your designer/engineer, I’d say:
+
+Tie reasoning to size, visibly.
+
+Global “Reasoning Mode” toggle.
+
+Per‑column badges: “Reasoning available” only on 70B + Frontier; “Not supported / unreliable” on 3B/7B.
+
+Make context constraints explicit.
+
+Show “Your input uses X tokens → minimum context Y.”
+
+Use the Input Gauge to show waste when context >> usage.
+
+Let students intentionally pick “overkill” and see the extra cost.
+
+Wire cost slider into model availability.
+
+Models above budget are dimmed and labeled “Over budget.”
+
+Changing the slider visibly adds/removes models.
+
+Upgrade the grid from “comparison table” to “experiment board.”
+
+“Run Wind Tunnel Test” triggers all cards.
+
+Each card shows progress + completion time.
+
+Cards switch to “View answer” state when done.
+
+Explain the weird words.
+
+Tooltips or short labels for:
+
+MMLU (“general knowledge + reasoning test”)
+
+HumanEval (“coding test”)
+
+This keeps it kid‑friendly while staying technically honest.
+
+If you do those, the current mock isn’t just “on brand”; it becomes an accurate embodiment of your LLM wind tunnel spec and a genuinely powerful way for kids to feel speed, cost, and capability tradeoffs like real engineers.

@@ -1,0 +1,268 @@
+Short answer: this UI is very close structurally (maybe 70–80% there) but it doesn’t yet fully deliver the teaching goals in your outline. The missing pieces are mostly about making the engineering heuristics explicit: context selection, reasoning-on-big-models, speed visualization, and “recommended” choices.
+
+I’ll go section by section.
+
+1. Where this UI does match the spec
+
+a) Top-level framing
+
+Title + subtitle: “Learn to think like an AI engineer: balance speed, cost, and capability.”
+✅ Directly aligned with your goal: teach students how AI engineers think, not just pick a model.
+
+b) Student-controlled constraints
+
+Prompt box + token gauge (“0 / 128,000 tokens, 0.0%”)
+✅ Matches “students want to upload context” and teaches that context has a hard limit.
+
+Context Window card with dropdown (128K tokens) and the “Higher Cost” chip.
+✅ This correctly ties context size ↔ cost.
+
+Max Cost Per Query slider with numeric value ($0.25).
+✅ Exactly what you asked for: explicit max spend per query.
+
+Reasoning Mode global toggle.
+✅ You have a way to turn reasoning on/off at the run level.
+
+Expert Mode toggle.
+✅ Nice hook to gate the “MoE / MMLU / HumanEval” nerd stuff, matches your “advanced course” idea.
+
+c) Grid layout
+
+Columns labeled 3B / 7B / 17B / 70B / Frontier, with Open vs Closed clearly called out.
+✅ This maps nicely to “model size / parameters / open vs closed.”
+
+Each column has:
+
+Est. Cost
+
+Capability (Basic / Good / Strong / Excellent)
+
+Benchmarks (MMLU, HumanEval)
+
+Modality (Text vs Vision)
+
+Speed line
+✅ Covers cost, accuracy/benchmarks, multimodal, and some notion of speed.
+
+Visually, this absolutely reads as a “wind tunnel grid across model sizes.” So the skeleton matches your outline.
+
+2. Where it doesn’t yet match the deeper spec
+2.1 Context window logic is not yet teaching the “smallest that fits” rule
+
+Spec:
+
+“2nd row - context size - choose smallest that fits context submitted… students can overrule…”
+
+Current UI:
+
+Context dropdown just shows a static choice (128K tokens) with a “Higher Cost” chip.
+
+There’s no visible:
+
+“Your prompt needs at least X tokens.”
+
+“Recommended: Y tokens (smallest that fits).”
+
+Warning badges on models that don’t fit.
+
+So: it surfaces context, but doesn’t yet teach the “smallest that fits” heuristic.
+
+2.2 Reasoning vs non-reasoning is too generic
+
+Spec:
+
+“reasoning only on the biggest (good to teach kids why this is true)… 89% of the time, only use reasoning on the biggest models…”
+
+Current UI:
+
+A global Reasoning Mode toggle (Disabled) with no visual linkage to model size.
+
+Small and big models look equally valid recipients of reasoning.
+
+Missing pedagogical pieces:
+
+No cue that reasoning on 3B/7B is a bad idea (slow and often worse than a big non-reasoning model).
+
+No “this is why we recommend reasoning only on 70B/Frontier” explanation or visual gating.
+
+So you can flip reasoning on, but you don’t yet show the engineering rule you want kids to internalize.
+
+2.3 Speed is present as text, but not experienced as “wind tunnel”
+
+Spec:
+
+“system should realtime stream the answers to each cell in the grid – not text stream – but progress meter… gives the user the visual indication of speed.”
+
+Current UI:
+
+“Speed” row shows only “Run test” links.
+
+There are no:
+
+Per-column progress bars,
+
+Completion times,
+
+Side-by-side “this one finished in 0.8s vs 4.2s.”
+
+So the grid doesn’t yet visually dramatize the latency tradeoffs. It’s still a static catalog.
+
+2.4 No explicit “recommended choice” logic surfaced
+
+Spec:
+
+“system should then pick the best suggested model for each cell on the grid.”
+
+Current UI:
+
+Big central button: Run Wind Tunnel Test (good).
+
+But there’s no:
+
+“Best for your budget & context” highlight,
+
+“Best speed under your cost,”
+
+Badges like “Recommended” / “Too expensive” / “Doesn’t fit context.”
+
+Right now, it’s still “here’s the data, you decide,” not “here’s the decision an AI engineer would make, with reasons.”
+
+2.5 Benchmarks and technical details are shown, but not scaffolded
+
+You’ve done a nice job putting MMLU, HumanEval, Technical Details in the cards. But for kids:
+
+There’s no “what this means in human terms” (e.g., “Good at coding problems,” “Great at school-style questions,” etc.).
+
+The teaching layer is missing above the metrics.
+
+Expert Mode could gate this, but the current UI doesn’t show that behavior yet.
+
+3. Concrete v2 changes to make this truly spec-accurate
+
+Here’s how I’d “redo” the concept while keeping your visual style:
+
+3.1 Make context window auto-recommend, with override
+
+Under the Context Window card:
+
+Add a small line:
+
+“Your prompt requires 7K tokens”
+
+“Recommended: 8K context (smallest that fits).”
+
+Highlight the picked option in the dropdown as “Auto (8K – Recommended).”
+
+For models whose context < prompt size:
+
+Show a red “Won’t fit” pill in their column header.
+
+Optionally grey them out or turn “Run test” into “Truncate & run (advanced).”
+
+This directly teaches: bigger context only when needed.
+
+3.2 Tie Reasoning Mode visually to model size
+
+Change the Reasoning Mode behavior like this:
+
+When OFF:
+
+All columns active as now.
+
+When ON:
+
+70B + Frontier get a green “Reasoning ready” glow around the header.
+
+3B + 7B get:
+
+Greyed out “Reasoning discouraged” state, or
+
+A ⚠ tooltip: “On small models, reasoning is slower and often worse than a big non-reasoning model.”
+
+Maybe a small text under the toggle:
+
+“We recommend reasoning only on the biggest models for most tasks (and let you test that).”
+
+Now the UI itself encodes your “89% of the time” heuristic.
+
+3.3 Add a true “wind tunnel” running state
+
+When the user clicks Run Wind Tunnel Test:
+
+Each column’s “Speed” row turns into a progress bar + time counter:
+
+▢▢▢▢▢ 0.2s…
+
+▢▢▢▢▢ 1.8s…
+
+On completion:
+
+Show “Finished in 0.8s / 2.3s / 4.9s.”
+
+Keep “Run test” as a secondary action for re-running single columns.
+
+Clicking a card opens a modal with:
+
+Full answer,
+
+Cost,
+
+Latency,
+
+Token usage.
+
+This makes latency and cost felt, not just read.
+
+3.4 Add an “AI engineer recommendation” panel
+
+Above the grid or in a right-hand panel, after a run:
+
+“For your prompt and settings, we recommend:”
+
+Fastest under budget: [Model X]
+
+Best quality under budget: [Model Y]
+
+Cheapest valid: [Model Z]
+
+Each with:
+
+1–2 line explanation:
+
+“Chosen because it fits your 7K-token prompt, costs <$0.01, and finished in <1.5s.”
+
+This turns the exercise into learning from an expert, not just exploring a catalog.
+
+3.5 Use Expert Mode to gate the nerd knobs
+
+Right now Expert Mode is visible but unused. Make it do real work:
+
+When Expert Mode is OFF:
+
+Hide MMLU % and HumanEval %, collapse them into a single “Capability: Basic/Good/Great/Expert” line.
+
+Hide “Technical Details.”
+
+When Expert Mode is ON:
+
+Reveal benchmarks, architectures, quantization options, etc.
+
+Maybe unlock switches like “Use quantized version,” “Use vision encoder,” etc.
+
+This matches your “advanced course on optimizations like quantization” note without overwhelming beginners.
+
+4. Net take
+
+Yes: The current UI is a strong v1 and matches the high-level outline: prompt → constraints → multi-model grid by size/source with cost/quality metrics.
+
+Not yet: It does not fully implement the teaching goals you wrote down:
+
+“Smallest context that fits,”
+
+“Reasoning mostly on biggest models,”
+
+“Visual latency comparison,”
+
+“System recommended choices with explanations.”
+
+If you want, I can write a short design spec you can hand to your designer/engineer that says: “Change Reasoning Mode like this; add these 3 states to Context; here’s the running grid state,” so they can ship a v2 that truly functions as an LLM wind tunnel for kids.
