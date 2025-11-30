@@ -485,38 +485,46 @@ export default function ChatPage() {
     
     const wasTieBreaker = modelsAtSameCost.length > 1;
     
+    // Build constraint summary for headline
+    const constraintParts: string[] = [];
+    constraintParts.push(`under your $${costCap.toFixed(2)} budget`);
+    constraintParts.push(`with ${contextSize.toUpperCase()} context`);
     if (reasoningEnabled) {
+      constraintParts.push(`reasoning mode enabled`);
+    }
+    const constraintSummary = constraintParts.join(", ");
+    
+    if (reasoningEnabled) {
+      const headline = col === "70B"
+        ? `Best value ${constraintSummary} — cheapest reasoning-capable model at ${actualLatency}ms.`
+        : `Best option ${constraintSummary} — 70B exceeded your budget, so Frontier is the only reasoning choice.`;
+      
       return (
         <div className="space-y-2">
-          <p className="font-semibold">{model.name} is recommended because:</p>
-          <ul className="list-disc list-inside space-y-1 text-sm">
-            <li>Cost: ${actualCost.toFixed(4)} (within your budget)</li>
+          <p className="font-semibold text-[#1a3a8f]">{headline}</p>
+          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+            <li>Cost: ${actualCost.toFixed(4)} (within ${costCap.toFixed(2)} cap)</li>
             <li>Speed: {actualLatency}ms</li>
             <li>Capability: {capability}</li>
-            <li>Reasoning Mode requires 70B+ parameters</li>
+            <li>Reasoning Mode: requires 70B+ parameters</li>
           </ul>
-          <p className="text-sm text-gray-600 mt-2 italic">
-            {col === "70B" 
-              ? "This is the most affordable reasoning-capable model."
-              : "70B was filtered out by your cost cap, so Frontier is the only reasoning option."}
-          </p>
         </div>
       );
     }
     
+    const headline = wasTieBreaker
+      ? `Best quality ${constraintSummary}, finishing fastest (${actualLatency}ms) among ${modelsAtSameCost.length} equally-priced models.`
+      : `Best value ${constraintSummary} — cheapest eligible model at ${actualLatency}ms.`;
+    
     return (
       <div className="space-y-2">
-        <p className="font-semibold">{model.name} is recommended because:</p>
-        <ul className="list-disc list-inside space-y-1 text-sm">
-          <li>Cost: ${actualCost.toFixed(4)} (within your budget)</li>
+        <p className="font-semibold text-[#1a3a8f]">{headline}</p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li>Cost: ${actualCost.toFixed(4)} (within ${costCap.toFixed(2)} cap)</li>
           <li>Speed: {actualLatency}ms{wasTieBreaker ? " (fastest at this price)" : ""}</li>
           <li>Capability: {capability}</li>
+          <li>Context: {contextSize.toUpperCase()} window selected</li>
         </ul>
-        <p className="text-sm text-gray-600 mt-2 italic">
-          {wasTieBreaker 
-            ? `${modelsAtSameCost.length} models cost $${roundedCost.toFixed(4)}, so we picked the fastest one.`
-            : "This is the most affordable model that meets your constraints."}
-        </p>
       </div>
     );
   };
