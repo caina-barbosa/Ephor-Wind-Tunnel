@@ -1979,6 +1979,101 @@ export default function ChatPage() {
                           <p className="text-xs text-[#1a3a8f] font-bold mt-2 hover:underline text-center cursor-pointer">
                             View Full Response →
                           </p>
+
+                          {/* Expert Mode: Show technical details WITH results */}
+                          {expertMode && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium cursor-help">
+                                      <BarChart3 className="w-3 h-3" /> MMLU <Info className="w-2.5 h-2.5 text-gray-400" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-[200px]">
+                                    <p className="text-xs">MMLU: School-style knowledge & reasoning. Higher % = smarter.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <span className="text-xs font-mono text-gray-700 tabular-nums text-right">
+                                  {renderModel.benchmarks.mmlu?.toFixed(0)}%
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium cursor-help">
+                                      <Code2 className="w-3 h-3" /> HumanEval <Info className="w-2.5 h-2.5 text-gray-400" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-[200px]">
+                                    <p className="text-xs">HumanEval: How well it writes correct code. Higher % = better coder.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <span className="text-xs font-mono text-gray-700 tabular-nums text-right">
+                                  {renderModel.benchmarks.humanEval ? `${renderModel.benchmarks.humanEval.toFixed(0)}%` : "—"}
+                                </span>
+                              </div>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedTechDetails(prev => ({ ...prev, [col]: !prev[col] }));
+                                }}
+                                className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-700 pt-2 mt-1 border-t border-gray-100"
+                              >
+                                <span className="flex items-center gap-1">
+                                  <Layers className="w-3 h-3" />
+                                  Technical Details
+                                </span>
+                                {expandedTechDetails[col] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+
+                              {expandedTechDetails[col] && (
+                                <div className="space-y-1.5 pt-1 text-xs">
+                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                      <Cpu className="w-3 h-3" /> Architecture
+                                    </span>
+                                    <span className={`font-medium text-right ${renderModel.technical.architecture.type === "Sparse MoE" ? "text-purple-600" : "text-gray-600"}`}>
+                                      {renderModel.technical.architecture.type === "Sparse MoE" ? "MoE" : "Dense"}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                      <Database className="w-3 h-3" /> Training
+                                    </span>
+                                    <span className="text-gray-600 text-right">{renderModel.technical.training.dataDate}</span>
+                                  </div>
+                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                      <Settings className="w-3 h-3" /> Fine-tuning
+                                    </span>
+                                    <span className={`font-medium text-right ${
+                                      renderModel.technical.finetuning.method === "RLHF" ? "text-blue-600" :
+                                      renderModel.technical.finetuning.method === "DPO" ? "text-green-600" : "text-gray-600"
+                                    }`}>
+                                      {renderModel.technical.finetuning.method}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                      <Zap className="w-3 h-3" /> Inference
+                                    </span>
+                                    <span className="text-gray-600 text-right">{renderModel.technical.inference.precision}</span>
+                                  </div>
+                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                      <Shield className="w-3 h-3" /> Safety
+                                    </span>
+                                    <span className={`font-medium text-right ${renderModel.technical.safety.aligned ? "text-green-600" : "text-red-600"}`}>
+                                      {renderModel.technical.safety.aligned ? "Aligned" : "Unaligned"}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })()}
