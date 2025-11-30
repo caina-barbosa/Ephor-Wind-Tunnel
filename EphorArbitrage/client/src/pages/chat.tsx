@@ -409,6 +409,12 @@ export default function ChatPage() {
   
   const [contextSize, setContextSize] = useState<string>("8k");
   const [contextAutoSelected, setContextAutoSelected] = useState(true);
+  const [showContextMismatch, setShowContextMismatch] = useState(false);
+  const [pendingRecommendedTier, setPendingRecommendedTier] = useState<string | null>(null);
+  const [showWontFitModal, setShowWontFitModal] = useState(false);
+  const [pendingWontFitContext, setPendingWontFitContext] = useState<string | null>(null);
+  const [wontFitConfirmed, setWontFitConfirmed] = useState(false);
+  const [truncationAccepted, setTruncationAccepted] = useState(false); // Persists after modal closes
   const [costFlash, setCostFlash] = useState(false);
   const [costCap, setCostCap] = useState<number>(0.25);
   const [reasoningEnabled, setReasoningEnabled] = useState(false);
@@ -423,34 +429,94 @@ export default function ChatPage() {
     return getRecommendedContextTier(inputTokenEstimate);
   }, [inputTokenEstimate]);
 
+  // SPEC-EXACT: Stop auto-switching - instead show mismatch card when prompt exceeds current window
   useEffect(() => {
-    if (contextAutoSelected && !isRunning) {
+    if (!isRunning) {
+      const currentTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
+      
+      // Check if prompt exceeds current context window
+      if (inputTokenEstimate > currentTokens && recommendedContextTier !== contextSize) {
+        // Only show mismatch if user hasn't already accepted truncation
+        if (!truncationAccepted) {
+          setShowContextMismatch(true);
+          setPendingRecommendedTier(recommendedContextTier);
+        }
+      } else if (inputTokenEstimate <= currentTokens) {
+        // Prompt fits - hide mismatch card and reset truncation acceptance
+        setShowContextMismatch(false);
+        setPendingRecommendedTier(null);
+        setWontFitConfirmed(false);
+        setTruncationAccepted(false); // Reset when prompt fits again
+      }
+    }
+  }, [inputTokenEstimate, contextSize, recommendedContextTier, isRunning, truncationAccepted]);
+
+  // Auto-select only on initial load or when user hasn't manually selected
+  useEffect(() => {
+    if (contextAutoSelected && !isRunning && inputTokenEstimate === 0) {
       setContextSize(recommendedContextTier);
     }
-  }, [recommendedContextTier, contextAutoSelected, isRunning]);
+  }, [recommendedContextTier, contextAutoSelected, isRunning, inputTokenEstimate]);
 
-  // GAP 1D: Re-engage auto-select when user edits prompt and recommended tier changes
-  useEffect(() => {
-    // Re-engage auto-select when prompt changes and current selection doesn't fit
-    const currentTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
-    if (inputTokenEstimate > currentTokens && contextSize !== recommendedContextTier) {
-      setContextAutoSelected(true);
+  // SPEC-EXACT: Handle recommended context acceptance from mismatch card
+  const handleAcceptRecommendedContext = () => {
+    if (pendingRecommendedTier) {
+      setContextSize(pendingRecommendedTier);
+      setContextAutoSelected(false);
+      setShowContextMismatch(false);
+      setPendingRecommendedTier(null);
+      
+      // Show Engineering Truth toast
+      toast({
+        title: "Context Upgraded",
+        description: `Switched to ${CONTEXT_SIZES.find(s => s.value === pendingRecommendedTier)?.label} — the smallest context that fits your prompt, saving you money.`,
+      });
     }
-  }, [inputTokenEstimate, recommendedContextTier, contextSize]);
+  };
 
   const handleContextSizeChange = (value: string) => {
-    // Check if user is selecting a larger-than-recommended tier
-    const recommendedTokens = CONTEXT_SIZES.find(c => c.value === recommendedContextTier)?.tokens || 8000;
     const selectedTokens = CONTEXT_SIZES.find(c => c.value === value)?.tokens || 8000;
+    const recommendedTokens = CONTEXT_SIZES.find(c => c.value === recommendedContextTier)?.tokens || 8000;
     
+    // SPEC-EXACT: If selecting a context that won't fit, show modal with pending context
+    if (inputTokenEstimate > selectedTokens && !expertMode) {
+      setPendingWontFitContext(value);
+      setShowWontFitModal(true);
+      setWontFitConfirmed(false);
+      return; // Don't change context until confirmed
+    }
+    
+    // Only flash cost warning for larger context - no toast spam
     if (selectedTokens > recommendedTokens && inputTokenEstimate <= recommendedTokens) {
-      // User is choosing a larger context than needed - flash cost warning
       setCostFlash(true);
       setTimeout(() => setCostFlash(false), 1500);
     }
     
     setContextSize(value);
     setContextAutoSelected(false);
+    setShowContextMismatch(false);
+    setPendingRecommendedTier(null);
+  };
+  
+  // SPEC-EXACT: Handle "Won't fit" confirmation with deliberate acknowledgment
+  const handleWontFitConfirm = () => {
+    if (pendingWontFitContext) {
+      // Apply the smaller context after user confirms understanding
+      setContextSize(pendingWontFitContext);
+      setContextAutoSelected(false);
+      setShowContextMismatch(false);
+      setPendingRecommendedTier(null);
+      setTruncationAccepted(true); // This allows models to run despite overflow
+    }
+    setWontFitConfirmed(false);
+    setPendingWontFitContext(null);
+    setShowWontFitModal(false);
+    
+    toast({
+      title: "Truncation Mode Active",
+      description: "Running with truncated input. Results may be incomplete or misleading.",
+      variant: "destructive",
+    });
   };
 
   const selectedContextTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 128000;
@@ -478,7 +544,8 @@ export default function ChatPage() {
     
     // Check if input exceeds selected context window
     if (inputTokenEstimate > selectedContextTokens) {
-      if (expertMode) {
+      // Allow running if user accepted truncation or expert mode is on
+      if (expertMode || truncationAccepted) {
         return { disabled: false, reason: "", warning: `Input exceeds ${contextSize.toUpperCase()} context` };
       }
       return { disabled: true, reason: `Input exceeds ${contextSize.toUpperCase()} context` };
@@ -1134,14 +1201,97 @@ export default function ChatPage() {
             </div>
           </div>
 
+          {/* SPEC-EXACT: Context Mismatch Card - shown when prompt exceeds current context */}
+          {showContextMismatch && pendingRecommendedTier && !expertMode && (
+            <div className="mb-4 p-4 bg-amber-50 border-2 border-amber-400 rounded-lg shadow-md animate-in fade-in duration-300">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-amber-800 text-base mb-1">Context Window Mismatch</h3>
+                  <p className="text-sm text-amber-700 mb-3">
+                    Your prompt uses <span className="font-bold">{inputTokenEstimate.toLocaleString()}</span> tokens, 
+                    but you selected <span className="font-bold">{contextSize.toUpperCase()}</span> ({selectedContextTokens.toLocaleString()} tokens). 
+                    Your prompt won't fit and will be truncated.
+                  </p>
+                  
+                  {/* Overflow visualization */}
+                  <div className="mb-3 p-2 bg-red-100 rounded border border-red-200">
+                    <div className="text-xs font-mono text-red-700 mb-1">Overflow starts here...</div>
+                    <div className="h-2 bg-gray-200 rounded overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: `${(selectedContextTokens / inputTokenEstimate) * 100}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs text-red-600 mt-1">
+                      <span>Kept: {selectedContextTokens.toLocaleString()}</span>
+                      <span className="font-bold">Lost: {(inputTokenEstimate - selectedContextTokens).toLocaleString()} tokens</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      onClick={handleAcceptRecommendedContext}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm"
+                    >
+                      Use {CONTEXT_SIZES.find(s => s.value === pendingRecommendedTier)?.label} (recommended)
+                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowContextMismatch(false)}
+                          className="text-gray-600 border-gray-300 text-sm"
+                        >
+                          Show other options
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
+                        <p className="text-xs">You can manually select a different context size, but results may be truncated if your prompt doesn't fit.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  
+                  {/* Why this recommendation? */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="mt-2 text-xs text-amber-600 hover:text-amber-800 flex items-center gap-1 hover:underline">
+                        <Info className="w-3 h-3" />
+                        Why this recommendation?
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-sm p-3">
+                      <p className="font-bold mb-2">Engineering Rule: Pick the smallest context that fits</p>
+                      <ul className="text-xs space-y-1 list-disc list-inside">
+                        <li>Smaller contexts cost less per query</li>
+                        <li>Larger contexts waste money on unused capacity</li>
+                        <li>AI engineers always optimize for cost when quality is equal</li>
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Brain className="w-4 h-4 text-gray-500" />
                   <span className="font-bold text-gray-900 text-sm">Context Window</span>
+                  {/* SPEC-EXACT: "Why?" tooltip for context recommendation */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="text-gray-400 hover:text-gray-600">
+                        <Info className="w-3.5 h-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs p-3">
+                      <p className="font-bold mb-1">Context Window = Token Budget</p>
+                      <p className="text-xs mb-2">This is how much text the AI can "see" at once. Bigger windows cost more money.</p>
+                      <p className="text-xs font-semibold text-emerald-600">Rule: Always pick the smallest context that fits your prompt.</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
-                {contextSize !== recommendedContextTier && (
+                {!showContextMismatch && contextSize !== recommendedContextTier && (
                   <span className={`text-xs px-2 py-0.5 rounded font-medium border transition-all ${
                     inputTokenEstimate > selectedContextTokens 
                       ? 'border-red-300 text-red-600 bg-red-50' 
@@ -1152,15 +1302,31 @@ export default function ChatPage() {
                     {inputTokenEstimate > selectedContextTokens ? "Won't Fit" : "Higher Cost"}
                   </span>
                 )}
-                {contextSize === recommendedContextTier && (
+                {!showContextMismatch && contextSize === recommendedContextTier && (
                   <span className="text-xs px-2 py-0.5 rounded font-medium border border-emerald-300 text-emerald-600 bg-emerald-50">
                     Best Value
                   </span>
                 )}
               </div>
-              <Select value={contextSize} onValueChange={handleContextSizeChange} disabled={isRunning}>
-                <SelectTrigger className="bg-white text-gray-900 border-gray-300 h-9 text-sm">
-                  <SelectValue />
+              {/* SPEC-EXACT: Dropdown frozen when mismatch is shown */}
+              <Select 
+                value={contextSize} 
+                onValueChange={handleContextSizeChange} 
+                disabled={isRunning || showContextMismatch}
+              >
+                <SelectTrigger className={`bg-white text-gray-900 border-gray-300 h-9 text-sm ${showContextMismatch ? 'opacity-50' : ''}`}>
+                  {/* SPEC-EXACT: Show "Auto" label when auto-selected */}
+                  <SelectValue>
+                    {contextAutoSelected && contextSize === recommendedContextTier ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-emerald-600 font-semibold">Auto</span>
+                        <span className="text-gray-500">({CONTEXT_SIZES.find(s => s.value === contextSize)?.label})</span>
+                        <span className="text-xs text-gray-400">— smallest that fits</span>
+                      </span>
+                    ) : (
+                      <span>{CONTEXT_SIZES.find(s => s.value === contextSize)?.label} tokens</span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
                   {CONTEXT_SIZES.map(size => {
@@ -1255,11 +1421,16 @@ export default function ChatPage() {
             </Tooltip>
           </div>
 
-          {/* GAP 1C: Warning when context too small */}
-          {inputTokenEstimate > selectedContextTokens && !expertMode && (
-            <div className="mb-2 p-2 bg-red-50 border border-red-300 rounded-lg flex items-center gap-2 text-red-600 text-sm font-medium">
+          {/* SPEC-EXACT: Small warning when mismatch is being shown, or after expert override */}
+          {inputTokenEstimate > selectedContextTokens && !showContextMismatch && (
+            <div className={`mb-2 p-2 rounded-lg flex items-center gap-2 text-sm font-medium ${
+              expertMode ? 'bg-amber-50 border border-amber-300 text-amber-700' : 'bg-red-50 border border-red-300 text-red-600'
+            }`}>
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-              Warning: selected context too small. Input will be truncated.
+              {expertMode 
+                ? "Expert Mode: Running with truncated input. Results may be misleading."
+                : "Warning: selected context too small. Input will be truncated."
+              }
             </div>
           )}
 
@@ -2470,6 +2641,90 @@ export default function ChatPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* SPEC-EXACT: "Won't Fit" Modal with deliberate confirmation */}
+        <Dialog open={showWontFitModal} onOpenChange={(open) => {
+          if (!open) {
+            setWontFitConfirmed(false);
+            setPendingWontFitContext(null);
+          }
+          setShowWontFitModal(open);
+        }}>
+          <DialogContent className="max-w-md bg-white border-gray-200 text-gray-900 mx-2 sm:mx-auto w-[calc(100%-1rem)] sm:w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2 font-black text-red-600">
+                <ShieldAlert className="w-6 h-6" />
+                Context Won't Fit
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-gray-700">
+                Your prompt has <span className="font-bold">{inputTokenEstimate.toLocaleString()}</span> tokens, 
+                but <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === pendingWontFitContext)?.label || 'the selected context'}</span> only holds <span className="font-bold">{(CONTEXT_SIZES.find(s => s.value === pendingWontFitContext)?.tokens || 0).toLocaleString()}</span> tokens.
+              </p>
+              
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 font-medium mb-2">
+                  What this means:
+                </p>
+                <ul className="text-sm text-red-600 list-disc list-inside space-y-1">
+                  <li>Your prompt will be cut off (truncated)</li>
+                  <li>The AI won't see your complete question</li>
+                  <li>Results may be incomplete or misleading</li>
+                </ul>
+              </div>
+              
+              <p className="text-sm text-gray-600">
+                We recommend using <span className="font-bold text-emerald-600">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> instead — 
+                it's the smallest context that fits your full prompt.
+              </p>
+              
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    setContextSize(recommendedContextTier);
+                    setShowWontFitModal(false);
+                    setWontFitConfirmed(false);
+                    setPendingWontFitContext(null);
+                    setContextAutoSelected(false);
+                    setShowContextMismatch(false);
+                    setPendingRecommendedTier(null);
+                    toast({
+                      title: "Context Upgraded",
+                      description: `Switched to ${CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label} — your complete prompt will now be processed.`,
+                    });
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold"
+                >
+                  Use {CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label} (recommended)
+                </Button>
+                
+                <div className="border-t border-gray-200 pt-3">
+                  <p className="text-xs text-gray-500 mb-2 font-medium">Advanced:</p>
+                  <label className="flex items-start gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={wontFitConfirmed}
+                      onChange={(e) => setWontFitConfirmed(e.target.checked)}
+                      className="mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                    />
+                    <span className="text-xs text-gray-600 group-hover:text-gray-900">
+                      I understand results may be misleading
+                    </span>
+                  </label>
+                  <Button
+                    variant="outline"
+                    onClick={handleWontFitConfirm}
+                    disabled={!wontFitConfirmed}
+                    className={`w-full mt-2 text-gray-600 border-gray-300 ${!wontFitConfirmed ? 'opacity-50' : ''}`}
+                  >
+                    Run truncated experiment (advanced)
+                  </Button>
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

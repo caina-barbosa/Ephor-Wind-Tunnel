@@ -1,0 +1,117 @@
+Your 7 ideas are good — here’s the “spec-exact” version
+1) Add a “context mismatch moment” before switching
+
+Strong yes. This hits the spec’s teaching intent perfectly.
+
+Implementation detail to make it crisp:
+
+When prompt exceeds current window:
+
+freeze the dropdown at the current value
+
+show an inline constraint callout with 2 buttons:
+
+Use 32K (recommended)
+
+Show other options
+
+Only after the student clicks “Use 32K” do you flip the dropdown.
+
+This makes the rule feel causal rather than magical.
+
+2) Explicit “I understand” gate for “Won’t fit”
+
+Yes, and it’s more aligned than hard-disabling.
+
+Spec says “students can overrule,” but you don’t want casual misuse.
+So don’t remove the choice — make it deliberate.
+
+Your modal flow is perfect. Only tweak:
+
+label option B as “Run truncated experiment (advanced)”
+
+and require a checkbox:
+
+“I understand results may be misleading.”
+
+That protects learning while preserving freedom.
+
+3) Visualize what gets cut off
+
+Optional but very high learning value.
+
+This is the single fastest way kids internalize length limits.
+If you can do only one extra learning improvement, do this.
+
+Keep it lightweight:
+
+a thin overflow bar
+
+a short “overflow starts here…” snippet
+
+No need for anything fancier.
+
+4) Make the recommendation clickable (“Why?”)
+
+Yes. You already did this for models, so it creates consistency.
+
+This is also where you can reinforce the engineering rule in 2–3 bullets.
+
+5) Surface an Engineering Truth toast at the moment of change
+
+Yes, but don’t spam.
+
+Only show when:
+
+mismatch happens, or
+
+student overrides to a larger window
+
+Short, repeatable, kid-friendly. Great.
+
+6) Dropdown label should say “Auto”
+
+Yes — this is subtle but important.
+
+“Auto (32K) — smallest that fits ✅”
+immediately teaches:
+
+system is optimizing cost
+
+user can override
+
+That matches the spec’s “AI engineer recommendation” framing.
+
+7) Challenge / Teacher Mode
+
+This is beyond spec but very aligned with your product goals.
+
+Default mode:
+
+auto-recommend
+
+require confirm when mismatch occurs
+
+Challenge mode:
+
+no auto-bump
+
+mismatch must be fixed before running
+
+That’s a perfect classroom lever.
+
+If you want a minimal “v2 spec-exact patch”
+
+If you want the smallest change that fixes the learning gap:
+
+Stop auto-switching immediately.
+
+Show inline mismatch card with:
+
+explanation
+
+“Use 32K (recommended)” button
+
+Only switch after click.
+
+Keep “Won’t fit” options visible but gated by modal.
