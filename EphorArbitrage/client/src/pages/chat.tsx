@@ -530,6 +530,17 @@ export default function ChatPage() {
     return NON_REASONING_MODELS[col];
   };
 
+  // Always returns a model for display purposes, even when reasoning mode is on for small models.
+  // Used to display existing results when the model would otherwise return null from getModelForColumn.
+  const getModelForDisplay = (col: string): Model | null => {
+    // If reasoning mode gives a model, use it
+    if (reasoningEnabled && REASONING_MODELS[col]) {
+      return REASONING_MODELS[col];
+    }
+    // Otherwise fall back to non-reasoning model (always exists for all columns)
+    return NON_REASONING_MODELS[col];
+  };
+
   const estimateCost = (model: Model): number => {
     const estimatedTokens = Math.max(inputTokenEstimate, 100) + 500;
     return (estimatedTokens / 1000) * model.costPer1k;
@@ -1507,6 +1518,7 @@ export default function ChatPage() {
                 <div className="grid grid-cols-5">
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
+                    const displayModel = getModelForDisplay(col); // Always returns a model for display
                     const { disabled, reason, warning } = isModelDisabled(col);
                     const response = responses[col];
                     const isLoading = response?.loading;
@@ -1517,11 +1529,13 @@ export default function ChatPage() {
                     // IMPORTANT: If we have results (content, loading, or error), 
                     // ALWAYS show them even if model would be "disabled" under current settings.
                     // This preserves results from Expert Mode runs when Expert Mode is later toggled off.
-                    // EXCEPTION: If model is null (e.g., reasoning mode on small models), always show disabled state
-                    // because we can't render results without model metadata.
+                    // Use displayModel (which always exists) to render results even when getModelForColumn returns null.
                     const hasResults = hasContent || isLoading || hasError;
 
-                    if (!model || (disabled && !hasResults)) {
+                    // Only show disabled state when:
+                    // 1. No results AND model is null (reasoning mode on small models), OR
+                    // 2. No results AND model is disabled due to cost/other constraints
+                    if ((!model && !hasResults) || (disabled && !hasResults)) {
                       const isReasoningLocked = !model;
                       const isCostExceeded = reason.includes("Exceeds");
                       return (
@@ -1598,15 +1612,17 @@ export default function ChatPage() {
                     }
 
                     const cardVisuals = COLUMN_VISUALS[col];
-                    const latencyConfig = getLatencyBarConfig(model!.expectedLatency);
-                    const capabilityConfig = getCapabilityVisuals(model!.expectedAccuracy);
-                    const estimatedCost = estimateCost(model!);
+                    // Use displayModel for rendering (always exists), fallback to model for constraint checks
+                    const renderModel = displayModel!;
+                    const latencyConfig = getLatencyBarConfig(renderModel.expectedLatency);
+                    const capabilityConfig = getCapabilityVisuals(renderModel.expectedAccuracy);
+                    const estimatedCost = estimateCost(renderModel);
                     const costConfig = getCostVisuals(estimatedCost);
                     
                     return (
                       <div
                         key={col}
-                        onClick={() => response && hasContent && openModal(col, model!, response)}
+                        onClick={() => response && hasContent && openModal(col, renderModel, response)}
                         className={`
                           p-3 transition-all flex flex-col overflow-hidden
                           ${hasResults ? 'min-h-[260px]' : 'min-h-[140px]'}
@@ -1621,7 +1637,7 @@ export default function ChatPage() {
                       >
                         <div className="text-center mb-3">
                           <span className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
-                            {model!.name}
+                            {renderModel.name}
                           </span>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
                             <Tooltip>
