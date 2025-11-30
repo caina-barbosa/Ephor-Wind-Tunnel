@@ -694,15 +694,21 @@ export default function ChatPage() {
         const decoder = new TextDecoder();
         let accumulatedContent = "";
         let tokenCount = 0;
+        let buffer = "";
+        let receivedComplete = false;
+        let finalLatency: number | null = null;
+        let finalCost: number | null = null;
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n\n");
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() || "";
 
-          for (const line of lines) {
+          for (const part of parts) {
+            const line = part.trim();
             if (!line.startsWith("data: ")) continue;
             
             try {
@@ -723,10 +729,13 @@ export default function ChatPage() {
                   },
                 }));
               } else if (data.type === "complete") {
+                receivedComplete = true;
+                finalLatency = data.latency;
+                finalCost = data.cost;
                 setResponses((prev) => ({
                   ...prev,
                   [col]: {
-                    content: data.content,
+                    content: data.content || accumulatedContent,
                     loading: false,
                     error: null,
                     latency: data.latency,
@@ -738,7 +747,35 @@ export default function ChatPage() {
                 throw new Error(data.error);
               }
             } catch (parseErr) {
-              // Ignore parse errors for incomplete chunks
+              console.warn(`[${col}] Parse error for SSE chunk:`, line.slice(0, 100));
+            }
+          }
+        }
+        
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          const line = buffer.trim();
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === "complete") {
+                receivedComplete = true;
+                finalLatency = data.latency;
+                finalCost = data.cost;
+                setResponses((prev) => ({
+                  ...prev,
+                  [col]: {
+                    content: data.content || accumulatedContent,
+                    loading: false,
+                    error: null,
+                    latency: data.latency,
+                    cost: data.cost,
+                    progress: 100,
+                  },
+                }));
+              }
+            } catch (parseErr) {
+              console.warn(`[${col}] Parse error for final buffer:`, line.slice(0, 100));
             }
           }
         }
@@ -751,9 +788,12 @@ export default function ChatPage() {
               ...prev,
               [col]: {
                 ...current,
+                content: accumulatedContent || current.content,
                 loading: false,
                 progress: 100,
-                error: current.content ? null : "No response received",
+                latency: finalLatency,
+                cost: finalCost,
+                error: (accumulatedContent || current.content) ? null : "No response received",
               },
             };
           }

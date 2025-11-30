@@ -230,11 +230,14 @@ export const MODEL_PRICING: Record<string, { input: number; output: number }> = 
   "qwen/qwen-2.5-72b-instruct": { input: 0.27, output: 0.27 },
   "z-ai/glm-4-32b": { input: 0.10, output: 0.10 },
   "together/qwen-2.5-3b-instruct": { input: 0.06, output: 0.06 },
-  "together/qwen-2.5-7b-instruct-turbo": { input: 0.30, output: 0.30 },
+  "together/llama-3.2-3b-instruct-turbo": { input: 0.06, output: 0.06 },
+  "together/qwen-2.5-7b-instruct-turbo": { input: 0.10, output: 0.10 },
   "together/qwen-2.5-14b-instruct": { input: 0.18, output: 0.18 },
+  "together/llama-4-maverick-17b": { input: 0.10, output: 0.10 },
   "together/deepseek-r1-distill-llama-70b": { input: 2.00, output: 2.00 },
   "together/deepseek-r1": { input: 3.00, output: 7.00 },
   "together/qwq-32b": { input: 1.20, output: 1.20 },
+  "openrouter/qwen/qwen3-14b": { input: 0.10, output: 0.20 },
 };
 
 // Helper to calculate cost from token counts
