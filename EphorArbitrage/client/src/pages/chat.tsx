@@ -2010,6 +2010,24 @@ export default function ChatPage() {
                                 </span>
                               </div>
 
+                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium">
+                                  {renderModel.modality === "text" ? (
+                                    <FileText className="w-3 h-3" />
+                                  ) : (
+                                    <Image className="w-3 h-3" />
+                                  )}
+                                  Input
+                                </span>
+                                <span className={`text-xs font-medium text-right ${
+                                  renderModel.modality === "text" 
+                                    ? "text-gray-500" 
+                                    : "text-purple-600"
+                                }`}>
+                                  {renderModel.modality === "text" ? "Text" : "Vision"}
+                                </span>
+                              </div>
+
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
