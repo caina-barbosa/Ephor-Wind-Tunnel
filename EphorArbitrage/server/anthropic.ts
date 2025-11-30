@@ -137,4 +137,4 @@ export async function createAnthropicChatCompletion(
   }
 }
 
-export const ANTHROPIC_MODEL_ID = "claude-3-5-sonnet-20241022";
+export const ANTHROPIC_MODEL_ID = "claude-sonnet-4-20250514";

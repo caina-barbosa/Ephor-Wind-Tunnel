@@ -1028,12 +1028,19 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       
       // Anthropic requires special handling - use non-streaming fallback
       if (modelId === "anthropic/claude-sonnet-4.5") {
+        console.log("[Wind Tunnel] Claude path - calling getModelCompletion");
         // Use existing non-streaming completion for Anthropic
         const result = await getModelCompletion({
           model: modelId,
           messages,
           maxTokens: 1024,
           timeoutMs: 60000,
+        });
+        
+        console.log("[Wind Tunnel] Claude result:", { 
+          contentLength: result.content?.length, 
+          inputTokens: result.inputTokens, 
+          outputTokens: result.outputTokens 
         });
         
         const latency = Date.now() - startTime;
@@ -1049,6 +1056,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
           cost
         })}\n\n`);
         res.end();
+        console.log("[Wind Tunnel] Claude complete - sent SSE response");
         return;
       }
       
