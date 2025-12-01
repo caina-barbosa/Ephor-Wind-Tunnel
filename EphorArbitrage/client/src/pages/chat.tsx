@@ -205,6 +205,137 @@ const REASONING_MODELS: Record<string, Model | null> = {
   },
 };
 
+// MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
+const MODEL_ALTERNATIVES: Record<string, Model[]> = {
+  "3B": [
+    NON_REASONING_MODELS["3B"],
+    { 
+      id: "together/mistral-7b-instruct", 
+      name: "Mistral 7B", 
+      costPer1k: 0.0002, 
+      expectedLatency: "fast", 
+      reasoningDepth: "none", 
+      expectedAccuracy: "basic", 
+      benchmarks: { mmlu: 60.1, humanEval: 52.4 }, 
+      modality: "text",
+      technical: {
+        architecture: { type: "Dense Transformer", attention: "Sliding Window", parameters: "7B" },
+        training: { dataDate: "2023", dataSources: ["Web", "Code"] },
+        finetuning: { method: "SFT", variants: ["Instruct"] },
+        inference: { precision: "FP16" },
+        safety: { aligned: true, methods: ["SFT", "Safety tuning"] }
+      }
+    },
+  ],
+  "7B": [
+    NON_REASONING_MODELS["7B"],
+    { 
+      id: "together/llama-3.1-70b-instruct", 
+      name: "Gemma 2 27B", 
+      costPer1k: 0.00018, 
+      expectedLatency: "fast", 
+      reasoningDepth: "none", 
+      expectedAccuracy: "good", 
+      benchmarks: { mmlu: 75.2, humanEval: 75.1 }, 
+      modality: "text",
+      technical: {
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "27B" },
+        training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
+        finetuning: { method: "SFT", variants: ["Instruct"] },
+        inference: { precision: "BF16" },
+        safety: { aligned: true, methods: ["SFT", "Safety filtering"] }
+      }
+    },
+  ],
+  "17B": [
+    NON_REASONING_MODELS["17B"],
+    { 
+      id: "together/qwen-2.5-72b-instruct", 
+      name: "Qwen 2.5 72B", 
+      costPer1k: 0.0004, 
+      expectedLatency: "medium", 
+      reasoningDepth: "none", 
+      expectedAccuracy: "strong", 
+      benchmarks: { mmlu: 85.8, humanEval: 86.6 }, 
+      modality: "text",
+      technical: {
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B" },
+        training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+        finetuning: { method: "DPO", variants: ["Instruct"] },
+        inference: { precision: "BF16" },
+        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+      }
+    },
+  ],
+  "70B": [
+    NON_REASONING_MODELS["70B"],
+    { 
+      id: "together/mixtral-8x22b-instruct", 
+      name: "Mixtral 8x22B", 
+      costPer1k: 0.0009, 
+      expectedLatency: "medium", 
+      reasoningDepth: "shallow", 
+      expectedAccuracy: "strong", 
+      benchmarks: { mmlu: 84.5, humanEval: 75.0 }, 
+      modality: "text",
+      technical: {
+        architecture: { type: "Sparse MoE", attention: "GQA", parameters: "141B total / 39B active" },
+        training: { dataDate: "2024", dataSources: ["Web", "Code", "Math"] },
+        finetuning: { method: "DPO", variants: ["Instruct"] },
+        inference: { precision: "BF16", optimizations: ["MoE routing"] },
+        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+      }
+    },
+  ],
+  "Frontier": [
+    NON_REASONING_MODELS["Frontier"],
+    { 
+      id: "openai/gpt-4o", 
+      name: "GPT-4o", 
+      costPer1k: 0.0125, 
+      expectedLatency: "medium", 
+      reasoningDepth: "deep", 
+      expectedAccuracy: "excellent", 
+      benchmarks: { mmlu: 88.7, humanEval: 90.2 }, 
+      modality: "text+image",
+      technical: {
+        architecture: { type: "Dense Transformer", attention: "MHA", parameters: "Undisclosed" },
+        training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Scientific", "Curated"] },
+        finetuning: { method: "RLHF", variants: ["InstructGPT"] },
+        inference: { precision: "BF16" },
+        safety: { aligned: true, methods: ["RLHF", "Red teaming", "Constitutional AI"] }
+      }
+    },
+  ],
+};
+
+// Baseline for relative delta display (3B model MMLU)
+const BASELINE_MMLU = 69.4;
+
+// Helper: Get reasoning depth for a band (shows capability even when reasoning mode is off)
+const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {
+  switch (col) {
+    case "3B": 
+    case "7B": 
+    case "17B": 
+      return { depth: "none", label: "None", color: "text-gray-400" };
+    case "70B": 
+      return { depth: "shallow", label: "Shallow", color: "text-amber-600" };
+    case "Frontier": 
+      return { depth: "deep", label: "Deep", color: "text-emerald-600" };
+    default: 
+      return { depth: "none", label: "None", color: "text-gray-400" };
+  }
+};
+
+// Helper: Format MMLU delta vs baseline
+const formatMmluDelta = (mmlu: number): string => {
+  const delta = mmlu - BASELINE_MMLU;
+  if (delta > 0) return `+${delta.toFixed(0)} pts vs 3B`;
+  if (delta < 0) return `${delta.toFixed(0)} pts vs 3B`;
+  return "baseline";
+};
+
 const CONTEXT_SIZES = [
   { value: "8k", tokens: 8000, label: "8K" },
   { value: "32k", tokens: 32000, label: "32K" },
@@ -421,6 +552,11 @@ export default function ChatPage() {
   const [expertMode, setExpertMode] = useState(false);
   const [challengePromptIndex, setChallengePromptIndex] = useState(0);
   const [showReasoningExplainModal, setShowReasoningExplainModal] = useState(false);
+  
+  // Expert Mode: Selected model overrides per band (for model swap feature)
+  const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
+    "3B": 0, "7B": 0, "17B": 0, "70B": 0, "Frontier": 0
+  });
 
   const inputTokenEstimate = useMemo(() => {
     return Math.ceil(prompt.length / 4);
@@ -524,6 +660,15 @@ export default function ChatPage() {
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
   const getModelForColumn = (col: string): Model | null => {
+    // When in Expert Mode, use the selected model from alternatives
+    if (expertMode && MODEL_ALTERNATIVES[col]) {
+      const selectedIndex = selectedModelPerBand[col] || 0;
+      const alternatives = MODEL_ALTERNATIVES[col];
+      if (selectedIndex < alternatives.length) {
+        return alternatives[selectedIndex];
+      }
+    }
+    
     if (reasoningEnabled) {
       return REASONING_MODELS[col];
     }
@@ -533,6 +678,15 @@ export default function ChatPage() {
   // Always returns a model for display purposes, even when reasoning mode is on for small models.
   // Used to display existing results when the model would otherwise return null from getModelForColumn.
   const getModelForDisplay = (col: string): Model | null => {
+    // When in Expert Mode, use the selected model from alternatives
+    if (expertMode && MODEL_ALTERNATIVES[col]) {
+      const selectedIndex = selectedModelPerBand[col] || 0;
+      const alternatives = MODEL_ALTERNATIVES[col];
+      if (selectedIndex < alternatives.length) {
+        return alternatives[selectedIndex];
+      }
+    }
+    
     // If reasoning mode gives a model, use it
     if (reasoningEnabled && REASONING_MODELS[col]) {
       return REASONING_MODELS[col];
@@ -1669,6 +1823,29 @@ export default function ChatPage() {
                               </TooltipContent>
                             </Tooltip>
                           )}
+                          
+                          {/* Expert Mode: Model Swap Dropdown */}
+                          {expertMode && !hasResults && MODEL_ALTERNATIVES[col] && MODEL_ALTERNATIVES[col].length > 1 && (
+                            <div className="mt-2">
+                              <Select
+                                value={String(selectedModelPerBand[col] || 0)}
+                                onValueChange={(val) => {
+                                  setSelectedModelPerBand(prev => ({ ...prev, [col]: parseInt(val) }));
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs bg-gray-50 border-gray-200">
+                                  <SelectValue placeholder="Change model" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {MODEL_ALTERNATIVES[col].map((altModel, idx) => (
+                                    <SelectItem key={altModel.id} value={String(idx)} className="text-xs">
+                                      {altModel.name} {altModel.technical.architecture.type === "Sparse MoE" ? "(MoE)" : ""}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Reasoning Ready explanation for 70B/Frontier */}
@@ -1712,6 +1889,7 @@ export default function ChatPage() {
                             {/* GAP 2B: Benchmarks - Expert Mode only */}
                             {expertMode && (
                               <>
+                                {/* MMLU with delta vs baseline */}
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-x-2 mt-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -1719,13 +1897,21 @@ export default function ChatPage() {
                                         <BarChart3 className="w-4 h-4" /> MMLU <Info className="w-3 h-3 text-gray-400" />
                                       </span>
                                     </TooltipTrigger>
-                                    <TooltipContent side="left" className="max-w-[200px]">
-                                      <p className="text-xs">MMLU: School-style knowledge & reasoning. Higher % = smarter.</p>
+                                    <TooltipContent side="left" className="max-w-[220px]">
+                                      <p className="text-xs font-medium">MMLU: School-style knowledge & reasoning</p>
+                                      <p className="text-xs text-gray-500 mt-1">{model!.benchmarks.mmlu ? formatMmluDelta(model!.benchmarks.mmlu) : ""}</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
-                                    {model!.benchmarks.mmlu?.toFixed(0)}%
-                                  </span>
+                                  <div className="text-right">
+                                    <span className="text-sm font-mono text-gray-700 tabular-nums">
+                                      {model!.benchmarks.mmlu?.toFixed(0)}%
+                                    </span>
+                                    {col !== "3B" && model!.benchmarks.mmlu && (
+                                      <span className="text-[10px] text-emerald-600 ml-1">
+                                        +{(model!.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
 
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
@@ -1741,6 +1927,30 @@ export default function ChatPage() {
                                   </Tooltip>
                                   <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
                                     {model!.benchmarks.humanEval ? `${model!.benchmarks.humanEval.toFixed(0)}%` : "—"}
+                                  </span>
+                                </div>
+
+                                {/* Reasoning Depth per band - shows capability regardless of toggle */}
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
+                                        <Brain className="w-4 h-4" /> Reasoning <Info className="w-3 h-3 text-gray-400" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="max-w-[220px]">
+                                      <p className="text-xs font-medium">Reasoning capability for this size band</p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {col === "3B" || col === "7B" || col === "17B" 
+                                          ? "Too small for step-by-step reasoning" 
+                                          : col === "70B" 
+                                            ? "Can do basic chain-of-thought" 
+                                            : "Full deep reasoning capability"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className={`text-sm font-medium text-right ${getReasoningDepthForBand(col).color}`}>
+                                    {getReasoningDepthForBand(col).label}
                                   </span>
                                 </div>
                               </>
@@ -2003,7 +2213,7 @@ export default function ChatPage() {
                                 {getSkillTag(col)}
                               </div>
 
-                              {/* MMLU */}
+                              {/* MMLU with delta */}
                               <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -2011,13 +2221,21 @@ export default function ChatPage() {
                                       <BarChart3 className="w-3 h-3" /> MMLU <Info className="w-2.5 h-2.5 text-gray-400" />
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent side="left" className="max-w-[200px]">
-                                    <p className="text-xs">MMLU: School-style knowledge & reasoning. Higher % = smarter.</p>
+                                  <TooltipContent side="left" className="max-w-[220px]">
+                                    <p className="text-xs font-medium">MMLU: School-style knowledge & reasoning</p>
+                                    <p className="text-xs text-gray-500 mt-1">{renderModel.benchmarks.mmlu ? formatMmluDelta(renderModel.benchmarks.mmlu) : ""}</p>
                                   </TooltipContent>
                                 </Tooltip>
-                                <span className="text-xs font-mono text-gray-700 tabular-nums text-right">
-                                  {renderModel.benchmarks.mmlu?.toFixed(0)}%
-                                </span>
+                                <div className="text-right">
+                                  <span className="text-xs font-mono text-gray-700 tabular-nums">
+                                    {renderModel.benchmarks.mmlu?.toFixed(0)}%
+                                  </span>
+                                  {col !== "3B" && renderModel.benchmarks.mmlu && (
+                                    <span className="text-[10px] text-emerald-600 ml-1">
+                                      +{(renderModel.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
 
                               <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
@@ -2033,6 +2251,30 @@ export default function ChatPage() {
                                 </Tooltip>
                                 <span className="text-xs font-mono text-gray-700 tabular-nums text-right">
                                   {renderModel.benchmarks.humanEval ? `${renderModel.benchmarks.humanEval.toFixed(0)}%` : "—"}
+                                </span>
+                              </div>
+
+                              {/* Reasoning Depth */}
+                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium cursor-help">
+                                      <Brain className="w-3 h-3" /> Reasoning <Info className="w-2.5 h-2.5 text-gray-400" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-[220px]">
+                                    <p className="text-xs font-medium">Reasoning capability for this size band</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {col === "3B" || col === "7B" || col === "17B" 
+                                        ? "Too small for step-by-step reasoning" 
+                                        : col === "70B" 
+                                          ? "Can do basic chain-of-thought" 
+                                          : "Full deep reasoning capability"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <span className={`text-xs font-medium text-right ${getReasoningDepthForBand(col).color}`}>
+                                  {getReasoningDepthForBand(col).label}
                                 </span>
                               </div>
 
