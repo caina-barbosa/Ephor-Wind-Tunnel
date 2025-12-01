@@ -660,7 +660,12 @@ export default function ChatPage() {
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
   const getModelForColumn = (col: string): Model | null => {
-    // When in Expert Mode, use the selected model from alternatives
+    // Reasoning mode takes precedence - reasoning models are specialized
+    if (reasoningEnabled) {
+      return REASONING_MODELS[col];
+    }
+    
+    // Expert Mode model swap (only applies when NOT in reasoning mode)
     if (expertMode && MODEL_ALTERNATIVES[col]) {
       const selectedIndex = selectedModelPerBand[col] || 0;
       const alternatives = MODEL_ALTERNATIVES[col];
@@ -669,16 +674,18 @@ export default function ChatPage() {
       }
     }
     
-    if (reasoningEnabled) {
-      return REASONING_MODELS[col];
-    }
     return NON_REASONING_MODELS[col];
   };
 
   // Always returns a model for display purposes, even when reasoning mode is on for small models.
   // Used to display existing results when the model would otherwise return null from getModelForColumn.
   const getModelForDisplay = (col: string): Model | null => {
-    // When in Expert Mode, use the selected model from alternatives
+    // Reasoning mode takes precedence - reasoning models are specialized
+    if (reasoningEnabled && REASONING_MODELS[col]) {
+      return REASONING_MODELS[col];
+    }
+    
+    // Expert Mode model swap (only applies when NOT in reasoning mode)
     if (expertMode && MODEL_ALTERNATIVES[col]) {
       const selectedIndex = selectedModelPerBand[col] || 0;
       const alternatives = MODEL_ALTERNATIVES[col];
@@ -687,11 +694,7 @@ export default function ChatPage() {
       }
     }
     
-    // If reasoning mode gives a model, use it
-    if (reasoningEnabled && REASONING_MODELS[col]) {
-      return REASONING_MODELS[col];
-    }
-    // Otherwise fall back to non-reasoning model (always exists for all columns)
+    // Fall back to non-reasoning model (always exists for all columns)
     return NON_REASONING_MODELS[col];
   };
 
@@ -1824,26 +1827,38 @@ export default function ChatPage() {
                             </Tooltip>
                           )}
                           
-                          {/* Expert Mode: Model Swap Dropdown */}
+                          {/* Expert Mode: Model Swap Dropdown (disabled when reasoning is on) */}
                           {expertMode && !hasResults && MODEL_ALTERNATIVES[col] && MODEL_ALTERNATIVES[col].length > 1 && (
                             <div className="mt-2">
-                              <Select
-                                value={String(selectedModelPerBand[col] || 0)}
-                                onValueChange={(val) => {
-                                  setSelectedModelPerBand(prev => ({ ...prev, [col]: parseInt(val) }));
-                                }}
-                              >
-                                <SelectTrigger className="h-7 text-xs bg-gray-50 border-gray-200">
-                                  <SelectValue placeholder="Change model" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {MODEL_ALTERNATIVES[col].map((altModel, idx) => (
-                                    <SelectItem key={altModel.id} value={String(idx)} className="text-xs">
-                                      {altModel.name} {altModel.technical.architecture.type === "Sparse MoE" ? "(MoE)" : ""}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <Select
+                                      value={String(selectedModelPerBand[col] || 0)}
+                                      onValueChange={(val) => {
+                                        setSelectedModelPerBand(prev => ({ ...prev, [col]: parseInt(val) }));
+                                      }}
+                                      disabled={reasoningEnabled}
+                                    >
+                                      <SelectTrigger className={`h-7 text-xs ${reasoningEnabled ? 'bg-gray-100 opacity-60' : 'bg-gray-50'} border-gray-200`}>
+                                        <SelectValue placeholder="Change model" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {MODEL_ALTERNATIVES[col].map((altModel, idx) => (
+                                          <SelectItem key={altModel.id} value={String(idx)} className="text-xs">
+                                            {altModel.name} {altModel.technical.architecture.type === "Sparse MoE" ? "(MoE)" : ""}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </TooltipTrigger>
+                                {reasoningEnabled && (
+                                  <TooltipContent side="bottom" className="max-w-[200px]">
+                                    <p className="text-xs">Model swap disabled during reasoning mode. Reasoning uses specialized models.</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
                             </div>
                           )}
                         </div>
