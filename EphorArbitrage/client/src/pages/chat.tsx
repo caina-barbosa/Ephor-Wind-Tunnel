@@ -79,53 +79,53 @@ const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "cerebras/llama-3.1-8b", 
-    name: "Llama 3.1 8B", 
+    id: "together/llama-3.2-3b-instruct-turbo", 
+    name: "Llama 3.2 3B", 
     costPer1k: 0.0001, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 69.4, humanEval: 62.5 }, 
+    benchmarks: { mmlu: 63.4, humanEval: 55.3 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
       training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
-      finetuning: { method: "SFT", variants: ["Instruct"] },
-      inference: { precision: "FP16", optimizations: ["Cerebras WSE", "1800 tok/s"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Turbo"] },
+      inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
       safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
     }
   },
   "7B": { 
-    id: "cerebras/qwen-3-32b", 
-    name: "Qwen 3 32B", 
+    id: "together/qwen-2.5-7b-instruct-turbo", 
+    name: "Qwen 2.5 7B", 
     costPer1k: 0.00015, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "good", 
-    benchmarks: { mmlu: 83.0, humanEval: 87.2 }, 
+    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "32B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "DPO", variants: ["Instruct"] },
-      inference: { precision: "FP16", optimizations: ["Cerebras WSE", "2400 tok/s"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
+      inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "17B": { 
-    id: "cerebras/gpt-oss-120b", 
-    name: "GPT-OSS 120B", 
-    costPer1k: 0.00035, 
+    id: "together/llama-4-maverick-17b", 
+    name: "Llama 4 Maverick 17B", 
+    costPer1k: 0.0002, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 85.3, humanEval: 82.1 }, 
-    modality: "text",
+    benchmarks: { mmlu: 80.5, humanEval: 78.4 }, 
+    modality: "text+image",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "120B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Open-source"] },
-      inference: { precision: "FP16", optimizations: ["Cerebras WSE", "3000 tok/s"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "17B active / 400B total" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Vision", "Multimodal"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Maverick"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing"] },
       safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
     }
   },
