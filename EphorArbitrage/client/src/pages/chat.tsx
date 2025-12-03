@@ -102,7 +102,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
   },
   "7B": { 
     id: "together/qwen-2.5-7b-instruct-turbo", 
-    name: "Qwen 2.5 7B", 
+    name: "Qwen2.5-7B", 
     costPer1k: 0.00015, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
@@ -235,18 +235,18 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "7B": [
     NON_REASONING_MODELS["7B"],
     { 
-      id: "together/llama-3.1-70b-instruct", 
-      name: "Gemma 2 27B", 
-      costPer1k: 0.00018, 
+      id: "openrouter/deepseek/deepseek-r1-distill-qwen-7b", 
+      name: "DeepSeek-R1-Distill-Qwen-7B", 
+      costPer1k: 0.0002, 
       expectedLatency: "fast", 
-      reasoningDepth: "none", 
+      reasoningDepth: "shallow", 
       expectedAccuracy: "good", 
-      benchmarks: { mmlu: 75.2, humanEval: 75.1 }, 
+      benchmarks: { mmlu: 75.8, humanEval: 78.2 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "27B" },
-        training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
-        finetuning: { method: "SFT", variants: ["Instruct"] },
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
+        finetuning: { method: "SFT", variants: ["Distillation", "R1"] },
         inference: { precision: "BF16" },
         safety: { aligned: true, methods: ["SFT", "Safety filtering"] }
       }

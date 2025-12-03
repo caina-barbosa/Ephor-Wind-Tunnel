@@ -300,6 +300,7 @@ function getActualModelId(modelId: string): string {
     "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
     "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
     "openrouter/qwen/qwen2.5-vl-3b-instruct": "qwen/qwen2.5-vl-3b-instruct:free",
+    "openrouter/deepseek/deepseek-r1-distill-qwen-7b": "deepseek/deepseek-r1-distill-qwen-7b",
   };
   return modelMap[modelId] || modelId;
 }
