@@ -38,6 +38,7 @@ const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
 const TOGETHER_QWQ_32B_SELECTOR_ID = "together/qwq-32b";
 const TOGETHER_QWEN3_4B_SELECTOR_ID = "together/Qwen/Qwen3-4B";
 const TOGETHER_QWEN3_A3B_SELECTOR_ID = "together/Qwen/Qwen3-Next-80B-A3B-Instruct";
+const OPENROUTER_QWEN25_3B_SELECTOR_ID = "openrouter/qwen/qwen2.5-vl-3b-instruct";
 
 interface UnifiedChatRequest {
   model: string;
@@ -208,6 +209,16 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
+  if (request.model === OPENROUTER_QWEN25_3B_SELECTOR_ID) {
+    console.log("[API] Using OpenRouter for Qwen2.5-3B");
+    return createOpenRouterChatCompletion({
+      model: "qwen/qwen2.5-vl-3b-instruct:free",
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
   throw new Error(`Unknown model: ${request.model}`);
 }
 
@@ -229,6 +240,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   "together/qwq-32b": "QwQ 32B (Frontier, reasoning)",
   "together/Qwen/Qwen3-4B": "Qwen3-4B (3B, Chinese)",
   "together/Qwen/Qwen3-Next-80B-A3B-Instruct": "Qwen3-A3B (3B active, Chinese)",
+  "openrouter/qwen/qwen2.5-vl-3b-instruct": "Qwen2.5-3B (3B, Chinese)",
 };
 
 function getModelDisplayName(modelId: string): string {
@@ -287,6 +299,7 @@ function getActualModelId(modelId: string): string {
     // OpenRouter
     "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
     "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
+    "openrouter/qwen/qwen2.5-vl-3b-instruct": "qwen/qwen2.5-vl-3b-instruct:free",
   };
   return modelMap[modelId] || modelId;
 }
