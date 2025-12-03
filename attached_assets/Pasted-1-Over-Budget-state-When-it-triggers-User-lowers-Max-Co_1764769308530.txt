@@ -1,0 +1,205 @@
+1) “Over Budget” state
+When it triggers
+
+User lowers Max Cost Per Query below the cheapest eligible model in a size band given current context + reasoning settings.
+
+Band / cell visual treatment
+
+Fade band header to ~40% opacity.
+
+Card background becomes a soft gray wash.
+
+Replace model card content with an “Over budget” panel.
+
+Keep the band visible (don’t remove), so students see what got eliminated.
+
+Primary panel copy (inside the band)
+
+Title:
+Over budget for this band
+
+Body (dynamic):
+This size class can’t run under your $X.XX/query cap.
+
+Cost breakdown (dynamic line):
+Cheapest option here costs ~$Y.YY/query with your settings.
+
+Why (1-liner, dynamic):
+{Reasoning ON adds ~3–5× cost.} {Context increased to 32K adds ~Z× cost.}
+
+CTA buttons:
+
+Increase budget to $Y.YY (primary)
+
+See cheaper bands (secondary anchor scrolls to cheapest eligible band)
+
+Micro “learn more” link:
+Why did this happen?
+
+Tooltip / “Why did this happen?” explainer (short)
+
+Header:
+Why this band is locked out
+
+Bullets (dynamic):
+
+This band’s models cost more because they use more compute per token.
+
+Your context window and reasoning mode increase compute.
+
+Budget caps remove models that can’t fit within real-world constraints.
+
+Footer mini-lesson:
+Engineering rule: capability is useless if you can’t afford to run it.
+
+Micro-interactions
+
+On slider drag
+
+As the cap crosses the threshold, the band animates into disabled state:
+
+150ms fade + slight blur on old content
+
+swap to Over Budget panel
+
+A small toast appears once per drag (not spammy):
+
+Toast:
+Budget cap removed 70B band
+Cheapest eligible cost is $Y.YY.
+
+On hover over disabled band
+
+Show a subtle outline + tooltip:
+
+Tooltip:
+Needs $Y.YY/query minimum with current context + reasoning.
+
+On clicking “Increase budget”
+
+Budget slider snaps to $Y.YY with a quick spring.
+
+Band re-enables with reverse fade.
+
+Tiny confirmation toast:
+
+Toast:
+Band restored under new cap.
+
+2) “Context forced model swap” state
+When it triggers
+
+User increases context window (Auto → 32K/128K/1M), and the current model in a band no longer supports it.
+
+System auto-selects the best eligible model within that band that does support the chosen context.
+
+Band / cell visual treatment
+
+Keep the card, but show a transition highlight.
+
+Add a small banner at top of card for one run (dismisses after).
+
+Banner copy (inside band, subtle)
+
+Banner (info):
+Model updated to fit 32K context
+
+Subtext (dynamic):
+Previous model maxed at 8K, so we switched to the next best option.
+
+Inline link:
+Compare old vs new
+
+Expandable “Compare old vs new” mini drawer
+
+Header:
+What changed?
+
+Before:
+
+Model: {Old Model Name}
+
+Max context: 8K
+
+Est. cost: $A.AA/query
+
+Capability: {label}
+
+After:
+
+Model: {New Model Name}
+
+Max context: 32K
+
+Est. cost: $B.BB/query
+
+Capability: {label}
+
+Why this matters (1 sentence):
+Longer context lets the model “see” more, but costs more and may run slower.
+
+Input gauge copy (near context control)
+
+When user is near limit:
+
+8K fits, but tight — risk of truncation if you add more.
+
+When overflow:
+
+Your prompt is 10,000 tokens. 8K will truncate ~2,000 tokens.
+
+Micro-interactions
+
+On selecting larger context
+
+Run a band-by-band eligibility check.
+
+For any band that must swap:
+
+Card briefly highlights (soft yellow glow for 400ms).
+
+Model name crossfades to new one.
+
+Banner slides in from top (200ms).
+
+If multiple bands swap
+
+Show a single toast summary:
+
+Toast:
+Context change updated 3 bands
+Some models don’t support 32K.
+
+If a band has no model that supports the context
+
+Replace card with a “No eligible model” state (different from over budget).
+
+Title:
+No models in this band support 128K
+
+Body:
+This size class tops out at 32K today.
+
+CTA:
+
+Lower context (primary)
+
+Use larger bands (secondary)
+
+On hover over the context dropdown
+
+Add 1-line cost hint per option:
+
+8K — lowest cost (recommended)
+
+32K — higher cost
+
+128K — much higher cost
+
+1M — extreme cost
+
+The tiny but crucial tone rule
+
+Keep the copy engineering-neutral, not moralizing.
+You’re teaching constraints, not scolding choices.
+Your current voice already nails this; the above matches it.

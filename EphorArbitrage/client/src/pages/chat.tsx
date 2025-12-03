@@ -498,6 +498,53 @@ const getContextTierLabel = (tierValue: string, tokenCount: number, recommendedT
   return { label: `${tier.label} tokens`, status: "higher" };
 };
 
+// Helper to get minimum cost for a band based on current settings
+const getMinimumCostForBand = (
+  col: string, 
+  inputTokenEstimate: number, 
+  reasoningEnabled: boolean
+): number => {
+  const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
+  if (!model) return Infinity;
+  const estimatedTokens = Math.max(inputTokenEstimate, 100) + 500;
+  return (estimatedTokens / 1000) * model.costPer1k;
+};
+
+// Get cost multiplier explanation for why a band is over budget
+const getCostMultiplierExplanation = (
+  reasoningEnabled: boolean,
+  contextSize: string
+): string[] => {
+  const explanations: string[] = [];
+  if (reasoningEnabled) {
+    explanations.push("Reasoning ON adds ~3-5× cost.");
+  }
+  const contextIndex = CONTEXT_SIZES.findIndex(s => s.value === contextSize);
+  if (contextIndex > 0) {
+    const contextLabel = CONTEXT_SIZES[contextIndex]?.label || contextSize.toUpperCase();
+    const multiplier = Math.pow(2, contextIndex);
+    if (multiplier > 1) {
+      explanations.push(`Context at ${contextLabel} adds ~${multiplier}× cost.`);
+    }
+  }
+  return explanations;
+};
+
+// Find the cheapest eligible band that's within budget
+const getCheapestEligibleBand = (
+  costCap: number,
+  inputTokenEstimate: number,
+  reasoningEnabled: boolean
+): string | null => {
+  for (const col of COLUMNS) {
+    const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+    if (minCost <= costCap) {
+      return col;
+    }
+  }
+  return null;
+};
+
 export default function ChatPage() {
   const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
@@ -557,6 +604,10 @@ export default function ChatPage() {
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
     "3B": 0, "7B": 0, "17B": 0, "70B": 0, "Frontier": 0
   });
+
+  // Track previous cost cap for budget change toasts (prevents spam on slider drag)
+  const [lastBudgetToastTime, setLastBudgetToastTime] = useState<number>(0);
+  const [prevOverBudgetBands, setPrevOverBudgetBands] = useState<Set<string>>(new Set());
 
   const inputTokenEstimate = useMemo(() => {
     return Math.ceil(prompt.length / 4);
@@ -871,6 +922,124 @@ export default function ChatPage() {
     
     return allBlockedByCost;
   }, [costCap, inputTokenEstimate, reasoningEnabled]);
+
+  // Compute which bands are currently over budget (excluding reasoning-locked bands)
+  const overBudgetBands = useMemo(() => {
+    const overBudget = new Set<string>();
+    COLUMNS.forEach(col => {
+      // Skip bands that are reasoning-locked (no model available, not a cost issue)
+      const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
+      if (!model) return; // This is reasoning-locked, not over-budget
+      
+      const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+      if (minCost > costCap && minCost !== Infinity) {
+        overBudget.add(col);
+      }
+    });
+    return overBudget;
+  }, [costCap, inputTokenEstimate, reasoningEnabled]);
+
+  // Handle cost cap change with budget toast notifications
+  const handleCostCapChange = (newCap: number) => {
+    const oldOverBudget = prevOverBudgetBands;
+    setCostCap(newCap);
+    
+    // Calculate new over-budget bands (excluding reasoning-locked bands)
+    const newOverBudget = new Set<string>();
+    COLUMNS.forEach(col => {
+      // Skip bands that are reasoning-locked
+      const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
+      if (!model) return;
+      
+      const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+      if (minCost > newCap && minCost !== Infinity) {
+        newOverBudget.add(col);
+      }
+    });
+    
+    // Find newly removed bands (were not over budget, now are)
+    const newlyRemoved = Array.from(newOverBudget).filter(col => !oldOverBudget.has(col));
+    
+    // Find restored bands (were over budget, now aren't)
+    const restored = Array.from(oldOverBudget).filter(col => !newOverBudget.has(col));
+    
+    // Rate limit toasts (max once per 500ms)
+    const now = Date.now();
+    if (now - lastBudgetToastTime > 500) {
+      if (newlyRemoved.length > 0) {
+        const cheapestEligible = getCheapestEligibleBand(newCap, inputTokenEstimate, reasoningEnabled);
+        const cheapestCost = cheapestEligible 
+          ? getMinimumCostForBand(cheapestEligible, inputTokenEstimate, reasoningEnabled)
+          : null;
+        
+        toast({
+          title: `Budget cap removed ${newlyRemoved.join(", ")} band${newlyRemoved.length > 1 ? "s" : ""}`,
+          description: cheapestCost && cheapestCost !== Infinity
+            ? `Cheapest eligible cost is $${cheapestCost.toFixed(4)}.`
+            : "No models fit your current budget.",
+        });
+        setLastBudgetToastTime(now);
+      } else if (restored.length > 0) {
+        toast({
+          title: `Band${restored.length > 1 ? "s" : ""} restored under new cap`,
+          description: `${restored.join(", ")} ${restored.length > 1 ? "are" : "is"} now within budget.`,
+        });
+        setLastBudgetToastTime(now);
+      }
+    }
+    
+    setPrevOverBudgetBands(newOverBudget);
+  };
+
+  // Handle "Increase budget" button click for a specific band
+  const handleIncreaseBudgetForBand = (col: string) => {
+    const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+    
+    // Bail out if no valid model available (e.g., reasoning-locked band)
+    if (minCost === Infinity || !isFinite(minCost)) {
+      return;
+    }
+    
+    // Round up to nearest cent
+    const newCap = Math.ceil(minCost * 100) / 100;
+    const cappedValue = Math.min(newCap, 0.25);
+    setCostCap(cappedValue); // Cap at max slider value
+    
+    toast({
+      title: "Band restored under new cap",
+      description: `Budget increased to $${cappedValue.toFixed(2)}.`,
+    });
+    
+    // Update over-budget tracking (excluding reasoning-locked bands)
+    const newOverBudget = new Set<string>();
+    COLUMNS.forEach(c => {
+      const model = reasoningEnabled ? REASONING_MODELS[c] : NON_REASONING_MODELS[c];
+      if (!model) return;
+      
+      const cost = getMinimumCostForBand(c, inputTokenEstimate, reasoningEnabled);
+      if (cost > cappedValue && cost !== Infinity) {
+        newOverBudget.add(c);
+      }
+    });
+    setPrevOverBudgetBands(newOverBudget);
+  };
+
+  // Scroll to cheapest eligible band
+  const scrollToCheapestBand = () => {
+    const cheapest = getCheapestEligibleBand(costCap, inputTokenEstimate, reasoningEnabled);
+    if (cheapest) {
+      // Find the band element and scroll to it
+      const bandElement = document.getElementById(`band-${cheapest}`);
+      if (bandElement) {
+        bandElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Add a brief highlight
+        bandElement.classList.add('ring-2', 'ring-emerald-400');
+        setTimeout(() => {
+          bandElement.classList.remove('ring-2', 'ring-emerald-400');
+        }, 2000);
+      }
+    }
+  };
 
   const loadChallengePrompt = () => {
     setPrompt(CHALLENGE_PROMPTS[challengePromptIndex]);
@@ -1527,7 +1696,7 @@ export default function ChatPage() {
               <div className="flex items-center gap-3">
                 <Slider
                   value={[costCap]}
-                  onValueChange={([val]) => setCostCap(val)}
+                  onValueChange={([val]) => handleCostCapChange(val)}
                   min={0}
                   max={0.25}
                   step={0.01}
@@ -1644,10 +1813,12 @@ export default function ChatPage() {
                     const model = getModelForColumn(col);
                     const isRecommended = showResults && col === recommendedModel;
                     const visuals = COLUMN_VISUALS[col];
+                    const isOverBudget = overBudgetBands.has(col);
                     return (
                       <div 
                         key={col} 
-                        className={`p-3 sm:p-4 text-center ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        id={`band-${col}`}
+                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
                         <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
@@ -1695,23 +1866,83 @@ export default function ChatPage() {
                     if ((!model && !hasResults) || (disabled && !hasResults)) {
                       const isReasoningLocked = !model;
                       const isCostExceeded = reason.includes("Exceeds");
+                      const minCostForBand = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+                      const costExplanations = getCostMultiplierExplanation(reasoningEnabled, contextSize);
+                      const cheapestBand = getCheapestEligibleBand(costCap, inputTokenEstimate, reasoningEnabled);
+                      
                       return (
-                        <Tooltip key={col}>
-                          <TooltipTrigger asChild>
-                            <div className={`p-3 min-h-[280px] flex flex-col items-center justify-center ${
-                              isCostExceeded ? 'bg-red-50' : 'bg-gray-50'
-                            } ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}>
-                              {isCostExceeded ? (
-                                <>
-                                  <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-red-400" />
-                                  <span className="text-xs sm:text-sm font-medium text-gray-500 text-center mb-2">
-                                    {model?.name}
-                                  </span>
-                                  <span className="text-xs font-bold text-red-600 bg-red-100 border border-red-300 px-2 py-1 rounded text-center">
-                                    {reason}
-                                  </span>
-                                </>
-                              ) : isReasoningLocked ? (
+                        <div 
+                          key={col}
+                          className={`p-3 min-h-[280px] flex flex-col transition-all duration-150 ${
+                            isCostExceeded ? 'bg-gray-100' : 'bg-gray-50'
+                          } ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                        >
+                          {isCostExceeded ? (
+                            <div className="flex flex-col h-full">
+                              <div className="flex-1 flex flex-col items-center justify-center text-center px-2">
+                                <DollarSign className="w-6 h-6 mb-2 text-gray-400" />
+                                <h4 className="text-sm font-bold text-gray-700 mb-1">Over budget for this band</h4>
+                                <p className="text-xs text-gray-500 mb-2 leading-relaxed">
+                                  This size class can't run under your ${costCap.toFixed(2)}/query cap.
+                                </p>
+                                <div className="text-[10px] text-gray-500 mb-2 p-1.5 bg-white rounded border border-gray-200">
+                                  <span className="font-medium">Cheapest here:</span> ~${minCostForBand.toFixed(4)}/query
+                                </div>
+                                {costExplanations.length > 0 && (
+                                  <div className="text-[10px] text-gray-400 mb-3 space-y-0.5">
+                                    {costExplanations.map((exp, i) => (
+                                      <p key={i}>{exp}</p>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="mt-auto space-y-1.5 px-1">
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleIncreaseBudgetForBand(col);
+                                  }}
+                                  className="w-full text-[10px] h-7 bg-[#1a3a8f] hover:bg-[#2a4a9f] text-white"
+                                >
+                                  Increase to ${Math.min(Math.ceil(minCostForBand * 100) / 100, 0.25).toFixed(2)}
+                                </Button>
+                                {cheapestBand && cheapestBand !== col && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      scrollToCheapestBand();
+                                    }}
+                                    className="w-full text-[10px] h-6 text-gray-600 border-gray-300"
+                                  >
+                                    See cheaper bands
+                                  </Button>
+                                )}
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button className="w-full text-[9px] text-gray-400 hover:text-gray-600 flex items-center justify-center gap-1 mt-1">
+                                      <Info className="w-2.5 h-2.5" />
+                                      Why did this happen?
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="max-w-[240px] bg-white border-gray-200 text-gray-700 p-3">
+                                    <p className="font-bold text-gray-900 text-xs mb-2">Why this band is locked out</p>
+                                    <ul className="text-[10px] text-gray-600 space-y-1 list-disc list-inside mb-2">
+                                      <li>This band's models cost more because they use more compute per token.</li>
+                                      <li>Your context window and reasoning mode increase compute.</li>
+                                      <li>Budget caps remove models that can't fit within real-world constraints.</li>
+                                    </ul>
+                                    <p className="text-[9px] text-gray-500 italic border-t border-gray-100 pt-2 mt-2">
+                                      Engineering rule: capability is useless if you can't afford to run it.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          ) : isReasoningLocked ? (
                                 <div className="flex flex-col items-center text-center px-2">
                                   <div className="flex items-center gap-1.5 mb-2">
                                     <Lock className="w-4 h-4 text-gray-400" />
@@ -1737,34 +1968,18 @@ export default function ChatPage() {
                                     Learn more
                                   </button>
                                 </div>
-                              ) : (
-                                <>
-                                  <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
-                                  <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
-                                    {model?.name}
-                                  </span>
-                                  <span className="text-xs text-gray-400 text-center mt-1">
-                                    {reason}
-                                  </span>
-                                </>
-                              )}
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center px-2">
+                              <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
+                              <span className="text-xs sm:text-sm font-medium text-gray-400 text-center">
+                                {model?.name}
+                              </span>
+                              <span className="text-xs text-gray-400 text-center mt-1">
+                                {reason}
+                              </span>
                             </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-white border-gray-200 text-gray-700">
-                            {isReasoningLocked ? (
-                              <p className="text-xs text-gray-500">Click the lock icon for details</p>
-                            ) : (
-                              <>
-                                <p>{reason}</p>
-                                {isCostExceeded && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Increase your budget cap to use this model.
-                                  </p>
-                                )}
-                              </>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
+                          )}
+                        </div>
                       );
                     }
 

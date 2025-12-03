@@ -22,7 +22,15 @@ The application allows users to select context window sizes (8K-1M), set a cost 
 
 *   **LLM Engineering Dimensions**: Displays 10 key dimensions including Architecture, Parameters & Scaling, Training Data, Context Window, Benchmarks (MMLU%, HumanEval%), Fine-tuning Methods, Inference Optimization, Multimodality, Safety & Alignment, and Deployment Economics (Est. Cost, Speed).
 *   **Context Window Management**: Auto-selects the smallest appropriate context, visually indicates token usage (used/unused), and provides cost-related feedback.
-*   **Budget Cap**: Filters out models exceeding a user-defined cost cap, with clear visual warnings.
+*   **Budget Cap with Educational "Over Budget" UI**: Filters out models exceeding a user-defined cost cap. When a band is over budget, it shows a comprehensive educational panel with:
+    - Faded header (40% opacity) to indicate the band is locked
+    - Gray card background with "Over budget for this band" title
+    - Cost breakdown showing the minimum cost for that band
+    - Context multiplier explanations (reasoning mode, context window impacts)
+    - "Increase to $X.XX" CTA button to restore the band
+    - "See cheaper bands" CTA button to scroll to eligible alternatives
+    - "Why did this happen?" tooltip with educational content about budget constraints
+    - Toast notifications when budget changes affect band availability
 *   **Public Leaderboard**: Allows users to share test results with optional anonymity, including prompt, recommended model, settings, and performance data.
 *   **Benchmark Library**: Users can save, load, and delete custom prompts for re-testing and comparison.
 *   **Educational Prompts**: Includes a rotating set of challenge prompts to encourage deeper learning.
