@@ -641,26 +641,30 @@ export default function ChatPage() {
   }, [effectiveTokens]);
 
   // SPEC-EXACT: Stop auto-switching - instead show mismatch card when prompt exceeds current window
+  // Use effectiveTokens (includes buffer) when buffer is active in Expert Mode
   useEffect(() => {
     if (!isRunning) {
       const currentTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
+      const tokensToCheck = expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate;
       
-      // Check if prompt exceeds current context window
-      if (inputTokenEstimate > currentTokens && recommendedContextTier !== contextSize) {
+      // Check if prompt (or prompt+buffer) exceeds current context window
+      if (tokensToCheck > currentTokens && recommendedContextTier !== contextSize) {
         // Only show mismatch if user hasn't already accepted truncation
         if (!truncationAccepted) {
           setShowContextMismatch(true);
           setPendingRecommendedTier(recommendedContextTier);
         }
-      } else if (inputTokenEstimate <= currentTokens) {
+      } else if (tokensToCheck <= currentTokens) {
         // Prompt fits - hide mismatch card and reset truncation acceptance
         setShowContextMismatch(false);
         setPendingRecommendedTier(null);
         setWontFitConfirmed(false);
         setTruncationAccepted(false); // Reset when prompt fits again
+        // Also reset buffer warning when context is now large enough
+        setShowBufferWarning(false);
       }
     }
-  }, [inputTokenEstimate, contextSize, recommendedContextTier, isRunning, truncationAccepted]);
+  }, [inputTokenEstimate, effectiveTokens, bufferTokens, expertMode, contextSize, recommendedContextTier, isRunning, truncationAccepted]);
 
   // Auto-select only on initial load or when user hasn't manually selected
   useEffect(() => {
@@ -688,13 +692,19 @@ export default function ChatPage() {
   const handleContextSizeChange = (value: string) => {
     const selectedTokens = CONTEXT_SIZES.find(c => c.value === value)?.tokens || 8000;
     const recommendedTokens = CONTEXT_SIZES.find(c => c.value === recommendedContextTier)?.tokens || 8000;
+    const tokensToCheck = expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate;
     
     // SPEC-EXACT: If selecting a context that won't fit, show modal with pending context
-    if (inputTokenEstimate > selectedTokens && !expertMode) {
+    if (tokensToCheck > selectedTokens && !expertMode) {
       setPendingWontFitContext(value);
       setShowWontFitModal(true);
       setWontFitConfirmed(false);
       return; // Don't change context until confirmed
+    }
+    
+    // Reset buffer warning if new context is large enough
+    if (selectedTokens >= tokensToCheck) {
+      setShowBufferWarning(false);
     }
     
     // Only flash cost warning for larger context - no toast spam
@@ -1529,19 +1539,26 @@ export default function ChatPage() {
               <div className="mb-2 text-sm">
                 <div className="font-medium text-gray-900">
                   Your prompt uses <span className="font-bold text-[#1a3a8f]">{inputTokenEstimate.toLocaleString()}</span> tokens.
+                  {expertMode && bufferTokens > 0 && (
+                    <span className="text-amber-600 ml-1">
+                      (+{bufferTokens.toLocaleString()} buffer = {effectiveTokens.toLocaleString()} required)
+                    </span>
+                  )}
                 </div>
                 {inputTokenEstimate > 1000000 ? (
                   <div className="text-red-600 font-bold mt-0.5">
                     Prompt exceeds max context (1M tokens). Please shorten.
                   </div>
                 ) : inputTokenEstimate > 0 && (
-                  <div className="text-emerald-600 mt-0.5">
-                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> (cheapest that fits)
+                  <div className={`mt-0.5 ${expertMode && bufferTokens > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> 
+                    {expertMode && bufferTokens > 0 ? ' (fits with buffer)' : ' (cheapest that fits)'}
                   </div>
                 )}
-                {getContextTightFitWarning(inputTokenEstimate, selectedContextTokens) && (
+                {getContextTightFitWarning(expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate, selectedContextTokens) && (
                   <div className="text-amber-600 font-medium mt-0.5">
-                    {contextSize.toUpperCase()} {getContextTightFitWarning(inputTokenEstimate, selectedContextTokens)}
+                    {contextSize.toUpperCase()} {getContextTightFitWarning(expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate, selectedContextTokens)}
+                    {expertMode && bufferTokens > 0 && " (with buffer)"}
                   </div>
                 )}
               </div>
@@ -1993,13 +2010,15 @@ export default function ChatPage() {
           )}
 
           {/* SPEC-EXACT: Small warning when mismatch is being shown, or after expert override */}
-          {inputTokenEstimate > selectedContextTokens && !showContextMismatch && (
+          {(expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) > selectedContextTokens && !showContextMismatch && (
             <div className={`mb-2 p-2 rounded-lg flex items-center gap-2 text-sm font-medium ${
               expertMode ? 'bg-amber-50 border border-amber-300 text-amber-700' : 'bg-red-50 border border-red-300 text-red-600'
             }`}>
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               {expertMode 
-                ? "Expert Mode: Running with truncated input. Results may be misleading."
+                ? bufferTokens > 0 
+                  ? "Expert Mode: Buffer exceeds context. Input may be truncated when context grows."
+                  : "Expert Mode: Running with truncated input. Results may be misleading."
                 : "Warning: selected context too small. Input will be truncated."
               }
             </div>
