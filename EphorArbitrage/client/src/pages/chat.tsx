@@ -119,7 +119,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
   },
   "14B": { 
     id: "openrouter/deepseek/deepseek-r1-distill-qwen-14b", 
-    name: "DeepSeek-R1-Distill-Qwen-14B", 
+    name: "DeepSeek-R1-14B", 
     costPer1k: 0.00016, 
     expectedLatency: "fast", 
     reasoningDepth: "shallow", 
@@ -236,7 +236,7 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
     NON_REASONING_MODELS["7B"],
     { 
       id: "openrouter/deepseek/deepseek-r1-distill-qwen-7b", 
-      name: "DeepSeek-R1-Distill-Qwen-7B", 
+      name: "DeepSeek-R1-7B", 
       costPer1k: 0.0002, 
       expectedLatency: "fast", 
       reasoningDepth: "shallow", 
