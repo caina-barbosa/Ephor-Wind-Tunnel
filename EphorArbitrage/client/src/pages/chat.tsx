@@ -2008,24 +2008,26 @@ export default function ChatPage() {
                         `}
                       >
                         <div className="text-center mb-3">
-                          <span className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
+                          <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {renderModel.name}
-                          </span>
+                          </div>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="ml-1 sm:ml-2 inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-1.5 sm:px-2 py-0.5 rounded font-bold border border-emerald-200 cursor-help">
-                                  <Brain className="w-3 h-3" />
-                                  Reasoning Ready
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
-                                <p className="font-semibold text-gray-900 mb-1">Why this works</p>
-                                <p className="text-xs text-gray-600">
-                                  Big models have enough parameters to keep multi-step thoughts consistent.
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
+                            <div className="mt-1.5 flex justify-center">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-1.5 sm:px-2 py-0.5 rounded font-bold border border-emerald-200 cursor-help">
+                                    <Brain className="w-3 h-3" />
+                                    Reasoning Ready
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
+                                  <p className="font-semibold text-gray-900 mb-1">Why this works</p>
+                                  <p className="text-xs text-gray-600">
+                                    Big models have enough parameters to keep multi-step thoughts consistent.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
                           )}
                           {warning && (
                             <Tooltip>
