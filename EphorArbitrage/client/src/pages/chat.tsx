@@ -366,49 +366,55 @@ const COLUMN_VISUALS: Record<string, {
   cardStyle: string;
   prominence: "small" | "medium" | "large";
   accentBorder: string;
+  accentColor: string;
 }> = {
   "3B": {
-    headerSize: "text-xl font-bold text-[#A3316F]",
-    headerBg: "bg-[#fdf2f8]",
+    headerSize: "text-2xl font-bold",
+    headerBg: "bg-slate-50",
     cardStyle: "bg-white",
     prominence: "small",
-    accentBorder: "border-t-[6px] border-t-[#A3316F]"
+    accentBorder: "border-t-4 border-t-[#64748b]",
+    accentColor: "text-slate-600"
   },
   "7B": {
-    headerSize: "text-xl font-bold text-blue-700",
-    headerBg: "bg-blue-50",
+    headerSize: "text-2xl font-bold",
+    headerBg: "bg-slate-50",
     cardStyle: "bg-white",
     prominence: "small",
-    accentBorder: "border-t-[6px] border-t-[#2563EB]"
+    accentBorder: "border-t-4 border-t-[#475569]",
+    accentColor: "text-slate-700"
   },
   "14B": {
-    headerSize: "text-2xl font-extrabold text-blue-800",
+    headerSize: "text-2xl font-bold",
     headerBg: "bg-blue-50",
     cardStyle: "bg-white",
     prominence: "medium",
-    accentBorder: "border-t-[6px] border-t-[#2563EB]"
+    accentBorder: "border-t-4 border-t-[#3b82f6]",
+    accentColor: "text-blue-600"
   },
   "70B": {
-    headerSize: "text-2xl font-extrabold text-emerald-700",
-    headerBg: "bg-emerald-50",
+    headerSize: "text-2xl font-bold",
+    headerBg: "bg-blue-50",
     cardStyle: "bg-white",
     prominence: "medium",
-    accentBorder: "border-t-[6px] border-t-[#16A34A]"
+    accentBorder: "border-t-4 border-t-[#1d4ed8]",
+    accentColor: "text-blue-700"
   },
   "Frontier": {
-    headerSize: "text-3xl font-black text-[#EA580C]",
-    headerBg: "bg-orange-50",
+    headerSize: "text-2xl font-bold",
+    headerBg: "bg-amber-50",
     cardStyle: "bg-white",
     prominence: "large",
-    accentBorder: "border-t-[6px] border-t-[#EA580C]"
+    accentBorder: "border-t-4 border-t-[#f59e0b]",
+    accentColor: "text-amber-600"
   }
 };
 
 const getLatencyBarConfig = (latency: "fast" | "medium" | "slow") => {
   switch (latency) {
     case "fast": return { width: "w-full", color: "bg-emerald-500", label: "Fast" };
-    case "medium": return { width: "w-[50%]", color: "bg-orange-400", label: "Medium" };
-    case "slow": return { width: "w-[20%]", color: "bg-red-500", label: "Slow" };
+    case "medium": return { width: "w-[50%]", color: "bg-amber-400", label: "Medium" };
+    case "slow": return { width: "w-[25%]", color: "bg-slate-400", label: "Slow" };
   }
 };
 
@@ -424,10 +430,10 @@ const getCostVisuals = (_cost: number) => {
 
 const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "basic": return { bars: 1, color: "bg-[#A3316F]", textColor: "text-[#A3316F]", label: "Basic" };
-    case "good": return { bars: 2, color: "bg-blue-400", textColor: "text-blue-600", label: "Good" };
-    case "strong": return { bars: 3, color: "bg-emerald-500", textColor: "text-emerald-600", label: "Strong" };
-    case "excellent": return { bars: 4, color: "bg-[#f5a623]", textColor: "text-[#f5a623]", label: "Excellent" };
+    case "basic": return { bars: 1, color: "bg-slate-400", textColor: "text-slate-600", label: "Basic" };
+    case "good": return { bars: 2, color: "bg-slate-500", textColor: "text-slate-700", label: "Good" };
+    case "strong": return { bars: 3, color: "bg-blue-500", textColor: "text-blue-600", label: "Strong" };
+    case "excellent": return { bars: 4, color: "bg-amber-500", textColor: "text-amber-600", label: "Excellent" };
   }
 };
 
@@ -2076,10 +2082,10 @@ export default function ChatPage() {
                       <div 
                         key={col} 
                         id={`band-${col}`}
-                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
+                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-amber-50/50' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
-                        <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
+                        <div className={`${visuals.headerSize} ${visuals.accentColor} tracking-tight`}>{col}</div>
+                        <div className={`text-xs font-medium mt-1 ${visuals.accentColor} opacity-75`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -2258,15 +2264,14 @@ export default function ChatPage() {
                           ${hasResults ? 'min-h-[260px]' : 'min-h-[140px]'}
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${cardVisuals.cardStyle}
-                          ${cardVisuals.accentBorder}
-                          ${isRecommended ? 'ring-2 ring-[#f5a623] ring-offset-1 bg-[#fffbf5]' : ''}
+                          ${isRecommended ? 'ring-2 ring-amber-400 ring-offset-1 bg-amber-50/30' : ''}
                           ${isLoading ? 'bg-gray-50/80' : ''}
                           ${hasError ? 'bg-red-50' : ''}
-                          ${hasContent ? 'cursor-pointer hover:brightness-[0.98]' : ''}
+                          ${hasContent ? 'cursor-pointer hover:bg-gray-50/50' : ''}
                         `}
                       >
                         <div className="text-center mb-3">
-                          <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
+                          <div className="font-semibold text-gray-800 text-sm">
                             {renderModel.name}
                           </div>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
