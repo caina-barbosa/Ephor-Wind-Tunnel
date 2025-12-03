@@ -84,17 +84,17 @@ const COLUMNS = ["4B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "4B": { 
-    id: "together/Qwen/Qwen3-4B", 
-    name: "Qwen3-4B", 
+    id: "openrouter/deepseek/deepseek-r1-0528-qwen3-8b", 
+    name: "DeepSeek-R1-8B", 
     costPer1k: 0.0001, 
     expectedLatency: "fast", 
-    reasoningDepth: "none", 
+    reasoningDepth: "shallow", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 72.1, humanEval: 65.8 }, 
+    benchmarks: { mmlu: 72.5, humanEval: 70.2 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
       finetuning: { method: "DPO", variants: ["Instruct"] },
       inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
@@ -215,8 +215,8 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "4B": [
     NON_REASONING_MODELS["4B"],
     { 
-      id: "together/Qwen/Qwen3-4B", 
-      name: "Qwen3-4B", 
+      id: "openrouter/deepseek/deepseek-r1-0528-qwen3-8b", 
+      name: "DeepSeek-R1-8B", 
       costPer1k: 0.0001, 
       expectedLatency: "fast", 
       reasoningDepth: "none", 
@@ -314,8 +314,8 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   ],
 };
 
-// Baseline for relative delta display (4B model MMLU)
-const BASELINE_MMLU = 72.1;
+// Baseline for relative delta display (4B band / DeepSeek-R1-8B MMLU)
+const BASELINE_MMLU = 72.5;
 
 // Helper: Get reasoning depth for a band (shows capability even when reasoning mode is off)
 const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {

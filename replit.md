@@ -52,11 +52,11 @@ The architecture is a client-server model with a React frontend and an Express.j
 
 **AI Model Providers**:
 *   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5.
-*   Together AI API (`api.together.xyz`) for Qwen2.5-7B, Qwen3-4B, Qwen2.5-72B, DeepSeek R1 Distill 70B, and DeepSeek R1.
-*   Replit AI Integration for OpenRouter for Chinese open source models: DeepSeek-R1-7B (7B secondary), DeepSeek-R1-14B (14B primary), Qwen3-14B (14B secondary), and Qwen2-72B (70B secondary), billed through Replit credits.
+*   Together AI API (`api.together.xyz`) for Qwen2.5-7B, Qwen2.5-72B, DeepSeek R1 Distill 70B, and DeepSeek R1.
+*   Replit AI Integration for OpenRouter for Chinese open source models: DeepSeek-R1-0528-Qwen3-8B (4B primary), DeepSeek-R1-14B (14B primary), Qwen3-14B (14B secondary), and Qwen2-72B (70B secondary), billed through Replit credits.
 
 **Model Configuration by Band**:
-*   4B: Primary = Qwen3-4B (Together AI), Secondary = Qwen3-4B (Together AI)
+*   4B: Primary = DeepSeek-R1-0528-Qwen3-8B (OpenRouter), Secondary = DeepSeek-R1-0528-Qwen3-8B (OpenRouter)
 *   7B: Primary = Qwen2.5-7B (Together AI), Secondary = DeepSeek-R1-Distill-Qwen-7B (OpenRouter)
 *   14B: Primary = DeepSeek-R1-Distill-Qwen-14B (OpenRouter), Secondary = Qwen3-14B (OpenRouter)
 *   70B: Primary = Qwen2.5-72B (Together AI), Secondary = Qwen2-72B (OpenRouter)
