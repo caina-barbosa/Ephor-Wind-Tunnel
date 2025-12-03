@@ -730,6 +730,40 @@ export default function ChatPage() {
     });
   };
 
+  // Handle safety buffer changes (Expert Mode)
+  const handleBufferChange = (newBuffer: "off" | "10" | "25") => {
+    const prevBuffer = safetyBuffer;
+    setSafetyBuffer(newBuffer);
+    
+    // Calculate new effective tokens
+    const newMultiplier = newBuffer === "off" ? 1.0 : newBuffer === "10" ? 1.1 : 1.25;
+    const newEffectiveTokens = Math.ceil(inputTokenEstimate * newMultiplier);
+    const newRecommendedTier = getRecommendedContextTier(newEffectiveTokens);
+    const currentContextTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
+    
+    // Check if buffer forces context upgrade
+    if (newEffectiveTokens > currentContextTokens && inputTokenEstimate <= currentContextTokens) {
+      setShowBufferWarning(true);
+    } else {
+      setShowBufferWarning(false);
+    }
+    
+    // Toast notification for buffer change
+    if (newBuffer !== prevBuffer) {
+      if (newBuffer === "off") {
+        toast({
+          title: "Buffer removed",
+          description: "Returning to tight-fit recommendation.",
+        });
+      } else {
+        toast({
+          title: "Safety buffer updated constraints",
+          description: "Context + models re-evaluated.",
+        });
+      }
+    }
+  };
+
   const selectedContextTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 128000;
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
@@ -1520,41 +1554,91 @@ export default function ChatPage() {
                       OVERFLOW
                     </span>
                   )}
+                  {expertMode && bufferTokens > 0 && (
+                    <span className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded font-bold">
+                      +{safetyBuffer}% BUFFER
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`font-mono text-sm font-bold ${
-                    inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
-                  }`}>{inputTokenEstimate.toLocaleString()}</span>
+                  {/* Show buffer breakdown when active */}
+                  {expertMode && bufferTokens > 0 ? (
+                    <>
+                      <span className="font-mono text-xs text-gray-600">
+                        {inputTokenEstimate.toLocaleString()} used
+                      </span>
+                      <span className="text-amber-500">+</span>
+                      <span className="font-mono text-xs text-amber-600 font-bold">
+                        {bufferTokens.toLocaleString()} buffer
+                      </span>
+                      <span className="text-gray-400">=</span>
+                      <span className={`font-mono text-sm font-bold ${
+                        effectiveTokens > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
+                      }`}>{effectiveTokens.toLocaleString()}</span>
+                    </>
+                  ) : (
+                    <span className={`font-mono text-sm font-bold ${
+                      inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
+                    }`}>{inputTokenEstimate.toLocaleString()}</span>
+                  )}
                   <span className="text-gray-400">/</span>
                   <span className="font-mono text-sm text-gray-600">{selectedContextTokens.toLocaleString()}</span>
                   <span className="text-xs text-gray-500">tokens</span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                    inputTokenEstimate > selectedContextTokens ? 'bg-red-500 text-white' :
-                    'bg-gray-200 text-gray-700'
+                    (expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) > selectedContextTokens 
+                      ? 'bg-red-500 text-white' 
+                      : 'bg-gray-200 text-gray-700'
                   }`}>
-                    {inputTokenEstimate > selectedContextTokens ? 'OVERFLOW!' : `${inputPercentage.toFixed(1)}%`}
+                    {(expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) > selectedContextTokens 
+                      ? 'OVERFLOW!' 
+                      : `${((expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) / selectedContextTokens * 100).toFixed(1)}%`}
                   </span>
                 </div>
               </div>
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden relative">
+                {/* Used tokens bar */}
                 <div 
-                  className={`h-full transition-all absolute left-0 z-10 ${
+                  className={`h-full transition-all absolute left-0 z-20 ${
                     inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-[#1a3a8f]'
                   }`}
-                  style={{ width: `${Math.min(Math.max(inputPercentage, 2), 100)}%` }}
+                  style={{ width: `${Math.min(Math.max(inputPercentage, inputTokenEstimate > 0 ? 2 : 0), 100)}%` }}
                 />
+                {/* Buffer bar (amber) - shown when buffer is active */}
+                {expertMode && bufferTokens > 0 && inputTokenEstimate <= selectedContextTokens && (
+                  <div 
+                    className="h-full transition-all absolute z-10 bg-amber-400"
+                    style={{ 
+                      left: `${Math.min(inputPercentage, 100)}%`,
+                      width: `${Math.min((bufferTokens / selectedContextTokens) * 100, 100 - inputPercentage)}%`
+                    }}
+                  />
+                )}
+                {/* Unused/wasted tokens (diagonal stripes) */}
                 {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
                   <div 
                     className="h-full absolute bg-gray-300 opacity-60"
                     style={{ 
-                      left: `${Math.min(Math.max(inputPercentage, 2), 100)}%`,
-                      width: `${100 - Math.min(Math.max(inputPercentage, 2), 100)}%`,
+                      left: `${Math.min(Math.max((expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) / selectedContextTokens * 100, 2), 100)}%`,
+                      width: `${100 - Math.min(Math.max((expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) / selectedContextTokens * 100, 2), 100)}%`,
                       backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)'
                     }}
                   />
                 )}
               </div>
-              {inputTokenEstimate > 0 && contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
+              {/* Buffer legend when active */}
+              {expertMode && bufferTokens > 0 && inputTokenEstimate > 0 && (
+                <div className="mt-1.5 flex items-center gap-3 text-[10px]">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-[#1a3a8f] rounded-sm" />
+                    <span className="text-gray-600">Used ({inputTokenEstimate.toLocaleString()})</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-amber-400 rounded-sm" />
+                    <span className="text-amber-700 font-medium">Buffer ({bufferTokens.toLocaleString()})</span>
+                  </div>
+                </div>
+              )}
+              {inputTokenEstimate > 0 && contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && !(expertMode && bufferTokens > 0) && (
                 <div className="mt-2 text-xs text-amber-600 font-medium">
                   You're paying for {(selectedContextTokens - inputTokenEstimate).toLocaleString()} unused tokens
                 </div>
@@ -1786,6 +1870,127 @@ export default function ChatPage() {
               </TooltipContent>
             </Tooltip>
           </div>
+
+          {/* Context Safety Buffer - Expert Mode Only */}
+          {expertMode && (
+            <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-800 text-sm">Context Safety Buffer</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-amber-600 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
+                      <p className="font-bold mb-1">Why use a safety buffer?</p>
+                      <p className="text-xs mb-2">Buffers reserve extra context space beyond your current prompt. Useful when your task may grow.</p>
+                      <p className="text-xs font-medium mb-1">Good for:</p>
+                      <ul className="text-xs list-disc pl-4 mb-2">
+                        <li>Retrieval (RAG) that adds docs</li>
+                        <li>Follow-up questions</li>
+                        <li>Multi-document prompts</li>
+                        <li>Agent/tool runs</li>
+                      </ul>
+                      <p className="text-xs mb-2"><span className="font-medium">Tradeoff:</span> More buffer = higher cost + latency, and may force a model swap.</p>
+                      <p className="text-xs italic text-gray-500">Engineering rule: right-size context with just enough headroom.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                  safetyBuffer === "25" ? 'bg-amber-500 text-white' : 
+                  safetyBuffer === "10" ? 'bg-amber-400 text-white' : 
+                  'bg-gray-200 text-gray-600'
+                }`}>
+                  Est. multiplier: {safetyBuffer === "off" ? "1.0×" : safetyBuffer === "10" ? "~1.1×" : "~1.25×"}
+                </span>
+              </div>
+              
+              {/* Segmented Control */}
+              <div className="flex rounded-lg overflow-hidden border border-amber-300 mb-2">
+                <button
+                  onClick={() => handleBufferChange("off")}
+                  disabled={isRunning}
+                  className={`flex-1 py-2 px-3 text-xs font-bold transition-all ${
+                    safetyBuffer === "off" 
+                      ? 'bg-amber-600 text-white' 
+                      : 'bg-white text-amber-700 hover:bg-amber-100'
+                  }`}
+                >
+                  Off
+                </button>
+                <button
+                  onClick={() => handleBufferChange("10")}
+                  disabled={isRunning}
+                  className={`flex-1 py-2 px-3 text-xs font-bold border-l border-amber-300 transition-all ${
+                    safetyBuffer === "10" 
+                      ? 'bg-amber-600 text-white' 
+                      : 'bg-white text-amber-700 hover:bg-amber-100'
+                  }`}
+                >
+                  +10%
+                </button>
+                <button
+                  onClick={() => handleBufferChange("25")}
+                  disabled={isRunning}
+                  className={`flex-1 py-2 px-3 text-xs font-bold border-l border-amber-300 transition-all ${
+                    safetyBuffer === "25" 
+                      ? 'bg-amber-600 text-white' 
+                      : 'bg-white text-amber-700 hover:bg-amber-100'
+                  }`}
+                >
+                  +25%
+                </button>
+              </div>
+              
+              {/* Helper Text */}
+              <p className="text-xs text-amber-700 leading-relaxed">
+                {safetyBuffer === "off" && "Tight fit. Cheapest option, but leaves no room for retrieval or follow-ups."}
+                {safetyBuffer === "10" && "Adds a little headroom for extra context. Small cost increase."}
+                {safetyBuffer === "25" && "Adds strong headroom for RAG / long tasks. Higher cost."}
+              </p>
+            </div>
+          )}
+
+          {/* Buffer Warning Panel - when buffer forces context upgrade */}
+          {expertMode && showBufferWarning && effectiveTokens > selectedContextTokens && inputTokenEstimate <= selectedContextTokens && (
+            <div className="mb-4 p-3 bg-amber-100 rounded-lg border border-amber-400">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-amber-800 text-sm mb-1">Buffer needs more context</h4>
+                  <p className="text-xs text-amber-700 mb-2">
+                    Your prompt fits {contextSize.toUpperCase()}, but with +{safetyBuffer}% buffer you need {effectiveTokens.toLocaleString()} tokens.
+                    {contextSize.toUpperCase()} will truncate if the task grows.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setContextSize(recommendedContextTier);
+                        setShowBufferWarning(false);
+                        toast({
+                          title: "Context upgraded for buffer",
+                          description: `Switched to ${CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label} to accommodate safety buffer.`,
+                        });
+                      }}
+                      className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold"
+                    >
+                      Use {CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label} (recommended)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowBufferWarning(false)}
+                      className="text-amber-700 border-amber-400 text-xs"
+                    >
+                      Keep {contextSize.toUpperCase()} anyway
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-amber-600 mt-1 italic">Risky for RAG / follow-ups.</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* SPEC-EXACT: Small warning when mismatch is being shown, or after expert override */}
           {inputTokenEstimate > selectedContextTokens && !showContextMismatch && (
