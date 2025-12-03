@@ -51,10 +51,14 @@ The architecture is a client-server model with a React frontend and an Express.j
 ## External Dependencies
 
 **AI Model Providers**:
-*   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5.
-*   Cerebras API (`api.cerebras.ai`) for Llama 3.3 70B.
-*   Together AI API (`api.together.xyz`) for Llama 3.2 3B, Qwen 2.5 7B, Llama 4 Maverick 17B, DeepSeek R1 Distill 70B, and DeepSeek R1.
-*   Replit AI Integration for OpenRouter (e.g., Qwen3 14B), billed through Replit credits.
+*   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5 (Frontier band).
+*   Together AI API (`api.together.xyz`) for Chinese models:
+    - **3B band**: Qwen2.5 3B Instruct (`Qwen/Qwen2.5-3B-Instruct-Turbo`)
+    - **7B band**: Qwen2.5 7B Instruct (`Qwen/Qwen2.5-7B-Instruct-Turbo`)
+    - **17B band**: Qwen2.5 14B Instruct (`Qwen/Qwen2.5-14B-Instruct-Turbo`) - Note: 14B model in 17B band
+    - **70B band**: DeepSeek V3.2 Thinking (`deepseek-ai/DeepSeek-V3-0324`)
+    - Reasoning mode: DeepSeek R1 Distill 70B and DeepSeek R1
+*   Replit AI Integration for OpenRouter (e.g., Kimi K2), billed through Replit credits.
 
 **Database Service**:
 *   Neon Serverless PostgreSQL (via Drizzle ORM).
