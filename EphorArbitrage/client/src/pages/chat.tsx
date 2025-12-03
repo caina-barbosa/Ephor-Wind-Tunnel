@@ -84,20 +84,20 @@ const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "together/llama-3.2-3b-instruct-turbo", 
-    name: "Llama 3.2 3B", 
+    id: "together/Qwen/Qwen3-4B", 
+    name: "Qwen3-4B", 
     costPer1k: 0.0001, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 63.4, humanEval: 55.3 }, 
+    benchmarks: { mmlu: 72.1, humanEval: 65.8 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Turbo"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "DPO", variants: ["Instruct"] },
       inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
-      safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
+      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "7B": { 
@@ -215,20 +215,20 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "3B": [
     NON_REASONING_MODELS["3B"],
     { 
-      id: "together/mistral-7b-instruct", 
-      name: "Mistral 7B", 
-      costPer1k: 0.0002, 
+      id: "together/Qwen/Qwen3-Next-80B-A3B-Instruct", 
+      name: "Qwen3-A3B", 
+      costPer1k: 0.00015, 
       expectedLatency: "fast", 
       reasoningDepth: "none", 
-      expectedAccuracy: "basic", 
-      benchmarks: { mmlu: 60.1, humanEval: 52.4 }, 
+      expectedAccuracy: "good", 
+      benchmarks: { mmlu: 75.3, humanEval: 68.2 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "Sliding Window", parameters: "7B" },
-        training: { dataDate: "2023", dataSources: ["Web", "Code"] },
-        finetuning: { method: "SFT", variants: ["Instruct"] },
-        inference: { precision: "FP16" },
-        safety: { aligned: true, methods: ["SFT", "Safety tuning"] }
+        architecture: { type: "Sparse MoE", attention: "GQA", parameters: "80B total / 3B active" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+        finetuning: { method: "DPO", variants: ["Instruct", "Next"] },
+        inference: { precision: "BF16", optimizations: ["MoE routing"] },
+        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },
   ],
@@ -315,7 +315,7 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
 };
 
 // Baseline for relative delta display (3B model MMLU)
-const BASELINE_MMLU = 69.4;
+const BASELINE_MMLU = 72.1;
 
 // Helper: Get reasoning depth for a band (shows capability even when reasoning mode is off)
 const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {

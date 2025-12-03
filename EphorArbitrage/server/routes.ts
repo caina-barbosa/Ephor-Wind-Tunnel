@@ -36,6 +36,8 @@ const TOGETHER_QWEN_7B_SELECTOR_ID = "together/qwen-2.5-7b-instruct-turbo";
 const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
 const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
 const TOGETHER_QWQ_32B_SELECTOR_ID = "together/qwq-32b";
+const TOGETHER_QWEN3_4B_SELECTOR_ID = "together/Qwen/Qwen3-4B";
+const TOGETHER_QWEN3_A3B_SELECTOR_ID = "together/Qwen/Qwen3-Next-80B-A3B-Instruct";
 
 interface UnifiedChatRequest {
   model: string;
@@ -186,6 +188,26 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
+  if (request.model === TOGETHER_QWEN3_4B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen3-4B");
+    return createTogetherChatCompletion({
+      model: "Qwen/Qwen3-4B",
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
+  if (request.model === TOGETHER_QWEN3_A3B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen3-Next-80B-A3B");
+    return createTogetherChatCompletion({
+      model: "Qwen/Qwen3-Next-80B-A3B-Instruct",
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
   throw new Error(`Unknown model: ${request.model}`);
 }
 
@@ -205,6 +227,8 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   "together/deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill 70B (70B, reasoning)",
   "together/deepseek-r1": "DeepSeek R1 (Frontier, reasoning)",
   "together/qwq-32b": "QwQ 32B (Frontier, reasoning)",
+  "together/Qwen/Qwen3-4B": "Qwen3-4B (3B, Chinese)",
+  "together/Qwen/Qwen3-Next-80B-A3B-Instruct": "Qwen3-A3B (3B active, Chinese)",
 };
 
 function getModelDisplayName(modelId: string): string {
@@ -258,6 +282,8 @@ function getActualModelId(modelId: string): string {
     "together/llama-4-maverick-17b": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
+    "together/Qwen/Qwen3-4B": "Qwen/Qwen3-4B",
+    "together/Qwen/Qwen3-Next-80B-A3B-Instruct": "Qwen/Qwen3-Next-80B-A3B-Instruct",
     // OpenRouter
     "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
     "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
