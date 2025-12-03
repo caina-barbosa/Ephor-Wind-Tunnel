@@ -84,17 +84,17 @@ const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "openrouter/qwen/qwen2.5-vl-3b-instruct", 
-    name: "Qwen2.5-3B", 
+    id: "openrouter/qwen/qwen3-4b", 
+    name: "Qwen3-4B", 
     costPer1k: 0.0001, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 69.4, humanEval: 58.5 }, 
+    benchmarks: { mmlu: 72.1, humanEval: 65.8 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
       finetuning: { method: "DPO", variants: ["Instruct"] },
       inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
@@ -315,7 +315,7 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
 };
 
 // Baseline for relative delta display (3B model MMLU)
-const BASELINE_MMLU = 69.4;
+const BASELINE_MMLU = 72.1;
 
 // Helper: Get reasoning depth for a band (shows capability even when reasoning mode is off)
 const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {
