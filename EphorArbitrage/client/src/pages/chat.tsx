@@ -80,29 +80,29 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "together/llama-3.2-3b", 
+    id: "together/llama-3.2-3b-instruct-turbo", 
     name: "Llama 3.2 3B", 
-    costPer1k: 0.00006, 
+    costPer1k: 0.0001, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 63.4, humanEval: 38.0 }, 
+    benchmarks: { mmlu: 63.4, humanEval: 55.3 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Multilingual"] },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Turbo"] },
-      inference: { precision: "FP16", optimizations: ["131K context"] },
-      safety: { aligned: true, methods: ["RLHF", "Safety filtering"] }
+      inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
+      safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
     }
   },
   "7B": { 
-    id: "together/qwen2.5-7b", 
-    name: "Qwen2.5-7B", 
+    id: "together/qwen-2.5-7b-instruct-turbo", 
+    name: "Qwen 2.5 7B", 
     costPer1k: 0.00015, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
@@ -113,42 +113,42 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
       training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
       finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
-      inference: { precision: "FP16", optimizations: ["131K context"] },
+      inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
-  "14B": { 
-    id: "together/llama-3.1-8b", 
-    name: "Llama 3.1 8B", 
-    costPer1k: 0.00018, 
+  "17B": { 
+    id: "together/llama-4-maverick-17b", 
+    name: "Llama 4 Maverick 17B", 
+    costPer1k: 0.0002, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
-    expectedAccuracy: "good", 
-    benchmarks: { mmlu: 73.0, humanEval: 72.6 }, 
-    modality: "text",
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 80.5, humanEval: 78.4 }, 
+    modality: "text+image",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Multilingual"] },
-      finetuning: { method: "RLHF", variants: ["Instruct", "Turbo"] },
-      inference: { precision: "FP16", optimizations: ["131K context"] },
-      safety: { aligned: true, methods: ["RLHF", "Red teaming"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "17B active / 400B total" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Vision", "Multimodal"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Maverick"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing"] },
+      safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
     }
   },
   "70B": { 
-    id: "together/deepseek-r1-distill-llama-70b", 
-    name: "DeepSeek-R1-Distill-Llama-70B", 
+    id: "meta-llama/llama-3.3-70b-instruct:cerebras", 
+    name: "Llama 3.3 70B", 
     costPer1k: 0.0006, 
     expectedLatency: "medium", 
-    reasoningDepth: "deep", 
+    reasoningDepth: "none", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 86.7, humanEval: 87.4 }, 
+    benchmarks: { mmlu: 86.0, humanEval: 88.4 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
-      finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning optimized"] },
-      inference: { precision: "BF16", optimizations: ["32K generation"] },
-      safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Scientific"] },
+      finetuning: { method: "RLHF", variants: ["Instruct", "Chat"] },
+      inference: { precision: "FP16", optimizations: ["Cerebras WSE"] },
+      safety: { aligned: true, methods: ["RLHF", "Constitutional AI"] }
     }
   },
   "Frontier": { 
@@ -173,7 +173,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
-  "14B": null,
+  "17B": null,
   "70B": { 
     id: "together/deepseek-r1-distill-llama-70b", 
     name: "DeepSeek R1 Distill 70B", 
@@ -211,57 +211,53 @@ const REASONING_MODELS: Record<string, Model | null> = {
 };
 
 // MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
-// Primary = default model shown, Secondary = alternative in dropdown
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "3B": [
-    NON_REASONING_MODELS["3B"],  // Primary: Llama 3.2 3B
+    NON_REASONING_MODELS["3B"],
     { 
-      id: "together/deepseek-r1-distill-qwen-1.5b", 
-      name: "DeepSeek-R1-Distill-Qwen-1.5B", 
-      costPer1k: 0.00008, 
+      id: "together/mistral-7b-instruct", 
+      name: "Mistral 7B", 
+      costPer1k: 0.0002, 
       expectedLatency: "fast", 
-      reasoningDepth: "shallow", 
+      reasoningDepth: "none", 
       expectedAccuracy: "basic", 
-      benchmarks: { mmlu: 56.3, humanEval: 60.2 }, 
+      benchmarks: { mmlu: 60.1, humanEval: 52.4 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "1.5B" },
-        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
-        finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning-enhanced"] },
-        inference: { precision: "FP16", optimizations: ["32K generation"] },
-        safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
+        architecture: { type: "Dense Transformer", attention: "Sliding Window", parameters: "7B" },
+        training: { dataDate: "2023", dataSources: ["Web", "Code"] },
+        finetuning: { method: "SFT", variants: ["Instruct"] },
+        inference: { precision: "FP16" },
+        safety: { aligned: true, methods: ["SFT", "Safety tuning"] }
       }
     },
   ],
   "7B": [
-    NON_REASONING_MODELS["7B"],  // Primary: Qwen2.5-7B
+    NON_REASONING_MODELS["7B"],
     { 
-      id: "together/deepseek-r1-distill-qwen-7b", 
-      name: "DeepSeek-R1-Distill-Qwen-7B", 
+      id: "together/llama-3.1-70b-instruct", 
+      name: "Gemma 2 27B", 
       costPer1k: 0.00018, 
       expectedLatency: "fast", 
-      reasoningDepth: "shallow", 
+      reasoningDepth: "none", 
       expectedAccuracy: "good", 
-      benchmarks: { mmlu: 75.3, humanEval: 79.8 }, 
+      benchmarks: { mmlu: 75.2, humanEval: 75.1 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
-        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
-        finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning-enhanced"] },
-        inference: { precision: "FP16", optimizations: ["32K generation"] },
-        safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "27B" },
+        training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
+        finetuning: { method: "SFT", variants: ["Instruct"] },
+        inference: { precision: "BF16" },
+        safety: { aligned: true, methods: ["SFT", "Safety filtering"] }
       }
     },
   ],
-  "14B": [
-    NON_REASONING_MODELS["14B"],  // Primary: Llama 3.1 8B (only serverless option in this size range)
-  ],
-  "70B": [
-    NON_REASONING_MODELS["70B"],  // Primary: DeepSeek-R1-Distill-Llama-70B
+  "17B": [
+    NON_REASONING_MODELS["17B"],
     { 
-      id: "together/qwen2.5-72b", 
-      name: "Qwen2.5-72B", 
-      costPer1k: 0.0009, 
+      id: "together/qwen-2.5-72b-instruct", 
+      name: "Qwen 2.5 72B", 
+      costPer1k: 0.0004, 
       expectedLatency: "medium", 
       reasoningDepth: "none", 
       expectedAccuracy: "strong", 
@@ -270,14 +266,34 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
       technical: {
         architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B" },
         training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-        finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
-        inference: { precision: "BF16", optimizations: ["128K context"] },
+        finetuning: { method: "DPO", variants: ["Instruct"] },
+        inference: { precision: "BF16" },
+        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+      }
+    },
+  ],
+  "70B": [
+    NON_REASONING_MODELS["70B"],
+    { 
+      id: "together/mixtral-8x22b-instruct", 
+      name: "Mixtral 8x22B", 
+      costPer1k: 0.0009, 
+      expectedLatency: "medium", 
+      reasoningDepth: "shallow", 
+      expectedAccuracy: "strong", 
+      benchmarks: { mmlu: 84.5, humanEval: 75.0 }, 
+      modality: "text",
+      technical: {
+        architecture: { type: "Sparse MoE", attention: "GQA", parameters: "141B total / 39B active" },
+        training: { dataDate: "2024", dataSources: ["Web", "Code", "Math"] },
+        finetuning: { method: "DPO", variants: ["Instruct"] },
+        inference: { precision: "BF16", optimizations: ["MoE routing"] },
         safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },
   ],
   "Frontier": [
-    NON_REASONING_MODELS["Frontier"],  // Primary: Claude Sonnet 4.5
+    NON_REASONING_MODELS["Frontier"],
     { 
       id: "openai/gpt-4o", 
       name: "GPT-4o", 
@@ -306,7 +322,7 @@ const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "d
   switch (col) {
     case "3B": 
     case "7B": 
-    case "14B": 
+    case "17B": 
       return { depth: "none", label: "None", color: "text-gray-400" };
     case "70B": 
       return { depth: "shallow", label: "Shallow", color: "text-amber-600" };
@@ -349,55 +365,49 @@ const COLUMN_VISUALS: Record<string, {
   cardStyle: string;
   prominence: "small" | "medium" | "large";
   accentBorder: string;
-  accentColor: string;
 }> = {
   "3B": {
-    headerSize: "text-2xl font-bold",
-    headerBg: "bg-slate-50",
+    headerSize: "text-xl font-bold text-[#A3316F]",
+    headerBg: "bg-[#fdf2f8]",
     cardStyle: "bg-white",
     prominence: "small",
-    accentBorder: "border-t-4 border-t-[#64748b]",
-    accentColor: "text-slate-600"
+    accentBorder: "border-t-[6px] border-t-[#A3316F]"
   },
   "7B": {
-    headerSize: "text-2xl font-bold",
-    headerBg: "bg-slate-50",
+    headerSize: "text-xl font-bold text-blue-700",
+    headerBg: "bg-blue-50",
     cardStyle: "bg-white",
     prominence: "small",
-    accentBorder: "border-t-4 border-t-[#475569]",
-    accentColor: "text-slate-700"
+    accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
-  "14B": {
-    headerSize: "text-2xl font-bold",
+  "17B": {
+    headerSize: "text-2xl font-extrabold text-blue-800",
     headerBg: "bg-blue-50",
     cardStyle: "bg-white",
     prominence: "medium",
-    accentBorder: "border-t-4 border-t-[#3b82f6]",
-    accentColor: "text-blue-600"
+    accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "70B": {
-    headerSize: "text-2xl font-bold",
-    headerBg: "bg-blue-50",
+    headerSize: "text-2xl font-extrabold text-emerald-700",
+    headerBg: "bg-emerald-50",
     cardStyle: "bg-white",
     prominence: "medium",
-    accentBorder: "border-t-4 border-t-[#1d4ed8]",
-    accentColor: "text-blue-700"
+    accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "Frontier": {
-    headerSize: "text-2xl font-bold",
-    headerBg: "bg-amber-50",
+    headerSize: "text-3xl font-black text-[#EA580C]",
+    headerBg: "bg-orange-50",
     cardStyle: "bg-white",
     prominence: "large",
-    accentBorder: "border-t-4 border-t-[#f59e0b]",
-    accentColor: "text-amber-600"
+    accentBorder: "border-t-[6px] border-t-[#EA580C]"
   }
 };
 
 const getLatencyBarConfig = (latency: "fast" | "medium" | "slow") => {
   switch (latency) {
     case "fast": return { width: "w-full", color: "bg-emerald-500", label: "Fast" };
-    case "medium": return { width: "w-[50%]", color: "bg-amber-400", label: "Medium" };
-    case "slow": return { width: "w-[25%]", color: "bg-slate-400", label: "Slow" };
+    case "medium": return { width: "w-[50%]", color: "bg-orange-400", label: "Medium" };
+    case "slow": return { width: "w-[20%]", color: "bg-red-500", label: "Slow" };
   }
 };
 
@@ -413,10 +423,10 @@ const getCostVisuals = (_cost: number) => {
 
 const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent") => {
   switch (accuracy) {
-    case "basic": return { bars: 1, color: "bg-slate-400", textColor: "text-slate-600", label: "Basic" };
-    case "good": return { bars: 2, color: "bg-slate-500", textColor: "text-slate-700", label: "Good" };
-    case "strong": return { bars: 3, color: "bg-blue-500", textColor: "text-blue-600", label: "Strong" };
-    case "excellent": return { bars: 4, color: "bg-amber-500", textColor: "text-amber-600", label: "Excellent" };
+    case "basic": return { bars: 1, color: "bg-[#A3316F]", textColor: "text-[#A3316F]", label: "Basic" };
+    case "good": return { bars: 2, color: "bg-blue-400", textColor: "text-blue-600", label: "Good" };
+    case "strong": return { bars: 3, color: "bg-emerald-500", textColor: "text-emerald-600", label: "Strong" };
+    case "excellent": return { bars: 4, color: "bg-[#f5a623]", textColor: "text-[#f5a623]", label: "Excellent" };
   }
 };
 
@@ -433,7 +443,7 @@ const getSkillTag = (col: string): string => {
   switch (col) {
     case "3B": return "Best for simple Q&A";
     case "7B": return "Solid general assistant";
-    case "14B": return "Good at longer documents";
+    case "17B": return "Good at longer documents";
     case "70B": return "Great at multi-step reasoning";
     case "Frontier": return "Best at coding & complex tasks";
     default: return "General purpose model";
@@ -601,7 +611,7 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
+    "3B": 0, "7B": 0, "17B": 0, "70B": 0, "Frontier": 0
   });
 
   // Track previous cost cap for budget change toasts (prevents spam on slider drag)
@@ -2065,10 +2075,10 @@ export default function ChatPage() {
                       <div 
                         key={col} 
                         id={`band-${col}`}
-                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-amber-50/50' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
+                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
-                        <div className={`${visuals.headerSize} ${visuals.accentColor} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-medium mt-1 ${visuals.accentColor} opacity-75`}>
+                        <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -2247,14 +2257,15 @@ export default function ChatPage() {
                           ${hasResults ? 'min-h-[260px]' : 'min-h-[140px]'}
                           ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${cardVisuals.cardStyle}
-                          ${isRecommended ? 'ring-2 ring-amber-400 ring-offset-1 bg-amber-50/30' : ''}
+                          ${cardVisuals.accentBorder}
+                          ${isRecommended ? 'ring-2 ring-[#f5a623] ring-offset-1 bg-[#fffbf5]' : ''}
                           ${isLoading ? 'bg-gray-50/80' : ''}
                           ${hasError ? 'bg-red-50' : ''}
-                          ${hasContent ? 'cursor-pointer hover:bg-gray-50/50' : ''}
+                          ${hasContent ? 'cursor-pointer hover:brightness-[0.98]' : ''}
                         `}
                       >
                         <div className="text-center mb-3">
-                          <div className="font-semibold text-gray-800 text-sm">
+                          <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {renderModel.name}
                           </div>
                           {reasoningEnabled && (col === "70B" || col === "Frontier") && (
@@ -2419,7 +2430,7 @@ export default function ChatPage() {
                                     <TooltipContent side="left" className="max-w-[220px]">
                                       <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {col === "3B" || col === "7B" || col === "14B" 
+                                        {col === "3B" || col === "7B" || col === "17B" 
                                           ? "Too small for step-by-step reasoning" 
                                           : col === "70B" 
                                             ? "Can do basic chain-of-thought" 
@@ -2743,7 +2754,7 @@ export default function ChatPage() {
                                   <TooltipContent side="left" className="max-w-[220px]">
                                     <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {col === "3B" || col === "7B" || col === "14B" 
+                                      {col === "3B" || col === "7B" || col === "17B" 
                                         ? "Too small for step-by-step reasoning" 
                                         : col === "70B" 
                                           ? "Can do basic chain-of-thought" 
@@ -3173,7 +3184,7 @@ export default function ChatPage() {
                         <div className="font-mono text-lg text-gray-900">{inputTokenEstimate.toLocaleString()} tokens</div>
                         <div className="text-xs text-gray-500 mt-1">
                           {inputTokenEstimate < 100 ? "Simple query - small models work well" :
-                           inputTokenEstimate < 500 ? "Moderate query - consider 7B-14B" :
+                           inputTokenEstimate < 500 ? "Moderate query - consider 7B-17B" :
                            "Complex query - larger models recommended"}
                         </div>
                       </div>
@@ -3197,7 +3208,7 @@ export default function ChatPage() {
                         <span className="text-gray-400 text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Reasoning Requires Scale</strong>
-                          <p className="text-gray-600">Small models (3B-14B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
+                          <p className="text-gray-600">Small models (3B-17B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
@@ -3278,7 +3289,7 @@ export default function ChatPage() {
             <div className="space-y-4">
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-sm text-amber-800 font-medium">
-                  Reasoning mode is locked for 3B, 7B, and 14B models because they lack the capacity to "think step-by-step" reliably.
+                  Reasoning mode is locked for 3B, 7B, and 17B models because they lack the capacity to "think step-by-step" reliably.
                 </p>
               </div>
               
@@ -3320,7 +3331,7 @@ export default function ChatPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2 bg-red-50 border border-red-200 rounded text-center">
-                    <div className="font-bold text-red-600">3B - 14B</div>
+                    <div className="font-bold text-red-600">3B - 17B</div>
                     <div className="text-red-500">Too small for reliable reasoning</div>
                   </div>
                   <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-center">

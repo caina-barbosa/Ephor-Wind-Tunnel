@@ -10,14 +10,10 @@ import { createAnthropicChatCompletion, ANTHROPIC_MODEL_ID } from "./anthropic";
 import { createOpenRouterChatCompletion, KIMI_K2_MODEL_ID } from "./openrouter";
 import { 
   createTogetherChatCompletion, 
+  TOGETHER_QWEN_MODEL_ID, 
   TOGETHER_GLM_MODEL_ID,
-  TOGETHER_LLAMA_32_3B_MODEL_ID,
-  TOGETHER_QWEN25_7B_MODEL_ID,
-  TOGETHER_QWEN25_72B_MODEL_ID,
-  TOGETHER_QWEN3_14B_MODEL_ID,
-  TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_1_5B_MODEL_ID,
-  TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_7B_MODEL_ID,
-  TOGETHER_LLAMA_31_8B_MODEL_ID,
+  TOGETHER_LLAMA_3B_MODEL_ID,
+  TOGETHER_QWEN_7B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_MODEL_ID,
   TOGETHER_QWQ_32B_MODEL_ID
@@ -29,21 +25,15 @@ import OpenAI from "openai";
 const CLAUDE_MODEL_ID = "anthropic/claude-sonnet-4.5";
 const GROQ_MODEL_SELECTOR_ID = "meta-llama/llama-4-maverick:groq";
 const CEREBRAS_MODEL_SELECTOR_ID = "meta-llama/llama-3.3-70b-instruct:cerebras";
-
-const TOGETHER_LLAMA_32_3B_SELECTOR_ID = "together/llama-3.2-3b";
-const TOGETHER_QWEN25_7B_SELECTOR_ID = "together/qwen2.5-7b";
-const TOGETHER_QWEN25_72B_SELECTOR_ID = "together/qwen2.5-72b";
-const TOGETHER_QWEN3_14B_SELECTOR_ID = "together/qwen3-14b";
-
-const TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_1_5B_SELECTOR_ID = "together/deepseek-r1-distill-qwen-1.5b";
-const TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_7B_SELECTOR_ID = "together/deepseek-r1-distill-qwen-7b";
-const TOGETHER_LLAMA_31_8B_SELECTOR_ID = "together/llama-3.1-8b";
-const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
-
+const TOGETHER_LLAMA4_MAVERICK_SELECTOR_ID = "together/llama-4-maverick-17b";
 const DEEPSEEK_MODEL_SELECTOR_ID = "deepseek/deepseek-chat";
 const MINIMAX_MODEL_SELECTOR_ID = "minimax/minimax-m2";
 const KIMI_K2_MODEL_SELECTOR_ID = "moonshotai/kimi-k2";
+const QWEN_72B_MODEL_SELECTOR_ID = "qwen/qwen-2.5-72b-instruct";
 const GLM_4_32B_MODEL_SELECTOR_ID = "z-ai/glm-4-32b";
+const TOGETHER_LLAMA_3B_SELECTOR_ID = "together/llama-3.2-3b-instruct-turbo";
+const TOGETHER_QWEN_7B_SELECTOR_ID = "together/qwen-2.5-7b-instruct-turbo";
+const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
 const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
 const TOGETHER_QWQ_32B_SELECTOR_ID = "together/qwq-32b";
 
@@ -85,70 +75,10 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
-  if (request.model === TOGETHER_LLAMA_32_3B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Llama 3.2 3B");
+  if (request.model === TOGETHER_LLAMA4_MAVERICK_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Llama 4 Maverick 17B");
     return createTogetherChatCompletion({
-      model: TOGETHER_LLAMA_32_3B_MODEL_ID,
-      messages: request.messages,
-      maxTokens: request.maxTokens,
-      timeoutMs: request.timeoutMs,
-    });
-  }
-  
-  if (request.model === TOGETHER_QWEN25_7B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Qwen2.5-7B");
-    return createTogetherChatCompletion({
-      model: TOGETHER_QWEN25_7B_MODEL_ID,
-      messages: request.messages,
-      maxTokens: request.maxTokens,
-      timeoutMs: request.timeoutMs,
-    });
-  }
-  
-  if (request.model === TOGETHER_QWEN25_72B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Qwen2.5-72B");
-    return createTogetherChatCompletion({
-      model: TOGETHER_QWEN25_72B_MODEL_ID,
-      messages: request.messages,
-      maxTokens: request.maxTokens,
-      timeoutMs: request.timeoutMs,
-    });
-  }
-  
-  if (request.model === TOGETHER_QWEN3_14B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Qwen3 14B");
-    return createTogetherChatCompletion({
-      model: TOGETHER_QWEN3_14B_MODEL_ID,
-      messages: request.messages,
-      maxTokens: request.maxTokens,
-      timeoutMs: request.timeoutMs,
-    });
-  }
-  
-  if (request.model === TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_1_5B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for DeepSeek-R1-Distill-Qwen-1.5B");
-    return createTogetherChatCompletion({
-      model: TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_1_5B_MODEL_ID,
-      messages: request.messages,
-      maxTokens: request.maxTokens,
-      timeoutMs: request.timeoutMs,
-    });
-  }
-  
-  if (request.model === TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_7B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for DeepSeek-R1-Distill-Qwen-7B");
-    return createTogetherChatCompletion({
-      model: TOGETHER_DEEPSEEK_R1_DISTILL_QWEN_7B_MODEL_ID,
-      messages: request.messages,
-      maxTokens: request.maxTokens,
-      timeoutMs: request.timeoutMs,
-    });
-  }
-  
-  if (request.model === TOGETHER_LLAMA_31_8B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Llama 3.1 8B");
-    return createTogetherChatCompletion({
-      model: TOGETHER_LLAMA_31_8B_MODEL_ID,
+      model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,
@@ -185,6 +115,16 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
+  if (request.model === QWEN_72B_MODEL_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen 2.5 72B Turbo");
+    return createTogetherChatCompletion({
+      model: TOGETHER_QWEN_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
   if (request.model === GLM_4_32B_MODEL_SELECTOR_ID) {
     console.log("[API] Using Together AI for GLM-4.6");
     return createTogetherChatCompletion({
@@ -194,6 +134,27 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
       timeoutMs: request.timeoutMs,
     });
   }
+  
+  if (request.model === TOGETHER_LLAMA_3B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Llama 3.2 3B");
+    return createTogetherChatCompletion({
+      model: TOGETHER_LLAMA_3B_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
+  if (request.model === TOGETHER_QWEN_7B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen 2.5 7B Turbo");
+    return createTogetherChatCompletion({
+      model: TOGETHER_QWEN_7B_MODEL_ID,
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      timeoutMs: request.timeoutMs,
+    });
+  }
+  
   
   if (request.model === TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID) {
     console.log("[API] Using Together AI for DeepSeek R1 Distill 70B");
@@ -236,15 +197,12 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   "deepseek/deepseek-chat": "DeepSeek-V3",
   "minimax/minimax-m2": "MiniMax M2",
   "moonshotai/kimi-k2": "Kimi K2 (Moonshot)",
+  "qwen/qwen-2.5-72b-instruct": "Qwen 2.5 72B (Alibaba)",
   "z-ai/glm-4-32b": "GLM-4.6 (Zhipu)",
-  "together/llama-3.2-3b": "Llama 3.2 3B",
-  "together/qwen2.5-7b": "Qwen2.5-7B",
-  "together/qwen2.5-72b": "Qwen2.5-72B",
-  "together/qwen3-14b": "Qwen3-14B",
-  "together/deepseek-r1-distill-qwen-1.5b": "DeepSeek-R1-Distill-Qwen-1.5B",
-  "together/deepseek-r1-distill-qwen-7b": "DeepSeek-R1-Distill-Qwen-7B",
-  "together/llama-3.1-8b": "Llama 3.1 8B",
-  "together/deepseek-r1-distill-llama-70b": "DeepSeek-R1-Distill-Llama-70B",
+  "together/qwen-2.5-3b-instruct": "Qwen 2.5 3B (3B)",
+  "together/qwen-2.5-7b-instruct-turbo": "Qwen 2.5 7B Turbo (7B)",
+  "together/llama-4-maverick-17b": "Llama 4 Maverick 17B (17B)",
+  "together/deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill 70B (70B, reasoning)",
   "together/deepseek-r1": "DeepSeek R1 (Frontier, reasoning)",
   "together/qwq-32b": "QwQ 32B (Frontier, reasoning)",
 };
@@ -294,16 +252,10 @@ function getActualModelId(modelId: string): string {
     "cerebras/qwen-3-32b": "qwen-3-32b",
     "cerebras/gpt-oss-120b": "gpt-oss-120b",
     "meta-llama/llama-3.3-70b-instruct:cerebras": "llama-3.3-70b",
-    // Together models - Llama family
-    "together/llama-3.2-3b": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
-    "together/llama-3.1-8b": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-    // Together models - Qwen family
-    "together/qwen2.5-7b": "Qwen/Qwen2.5-7B-Instruct-Turbo",
-    "together/qwen2.5-72b": "Qwen/Qwen2.5-72B-Instruct-Turbo",
-    "together/qwen3-14b": "Qwen/Qwen3-14B",
-    // Together models - DeepSeek R1 Distill family
-    "together/deepseek-r1-distill-qwen-1.5b": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
-    "together/deepseek-r1-distill-qwen-7b": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+    // Together models
+    "together/llama-3.2-3b-instruct-turbo": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+    "together/qwen-2.5-7b-instruct-turbo": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+    "together/llama-4-maverick-17b": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
     // OpenRouter

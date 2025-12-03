@@ -15,12 +15,13 @@ EPHOR WIND TUNNEL is a clean, minimal multi-model AI chat interface focused on d
 7. **Qwen 2.5 72B (Alibaba)** - qwen/qwen-2.5-72b-instruct - $0.18/$0.18 (via Together AI - Turbo)
 8. **GLM-4.6 (Zhipu)** - z-ai/glm-4-32b - $0.10/$0.10 (via Together AI)
 
-### LLM Wind Tunnel Models (5 bands via Together AI - Serverless Models Only)
-- **3B band**: Llama 3.2 3B - meta-llama/Llama-3.2-3B-Instruct-Turbo (no reasoning)
-- **7B band**: Qwen2.5-7B - Qwen/Qwen2.5-7B-Instruct-Turbo (no reasoning)
-- **14B band**: Llama 3.1 8B - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo (no true 14B serverless model available)
-- **70B band**: DeepSeek-R1-Distill-Llama-70B - deepseek-ai/DeepSeek-R1-Distill-Llama-70B (reasoning capable)
-- **Frontier band**: Claude Sonnet 4.5 - anthropic/claude-sonnet-4-20250514 (via Anthropic API)
+### LLM Wind Tunnel Models (6 additional models via Together AI)
+9. **Qwen 2.5 3B** - together/qwen-2.5-3b-instruct - $0.06/$0.06 (3B, no reasoning)
+10. **Qwen 2.5 7B Turbo** - together/qwen-2.5-7b-instruct-turbo - $0.30/$0.30 (7B, no reasoning)
+11. **Qwen 2.5 14B** - together/qwen-2.5-14b-instruct - $0.18/$0.18 (14B, no reasoning)
+12. **DeepSeek R1 Distill 70B** - together/deepseek-r1-distill-llama-70b - $2.00/$2.00 (70B, reasoning)
+13. **DeepSeek R1** - together/deepseek-r1 - $3.00/$7.00 (Frontier, reasoning)
+14. **QwQ 32B** - together/qwq-32b - $1.20/$1.20 (Frontier, reasoning)
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
