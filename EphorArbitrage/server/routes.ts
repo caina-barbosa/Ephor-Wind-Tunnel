@@ -12,9 +12,9 @@ import {
   createTogetherChatCompletion, 
   TOGETHER_QWEN_MODEL_ID, 
   TOGETHER_GLM_MODEL_ID,
-  TOGETHER_QWEN_3B_MODEL_ID,
-  TOGETHER_QWEN_7B_MODEL_ID,
-  TOGETHER_QWEN_14B_MODEL_ID,
+  TOGETHER_QWEN3_4B_MODEL_ID,
+  TOGETHER_QWEN3_8B_MODEL_ID,
+  TOGETHER_QWEN3_14B_MODEL_ID,
   TOGETHER_DEEPSEEK_V3_THINKING_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_MODEL_ID,
@@ -27,14 +27,14 @@ import OpenAI from "openai";
 const CLAUDE_MODEL_ID = "anthropic/claude-sonnet-4.5";
 const GROQ_MODEL_SELECTOR_ID = "meta-llama/llama-4-maverick:groq";
 const CEREBRAS_MODEL_SELECTOR_ID = "meta-llama/llama-3.3-70b-instruct:cerebras";
-const TOGETHER_QWEN_14B_SELECTOR_ID = "together/qwen2.5-14b-instruct";
+const TOGETHER_QWEN3_4B_SELECTOR_ID = "together/qwen3-4b";
+const TOGETHER_QWEN3_8B_SELECTOR_ID = "together/qwen3-8b";
+const TOGETHER_QWEN3_14B_SELECTOR_ID = "together/qwen3-14b";
 const DEEPSEEK_MODEL_SELECTOR_ID = "deepseek/deepseek-chat";
 const MINIMAX_MODEL_SELECTOR_ID = "minimax/minimax-m2";
 const KIMI_K2_MODEL_SELECTOR_ID = "moonshotai/kimi-k2";
 const QWEN_72B_MODEL_SELECTOR_ID = "qwen/qwen-2.5-72b-instruct";
 const GLM_4_32B_MODEL_SELECTOR_ID = "z-ai/glm-4-32b";
-const TOGETHER_QWEN_3B_SELECTOR_ID = "together/qwen2.5-3b-instruct";
-const TOGETHER_QWEN_7B_SELECTOR_ID = "together/qwen2.5-7b-instruct";
 const TOGETHER_DEEPSEEK_V3_THINKING_SELECTOR_ID = "together/deepseek-v3.2-thinking";
 const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
 const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
@@ -78,10 +78,10 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
-  if (request.model === TOGETHER_QWEN_14B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Qwen 2.5 14B");
+  if (request.model === TOGETHER_QWEN3_14B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen3 14B Instruct");
     return createTogetherChatCompletion({
-      model: TOGETHER_QWEN_14B_MODEL_ID,
+      model: TOGETHER_QWEN3_14B_MODEL_ID,
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,
@@ -138,20 +138,20 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
-  if (request.model === TOGETHER_QWEN_3B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Qwen2.5 3B Instruct");
+  if (request.model === TOGETHER_QWEN3_4B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen3 4B Instruct");
     return createTogetherChatCompletion({
-      model: TOGETHER_QWEN_3B_MODEL_ID,
+      model: TOGETHER_QWEN3_4B_MODEL_ID,
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,
     });
   }
   
-  if (request.model === TOGETHER_QWEN_7B_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Qwen2.5 7B Instruct");
+  if (request.model === TOGETHER_QWEN3_8B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen3 8B Instruct");
     return createTogetherChatCompletion({
-      model: TOGETHER_QWEN_7B_MODEL_ID,
+      model: TOGETHER_QWEN3_8B_MODEL_ID,
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,
@@ -211,9 +211,9 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   "moonshotai/kimi-k2": "Kimi K2 (Moonshot)",
   "qwen/qwen-2.5-72b-instruct": "Qwen 2.5 72B (Alibaba)",
   "z-ai/glm-4-32b": "GLM-4.6 (Zhipu)",
-  "together/qwen2.5-3b-instruct": "Qwen2.5 3B Instruct",
-  "together/qwen2.5-7b-instruct": "Qwen2.5 7B Instruct",
-  "together/qwen2.5-14b-instruct": "Qwen2.5 14B Instruct",
+  "together/qwen3-4b": "Qwen3 4B Instruct",
+  "together/qwen3-8b": "Qwen3 8B Instruct",
+  "together/qwen3-14b": "Qwen3 14B Instruct",
   "together/deepseek-v3.2-thinking": "DeepSeek V3.2 Thinking",
   "together/deepseek-r1-distill-llama-70b": "DeepSeek R1 Distill 70B (70B, reasoning)",
   "together/deepseek-r1": "DeepSeek R1 (Frontier, reasoning)",
@@ -265,10 +265,10 @@ function getActualModelId(modelId: string): string {
     "cerebras/qwen-3-32b": "qwen-3-32b",
     "cerebras/gpt-oss-120b": "gpt-oss-120b",
     "meta-llama/llama-3.3-70b-instruct:cerebras": "llama-3.3-70b",
-    // Together models - Qwen family (Chinese models)
-    "together/qwen2.5-3b-instruct": "Qwen/Qwen2.5-3B-Instruct-Turbo",
-    "together/qwen2.5-7b-instruct": "Qwen/Qwen2.5-7B-Instruct-Turbo",
-    "together/qwen2.5-14b-instruct": "Qwen/Qwen2.5-14B-Instruct-Turbo",
+    // Together models - Qwen3 family (Chinese models, April 2025)
+    "together/qwen3-4b": "Qwen/Qwen3-4B",
+    "together/qwen3-8b": "Qwen/Qwen3-8B",
+    "together/qwen3-14b": "Qwen/Qwen3-14B",
     "together/deepseek-v3.2-thinking": "deepseek-ai/DeepSeek-V3-0324",
     "together/deepseek-r1-distill-llama-70b": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",

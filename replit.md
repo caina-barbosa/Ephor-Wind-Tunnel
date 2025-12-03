@@ -53,9 +53,9 @@ The architecture is a client-server model with a React frontend and an Express.j
 **AI Model Providers**:
 *   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5 (Frontier band).
 *   Together AI API (`api.together.xyz`) for Chinese models:
-    - **3B band**: Qwen2.5 3B Instruct (`Qwen/Qwen2.5-3B-Instruct-Turbo`)
-    - **7B band**: Qwen2.5 7B Instruct (`Qwen/Qwen2.5-7B-Instruct-Turbo`)
-    - **17B band**: Qwen2.5 14B Instruct (`Qwen/Qwen2.5-14B-Instruct-Turbo`) - Note: 14B model in 17B band
+    - **3B band**: Qwen3 4B Instruct (`Qwen/Qwen3-4B`) - April 2025 release, 131K context
+    - **7B band**: Qwen3 8B Instruct (`Qwen/Qwen3-8B`) - April 2025 release, 131K context
+    - **14B band**: Qwen3 14B Instruct (`Qwen/Qwen3-14B`) - April 2025 release, 131K context
     - **70B band**: DeepSeek V3.2 Thinking (`deepseek-ai/DeepSeek-V3-0324`)
     - Reasoning mode: DeepSeek R1 Distill 70B and DeepSeek R1
 *   Replit AI Integration for OpenRouter (e.g., Kimi K2), billed through Replit credits.
