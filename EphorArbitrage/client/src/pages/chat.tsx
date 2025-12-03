@@ -84,25 +84,25 @@ const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "together/llama-3.2-3b-instruct-turbo", 
-    name: "Llama 3.2 3B", 
+    id: "together/qwen2.5-3b-instruct", 
+    name: "Qwen2.5 3B Instruct", 
     costPer1k: 0.0001, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 63.4, humanEval: 55.3 }, 
+    benchmarks: { mmlu: 65.0, humanEval: 58.2 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Turbo"] },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "SFT", variants: ["Instruct"] },
       inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
-      safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
+      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "7B": { 
-    id: "together/qwen-2.5-7b-instruct-turbo", 
-    name: "Qwen 2.5 7B", 
+    id: "together/qwen2.5-7b-instruct", 
+    name: "Qwen2.5 7B Instruct", 
     costPer1k: 0.00015, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
@@ -112,43 +112,43 @@ const NON_REASONING_MODELS: Record<string, Model> = {
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
       training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
+      finetuning: { method: "DPO", variants: ["Instruct"] },
       inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "17B": { 
-    id: "together/llama-4-maverick-17b", 
-    name: "Llama 4 Maverick 17B", 
+    id: "together/qwen2.5-14b-instruct", 
+    name: "Qwen2.5 14B Instruct", 
     costPer1k: 0.0002, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 80.5, humanEval: 78.4 }, 
-    modality: "text+image",
+    benchmarks: { mmlu: 79.8, humanEval: 80.4 }, 
+    modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "17B active / 400B total" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Vision", "Multimodal"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Maverick"] },
-      inference: { precision: "BF16", optimizations: ["MoE routing"] },
-      safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "DPO", variants: ["Instruct"] },
+      inference: { precision: "BF16", optimizations: ["Optimized attention"] },
+      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "70B": { 
-    id: "meta-llama/llama-3.3-70b-instruct:cerebras", 
-    name: "Llama 3.3 70B", 
+    id: "together/deepseek-v3.2-thinking", 
+    name: "DeepSeek V3.2 Thinking", 
     costPer1k: 0.0006, 
     expectedLatency: "medium", 
     reasoningDepth: "none", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 86.0, humanEval: 88.4 }, 
+    benchmarks: { mmlu: 88.5, humanEval: 89.2 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Scientific"] },
-      finetuning: { method: "RLHF", variants: ["Instruct", "Chat"] },
-      inference: { precision: "FP16", optimizations: ["Cerebras WSE"] },
-      safety: { aligned: true, methods: ["RLHF", "Constitutional AI"] }
+      architecture: { type: "Sparse MoE", attention: "MLA", parameters: "685B total / 37B active" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Scientific", "Reasoning"] },
+      finetuning: { method: "RLHF", variants: ["Thinking", "Reasoning optimized"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Thinking mode"] },
+      safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
     }
   },
   "Frontier": { 
