@@ -80,10 +80,10 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["4B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "3B": { 
+  "4B": { 
     id: "openrouter/qwen/qwen3-4b", 
     name: "Qwen3-4B", 
     costPer1k: 0.0001, 
@@ -171,7 +171,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 };
 
 const REASONING_MODELS: Record<string, Model | null> = {
-  "3B": null,
+  "4B": null,
   "7B": null,
   "14B": null,
   "70B": { 
@@ -212,8 +212,8 @@ const REASONING_MODELS: Record<string, Model | null> = {
 
 // MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
-  "3B": [
-    NON_REASONING_MODELS["3B"],
+  "4B": [
+    NON_REASONING_MODELS["4B"],
     { 
       id: "together/Qwen/Qwen3-4B", 
       name: "Qwen3-4B", 
@@ -314,13 +314,13 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   ],
 };
 
-// Baseline for relative delta display (3B model MMLU)
+// Baseline for relative delta display (4B model MMLU)
 const BASELINE_MMLU = 72.1;
 
 // Helper: Get reasoning depth for a band (shows capability even when reasoning mode is off)
 const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {
   switch (col) {
-    case "3B": 
+    case "4B": 
     case "7B": 
     case "14B": 
       return { depth: "none", label: "None", color: "text-gray-400" };
@@ -336,8 +336,8 @@ const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "d
 // Helper: Format MMLU delta vs baseline
 const formatMmluDelta = (mmlu: number): string => {
   const delta = mmlu - BASELINE_MMLU;
-  if (delta > 0) return `+${delta.toFixed(0)} pts vs 3B`;
-  if (delta < 0) return `${delta.toFixed(0)} pts vs 3B`;
+  if (delta > 0) return `+${delta.toFixed(0)} pts vs 4B`;
+  if (delta < 0) return `${delta.toFixed(0)} pts vs 4B`;
   return "baseline";
 };
 
@@ -366,7 +366,7 @@ const COLUMN_VISUALS: Record<string, {
   prominence: "small" | "medium" | "large";
   accentBorder: string;
 }> = {
-  "3B": {
+  "4B": {
     headerSize: "text-xl font-bold text-[#A3316F]",
     headerBg: "bg-[#fdf2f8]",
     cardStyle: "bg-white",
@@ -441,7 +441,7 @@ const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excel
 
 const getSkillTag = (col: string): string => {
   switch (col) {
-    case "3B": return "Best for simple Q&A";
+    case "4B": return "Best for simple Q&A";
     case "7B": return "Solid general assistant";
     case "14B": return "Strong reasoning with efficiency";
     case "70B": return "Great at multi-step reasoning";
@@ -611,7 +611,7 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
+    "4B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
   });
 
   // Track previous cost cap for budget change toasts (prevents spam on slider drag)
@@ -2078,7 +2078,7 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '4B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -2395,7 +2395,7 @@ export default function ChatPage() {
                                     <span className="text-sm font-mono text-gray-700 tabular-nums">
                                       {model!.benchmarks.mmlu?.toFixed(0)}%
                                     </span>
-                                    {col !== "3B" && model!.benchmarks.mmlu && (
+                                    {col !== "4B" && model!.benchmarks.mmlu && (
                                       <span className="text-[10px] text-emerald-600 ml-1">
                                         +{(model!.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
                                       </span>
@@ -2430,7 +2430,7 @@ export default function ChatPage() {
                                     <TooltipContent side="left" className="max-w-[220px]">
                                       <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {col === "3B" || col === "7B" || col === "14B" 
+                                        {col === "4B" || col === "7B" || col === "14B" 
                                           ? "Too small for step-by-step reasoning" 
                                           : col === "70B" 
                                             ? "Can do basic chain-of-thought" 
@@ -2719,7 +2719,7 @@ export default function ChatPage() {
                                   <span className="text-xs font-mono text-gray-700 tabular-nums">
                                     {renderModel.benchmarks.mmlu?.toFixed(0)}%
                                   </span>
-                                  {col !== "3B" && renderModel.benchmarks.mmlu && (
+                                  {col !== "4B" && renderModel.benchmarks.mmlu && (
                                     <span className="text-[10px] text-emerald-600 ml-1">
                                       +{(renderModel.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
                                     </span>
@@ -2754,7 +2754,7 @@ export default function ChatPage() {
                                   <TooltipContent side="left" className="max-w-[220px]">
                                     <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {col === "3B" || col === "7B" || col === "14B" 
+                                      {col === "4B" || col === "7B" || col === "14B" 
                                         ? "Too small for step-by-step reasoning" 
                                         : col === "70B" 
                                           ? "Can do basic chain-of-thought" 
@@ -3208,7 +3208,7 @@ export default function ChatPage() {
                         <span className="text-gray-400 text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Reasoning Requires Scale</strong>
-                          <p className="text-gray-600">Small models (3B-14B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
+                          <p className="text-gray-600">Small models (4B-14B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
@@ -3222,7 +3222,7 @@ export default function ChatPage() {
                         <span className="text-gray-400 text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Speed vs Accuracy Tradeoff</strong>
-                          <p className="text-gray-600">Fast models (3B-7B) respond quickly but make more mistakes. Slow models (70B+) are more accurate but take longer.</p>
+                          <p className="text-gray-600">Fast models (4B-7B) respond quickly but make more mistakes. Slow models (70B+) are more accurate but take longer.</p>
                         </div>
                       </div>
                     </div>
@@ -3289,7 +3289,7 @@ export default function ChatPage() {
             <div className="space-y-4">
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-sm text-amber-800 font-medium">
-                  Reasoning mode is locked for 3B, 7B, and 14B models because they lack the capacity to "think step-by-step" reliably.
+                  Reasoning mode is locked for 4B, 7B, and 14B models because they lack the capacity to "think step-by-step" reliably.
                 </p>
               </div>
               
@@ -3331,7 +3331,7 @@ export default function ChatPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2 bg-red-50 border border-red-200 rounded text-center">
-                    <div className="font-bold text-red-600">3B - 14B</div>
+                    <div className="font-bold text-red-600">4B - 14B</div>
                     <div className="text-red-500">Too small for reliable reasoning</div>
                   </div>
                   <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-center">

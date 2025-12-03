@@ -12,7 +12,7 @@ Preferred communication style: Simple, everyday language.
 
 ### UI/UX Decisions
 
-The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, neutral grays). The layout is a full-screen grid presenting five model columns (3B, 7B, 14B, 70B, Frontier) with visual cues for model size, latency, and cost. Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
+The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, neutral grays). The layout is a full-screen grid presenting five model columns (4B, 7B, 14B, 70B, Frontier) with visual cues for model size, latency, and cost. Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
 
 ### Technical Implementations
 
@@ -53,10 +53,10 @@ The architecture is a client-server model with a React frontend and an Express.j
 **AI Model Providers**:
 *   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5.
 *   Together AI API (`api.together.xyz`) for Qwen2.5-7B, Qwen3-4B, Qwen2.5-72B, DeepSeek R1 Distill 70B, and DeepSeek R1.
-*   Replit AI Integration for OpenRouter for Chinese open source models: Qwen3-4B (3B primary), DeepSeek-R1-Distill-Qwen-7B (7B secondary), DeepSeek-R1-Distill-Qwen-14B (14B primary), Qwen3-14B (14B secondary), and Qwen2-72B (70B secondary), billed through Replit credits.
+*   Replit AI Integration for OpenRouter for Chinese open source models: Qwen3-4B (4B primary), DeepSeek-R1-Distill-Qwen-7B (7B secondary), DeepSeek-R1-Distill-Qwen-14B (14B primary), Qwen3-14B (14B secondary), and Qwen2-72B (70B secondary), billed through Replit credits.
 
 **Model Configuration by Band**:
-*   3B: Primary = Qwen3-4B (OpenRouter), Secondary = Qwen3-4B (Together AI)
+*   4B: Primary = Qwen3-4B (OpenRouter), Secondary = Qwen3-4B (Together AI)
 *   7B: Primary = Qwen2.5-7B (Together AI), Secondary = DeepSeek-R1-Distill-Qwen-7B (OpenRouter)
 *   14B: Primary = DeepSeek-R1-Distill-Qwen-14B (OpenRouter), Secondary = Qwen3-14B (OpenRouter)
 *   70B: Primary = Qwen2.5-72B (Together AI), Secondary = Qwen2-72B (OpenRouter)
