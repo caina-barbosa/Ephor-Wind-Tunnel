@@ -84,70 +84,70 @@ const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "together/qwen3-4b", 
-    name: "Qwen3 4B Instruct", 
+    id: "together/qwen2.5-3b", 
+    name: "Qwen2.5-3B", 
     costPer1k: 0.0001, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 70.5, humanEval: 65.2 }, 
+    benchmarks: { mmlu: 65.6, humanEval: 42.1 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Thinking-capable"] },
-      inference: { precision: "FP16", optimizations: ["131K context"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "SFT", variants: ["Instruct"] },
+      inference: { precision: "FP16", optimizations: ["128K context"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "7B": { 
-    id: "together/qwen3-8b", 
-    name: "Qwen3 8B Instruct", 
+    id: "together/qwen2.5-7b", 
+    name: "Qwen2.5-7B", 
     costPer1k: 0.00015, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "good", 
-    benchmarks: { mmlu: 76.8, humanEval: 78.4 }, 
+    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8.2B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "DPO", variants: ["Instruct", "Hybrid thinking"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
       inference: { precision: "FP16", optimizations: ["131K context"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "14B": { 
-    id: "together/qwen3-14b", 
-    name: "Qwen3 14B Instruct", 
+    id: "together/deepseek-r1-distill-qwen-14b", 
+    name: "DeepSeek-R1-Distill-Qwen-14B", 
     costPer1k: 0.0002, 
     expectedLatency: "fast", 
-    reasoningDepth: "none", 
+    reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 82.1, humanEval: 84.6 }, 
+    benchmarks: { mmlu: 79.9, humanEval: 80.1 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14.8B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "DPO", variants: ["Instruct", "Advanced reasoning"] },
-      inference: { precision: "BF16", optimizations: ["131K context"] },
-      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
+      finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning-enhanced"] },
+      inference: { precision: "BF16", optimizations: ["32K generation"] },
+      safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
     }
   },
   "70B": { 
-    id: "together/deepseek-v3.2-thinking", 
-    name: "DeepSeek V3.2 Thinking", 
+    id: "together/deepseek-r1-distill-llama-70b", 
+    name: "DeepSeek-R1-Distill-Llama-70B", 
     costPer1k: 0.0006, 
     expectedLatency: "medium", 
-    reasoningDepth: "none", 
+    reasoningDepth: "deep", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 88.5, humanEval: 89.2 }, 
+    benchmarks: { mmlu: 86.7, humanEval: 87.4 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Sparse MoE", attention: "MLA", parameters: "685B total / 37B active" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Scientific", "Reasoning"] },
-      finetuning: { method: "RLHF", variants: ["Thinking", "Reasoning optimized"] },
-      inference: { precision: "BF16", optimizations: ["MoE routing", "Thinking mode"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
+      finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning optimized"] },
+      inference: { precision: "BF16", optimizations: ["32K generation"] },
       safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
     }
   },
@@ -211,53 +211,74 @@ const REASONING_MODELS: Record<string, Model | null> = {
 };
 
 // MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
+// Primary = default model shown, Secondary = alternative in dropdown
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "3B": [
-    NON_REASONING_MODELS["3B"],
+    NON_REASONING_MODELS["3B"],  // Primary: Qwen2.5-3B
     { 
-      id: "together/mistral-7b-instruct", 
-      name: "Mistral 7B", 
-      costPer1k: 0.0002, 
+      id: "together/deepseek-r1-distill-qwen-1.5b", 
+      name: "DeepSeek-R1-Distill-Qwen-1.5B", 
+      costPer1k: 0.00008, 
       expectedLatency: "fast", 
-      reasoningDepth: "none", 
+      reasoningDepth: "shallow", 
       expectedAccuracy: "basic", 
-      benchmarks: { mmlu: 60.1, humanEval: 52.4 }, 
+      benchmarks: { mmlu: 56.3, humanEval: 60.2 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "Sliding Window", parameters: "7B" },
-        training: { dataDate: "2023", dataSources: ["Web", "Code"] },
-        finetuning: { method: "SFT", variants: ["Instruct"] },
-        inference: { precision: "FP16" },
-        safety: { aligned: true, methods: ["SFT", "Safety tuning"] }
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "1.5B" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
+        finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning-enhanced"] },
+        inference: { precision: "FP16", optimizations: ["32K generation"] },
+        safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
       }
     },
   ],
   "7B": [
-    NON_REASONING_MODELS["7B"],
+    NON_REASONING_MODELS["7B"],  // Primary: Qwen2.5-7B
     { 
-      id: "together/llama-3.1-70b-instruct", 
-      name: "Gemma 2 27B", 
+      id: "together/deepseek-r1-distill-qwen-7b", 
+      name: "DeepSeek-R1-Distill-Qwen-7B", 
       costPer1k: 0.00018, 
       expectedLatency: "fast", 
-      reasoningDepth: "none", 
+      reasoningDepth: "shallow", 
       expectedAccuracy: "good", 
-      benchmarks: { mmlu: 75.2, humanEval: 75.1 }, 
+      benchmarks: { mmlu: 75.3, humanEval: 79.8 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "27B" },
-        training: { dataDate: "2024", dataSources: ["Web", "Code", "Books"] },
-        finetuning: { method: "SFT", variants: ["Instruct"] },
-        inference: { precision: "BF16" },
-        safety: { aligned: true, methods: ["SFT", "Safety filtering"] }
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
+        finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning-enhanced"] },
+        inference: { precision: "FP16", optimizations: ["32K generation"] },
+        safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
       }
     },
   ],
   "14B": [
-    NON_REASONING_MODELS["14B"],
+    NON_REASONING_MODELS["14B"],  // Primary: DeepSeek-R1-Distill-Qwen-14B
     { 
-      id: "together/qwen-2.5-72b-instruct", 
-      name: "Qwen 2.5 72B", 
-      costPer1k: 0.0004, 
+      id: "together/qwen3-14b", 
+      name: "Qwen3-14B", 
+      costPer1k: 0.00025, 
+      expectedLatency: "fast", 
+      reasoningDepth: "none", 
+      expectedAccuracy: "strong", 
+      benchmarks: { mmlu: 82.1, humanEval: 84.6 }, 
+      modality: "text",
+      technical: {
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+        finetuning: { method: "DPO", variants: ["Instruct", "Advanced reasoning"] },
+        inference: { precision: "BF16", optimizations: ["131K context"] },
+        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+      }
+    },
+  ],
+  "70B": [
+    NON_REASONING_MODELS["70B"],  // Primary: DeepSeek-R1-Distill-Llama-70B
+    { 
+      id: "together/qwen2.5-72b", 
+      name: "Qwen2.5-72B", 
+      costPer1k: 0.0009, 
       expectedLatency: "medium", 
       reasoningDepth: "none", 
       expectedAccuracy: "strong", 
@@ -266,34 +287,14 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
       technical: {
         architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B" },
         training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-        finetuning: { method: "DPO", variants: ["Instruct"] },
-        inference: { precision: "BF16" },
-        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
-      }
-    },
-  ],
-  "70B": [
-    NON_REASONING_MODELS["70B"],
-    { 
-      id: "together/mixtral-8x22b-instruct", 
-      name: "Mixtral 8x22B", 
-      costPer1k: 0.0009, 
-      expectedLatency: "medium", 
-      reasoningDepth: "shallow", 
-      expectedAccuracy: "strong", 
-      benchmarks: { mmlu: 84.5, humanEval: 75.0 }, 
-      modality: "text",
-      technical: {
-        architecture: { type: "Sparse MoE", attention: "GQA", parameters: "141B total / 39B active" },
-        training: { dataDate: "2024", dataSources: ["Web", "Code", "Math"] },
-        finetuning: { method: "DPO", variants: ["Instruct"] },
-        inference: { precision: "BF16", optimizations: ["MoE routing"] },
+        finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
+        inference: { precision: "BF16", optimizations: ["128K context"] },
         safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },
   ],
   "Frontier": [
-    NON_REASONING_MODELS["Frontier"],
+    NON_REASONING_MODELS["Frontier"],  // Primary: Claude Sonnet 4.5
     { 
       id: "openai/gpt-4o", 
       name: "GPT-4o", 
