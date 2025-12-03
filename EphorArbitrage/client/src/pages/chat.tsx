@@ -2303,10 +2303,10 @@ export default function ChatPage() {
                           
                           {/* Expert Mode: Model Swap Dropdown (disabled when reasoning is on) */}
                           {expertMode && !hasResults && MODEL_ALTERNATIVES[col] && MODEL_ALTERNATIVES[col].length > 1 && (
-                            <div className="mt-2">
+                            <div className="mt-2 w-full">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <div>
+                                  <div className="w-full">
                                     <Select
                                       value={String(selectedModelPerBand[col] || 0)}
                                       onValueChange={(val) => {
@@ -2314,7 +2314,7 @@ export default function ChatPage() {
                                       }}
                                       disabled={reasoningEnabled}
                                     >
-                                      <SelectTrigger className={`h-7 text-xs ${reasoningEnabled ? 'bg-gray-100 opacity-60' : 'bg-gray-50'} border-gray-200`}>
+                                      <SelectTrigger className={`w-full h-7 text-xs ${reasoningEnabled ? 'bg-gray-100 opacity-60' : 'bg-gray-50'} border-gray-200`}>
                                         <SelectValue placeholder="Change model" />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -2347,31 +2347,31 @@ export default function ChatPage() {
                         )}
 
                         {!hasResults && (
-                          <div className="space-y-2">
-                            <div className={`grid grid-cols-[1fr_auto] items-center gap-x-2 transition-all rounded px-1 -mx-1 ${
+                          <div className="space-y-1.5">
+                            <div className={`grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5 transition-all rounded px-1 -mx-1 ${
                               costFlash ? 'bg-amber-100 scale-[1.02]' : ''
                             }`}>
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
-                                <DollarSign className="w-4 h-4" /> Est. Cost
+                                <DollarSign className="w-4 h-4 flex-shrink-0" /> Est. Cost
                               </span>
-                              <span className={`font-mono text-sm tabular-nums text-right transition-all ${
+                              <span className={`font-mono text-sm tabular-nums text-right transition-all min-w-[70px] ${
                                 costFlash ? 'text-amber-700 font-bold' : 'text-gray-700'
                               }`}>
                                 ${estimatedCost.toFixed(4)}
                               </span>
                             </div>
                             
-                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                            <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
-                                <Target className="w-4 h-4" /> Capability
+                                <Target className="w-4 h-4 flex-shrink-0" /> Capability
                               </span>
-                              <span className={`text-sm font-semibold text-right ${capabilityConfig.textColor}`}>
+                              <span className={`text-sm font-semibold text-right min-w-[70px] ${capabilityConfig.textColor}`}>
                                 {capabilityConfig.label}
                               </span>
                             </div>
 
                             {/* GAP 2A: Skill tag - always visible */}
-                            <div className="text-xs text-gray-500 italic py-1 border-t border-gray-100 mt-1">
+                            <div className="text-xs text-gray-500 italic py-1.5 border-t border-gray-100 mt-1 min-h-[32px] flex items-center">
                               {getSkillTag(col)}
                             </div>
 
@@ -2379,11 +2379,11 @@ export default function ChatPage() {
                             {expertMode && (
                               <>
                                 {/* MMLU with delta vs baseline */}
-                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2 mt-1">
+                                <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                        <BarChart3 className="w-4 h-4" /> MMLU <Info className="w-3 h-3 text-gray-400" />
+                                        <BarChart3 className="w-4 h-4 flex-shrink-0" /> MMLU <Info className="w-3 h-3 text-gray-400 flex-shrink-0" />
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="max-w-[220px]">
@@ -2391,7 +2391,7 @@ export default function ChatPage() {
                                       <p className="text-xs text-gray-500 mt-1">{model!.benchmarks.mmlu ? formatMmluDelta(model!.benchmarks.mmlu) : ""}</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <div className="text-right">
+                                  <div className="text-right min-w-[70px]">
                                     <span className="text-sm font-mono text-gray-700 tabular-nums">
                                       {model!.benchmarks.mmlu?.toFixed(0)}%
                                     </span>
@@ -2403,28 +2403,28 @@ export default function ChatPage() {
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                        <Code2 className="w-4 h-4" /> HumanEval <Info className="w-3 h-3 text-gray-400" />
+                                        <Code2 className="w-4 h-4 flex-shrink-0" /> HumanEval <Info className="w-3 h-3 text-gray-400 flex-shrink-0" />
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="max-w-[200px]">
                                       <p className="text-xs">HumanEval: How well it writes correct code. Higher % = better coder.</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
+                                  <span className="text-sm font-mono text-gray-700 tabular-nums text-right min-w-[70px]">
                                     {model!.benchmarks.humanEval ? `${model!.benchmarks.humanEval.toFixed(0)}%` : "—"}
                                   </span>
                                 </div>
 
                                 {/* Reasoning Depth per band - shows capability regardless of toggle */}
-                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
-                                        <Brain className="w-4 h-4" /> Reasoning <Info className="w-3 h-3 text-gray-400" />
+                                        <Brain className="w-4 h-4 flex-shrink-0" /> Reasoning <Info className="w-3 h-3 text-gray-400 flex-shrink-0" />
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="max-w-[220px]">
@@ -2438,23 +2438,23 @@ export default function ChatPage() {
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <span className={`text-sm font-medium text-right ${getReasoningDepthForBand(col).color}`}>
+                                  <span className={`text-sm font-medium text-right min-w-[70px] ${getReasoningDepthForBand(col).color}`}>
                                     {getReasoningDepthForBand(col).label}
                                   </span>
                                 </div>
                               </>
                             )}
 
-                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                            <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 {model!.modality === "text" ? (
-                                  <FileText className="w-4 h-4" />
+                                  <FileText className="w-4 h-4 flex-shrink-0" />
                                 ) : (
-                                  <Image className="w-4 h-4" />
+                                  <Image className="w-4 h-4 flex-shrink-0" />
                                 )}
                                 Input
                               </span>
-                              <span className={`text-sm font-medium text-right ${
+                              <span className={`text-sm font-medium text-right min-w-[70px] ${
                                 model!.modality === "text" 
                                   ? "text-gray-500" 
                                   : "text-purple-600"
@@ -2463,11 +2463,11 @@ export default function ChatPage() {
                               </span>
                             </div>
                             
-                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                            <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
-                                <Clock className="w-4 h-4" /> Speed
+                                <Clock className="w-4 h-4 flex-shrink-0" /> Speed
                               </span>
-                              <span className="text-sm text-gray-400 italic text-right">
+                              <span className="text-sm text-gray-400 italic text-right min-w-[70px]">
                                 Run test
                               </span>
                             </div>
@@ -2676,11 +2676,11 @@ export default function ChatPage() {
 
                           {/* 2. Expert Mode: Full model details (BEFORE response) */}
                           {expertMode && (
-                            <div className="mb-3 space-y-2 pt-2 border-t border-gray-100">
+                            <div className="mb-3 space-y-1.5 pt-2 border-t border-gray-100">
                               {/* Est. Cost */}
-                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                              <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                 <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium">
-                                  <DollarSign className="w-3 h-3" /> Est. Cost
+                                  <DollarSign className="w-3 h-3 flex-shrink-0" /> Est. Cost
                                 </span>
                                 <span className="font-mono text-xs tabular-nums text-right text-gray-700">
                                   ${estimatedCost.toFixed(4)}
@@ -2688,9 +2688,9 @@ export default function ChatPage() {
                               </div>
 
                               {/* Capability */}
-                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                              <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                 <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium">
-                                  <Target className="w-3 h-3" /> Capability
+                                  <Target className="w-3 h-3 flex-shrink-0" /> Capability
                                 </span>
                                 <span className={`text-xs font-semibold text-right ${capabilityConfig.textColor}`}>
                                   {capabilityConfig.label}
@@ -2698,16 +2698,16 @@ export default function ChatPage() {
                               </div>
 
                               {/* Skill tag */}
-                              <div className="text-xs text-gray-500 italic py-1 border-t border-gray-100">
+                              <div className="text-xs text-gray-500 italic py-1.5 border-t border-gray-100 min-h-[28px] flex items-center">
                                 {getSkillTag(col)}
                               </div>
 
                               {/* MMLU with delta */}
-                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                              <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium cursor-help">
-                                      <BarChart3 className="w-3 h-3" /> MMLU <Info className="w-2.5 h-2.5 text-gray-400" />
+                                      <BarChart3 className="w-3 h-3 flex-shrink-0" /> MMLU <Info className="w-2.5 h-2.5 text-gray-400 flex-shrink-0" />
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent side="left" className="max-w-[220px]">
@@ -2727,11 +2727,11 @@ export default function ChatPage() {
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                              <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium cursor-help">
-                                      <Code2 className="w-3 h-3" /> HumanEval <Info className="w-2.5 h-2.5 text-gray-400" />
+                                      <Code2 className="w-3 h-3 flex-shrink-0" /> HumanEval <Info className="w-2.5 h-2.5 text-gray-400 flex-shrink-0" />
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent side="left" className="max-w-[200px]">
@@ -2744,11 +2744,11 @@ export default function ChatPage() {
                               </div>
 
                               {/* Reasoning Depth */}
-                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                              <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium cursor-help">
-                                      <Brain className="w-3 h-3" /> Reasoning <Info className="w-2.5 h-2.5 text-gray-400" />
+                                      <Brain className="w-3 h-3 flex-shrink-0" /> Reasoning <Info className="w-2.5 h-2.5 text-gray-400 flex-shrink-0" />
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent side="left" className="max-w-[220px]">
@@ -2767,12 +2767,12 @@ export default function ChatPage() {
                                 </span>
                               </div>
 
-                              <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                              <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                 <span className="text-gray-600 flex items-center gap-1.5 text-xs font-medium">
                                   {renderModel.modality === "text" ? (
-                                    <FileText className="w-3 h-3" />
+                                    <FileText className="w-3 h-3 flex-shrink-0" />
                                   ) : (
-                                    <Image className="w-3 h-3" />
+                                    <Image className="w-3 h-3 flex-shrink-0" />
                                   )}
                                   Input
                                 </span>
@@ -2800,24 +2800,24 @@ export default function ChatPage() {
                               </button>
 
                               {expandedTechDetails[col] && (
-                                <div className="space-y-1.5 pt-1 text-xs">
-                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                <div className="space-y-1 pt-1 text-xs">
+                                  <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                     <span className="text-gray-500 flex items-center gap-1">
-                                      <Cpu className="w-3 h-3" /> Architecture
+                                      <Cpu className="w-3 h-3 flex-shrink-0" /> Architecture
                                     </span>
                                     <span className={`font-medium text-right ${renderModel.technical.architecture.type === "Sparse MoE" ? "text-purple-600" : "text-gray-600"}`}>
                                       {renderModel.technical.architecture.type === "Sparse MoE" ? "MoE" : "Dense"}
                                     </span>
                                   </div>
-                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                     <span className="text-gray-500 flex items-center gap-1">
-                                      <Database className="w-3 h-3" /> Training
+                                      <Database className="w-3 h-3 flex-shrink-0" /> Training
                                     </span>
                                     <span className="text-gray-600 text-right">{renderModel.technical.training.dataDate}</span>
                                   </div>
-                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                     <span className="text-gray-500 flex items-center gap-1">
-                                      <Settings className="w-3 h-3" /> Fine-tuning
+                                      <Settings className="w-3 h-3 flex-shrink-0" /> Fine-tuning
                                     </span>
                                     <span className={`font-medium text-right ${
                                       renderModel.technical.finetuning.method === "RLHF" ? "text-blue-600" :
@@ -2826,15 +2826,15 @@ export default function ChatPage() {
                                       {renderModel.technical.finetuning.method}
                                     </span>
                                   </div>
-                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                     <span className="text-gray-500 flex items-center gap-1">
-                                      <Zap className="w-3 h-3" /> Inference
+                                      <Zap className="w-3 h-3 flex-shrink-0" /> Inference
                                     </span>
                                     <span className="text-gray-600 text-right">{renderModel.technical.inference.precision}</span>
                                   </div>
-                                  <div className="grid grid-cols-[1fr_auto] items-center gap-x-2">
+                                  <div className="grid grid-cols-[1fr_70px] items-center gap-x-2 py-0.5">
                                     <span className="text-gray-500 flex items-center gap-1">
-                                      <Shield className="w-3 h-3" /> Safety
+                                      <Shield className="w-3 h-3 flex-shrink-0" /> Safety
                                     </span>
                                     <span className={`font-medium text-right ${renderModel.technical.safety.aligned ? "text-green-600" : "text-red-600"}`}>
                                       {renderModel.technical.safety.aligned ? "Aligned" : "Unaligned"}
