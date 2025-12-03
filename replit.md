@@ -34,6 +34,15 @@ The application allows users to select context window sizes (8K-1M), set a cost 
 *   **Public Leaderboard**: Allows users to share test results with optional anonymity, including prompt, recommended model, settings, and performance data.
 *   **Benchmark Library**: Users can save, load, and delete custom prompts for re-testing and comparison.
 *   **Educational Prompts**: Includes a rotating set of challenge prompts to encourage deeper learning.
+*   **Context Safety Buffer (Expert Mode)**: Teaches advanced context headroom concepts with:
+    - Segmented control with Off/+10%/+25% buffer options
+    - Effective tokens calculation (prompt × buffer multiplier)
+    - Visual buffer bar in Input Gauge showing used tokens + reserved buffer
+    - Dynamic context recommendations that factor in buffer needs
+    - Warning panels when buffer forces context upgrade
+    - Toast notifications for buffer state changes
+    - Educational tooltips explaining buffer use cases (RAG, follow-ups, agent runs)
+    - Teaching point: right-size context with just enough headroom
 
 ### System Design Choices
 
