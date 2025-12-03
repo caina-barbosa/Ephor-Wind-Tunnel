@@ -24,6 +24,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2, ChevronDown, ChevronUp, Cpu, Database, Settings, Shield, Layers } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -675,17 +680,22 @@ export default function ChatPage() {
 
   // SPEC-EXACT: Handle recommended context acceptance from mismatch card
   const handleAcceptRecommendedContext = () => {
+    console.log("handleAcceptRecommendedContext called, pendingRecommendedTier:", pendingRecommendedTier);
     if (pendingRecommendedTier) {
-      setContextSize(pendingRecommendedTier);
+      const newTier = pendingRecommendedTier;
+      setContextSize(newTier);
       setContextAutoSelected(false);
       setShowContextMismatch(false);
       setPendingRecommendedTier(null);
+      setShowBufferWarning(false);
       
       // Show Engineering Truth toast
       toast({
         title: "Context Upgraded",
-        description: `Switched to ${CONTEXT_SIZES.find(s => s.value === pendingRecommendedTier)?.label} — the smallest context that fits your prompt, saving you money.`,
+        description: `Switched to ${CONTEXT_SIZES.find(s => s.value === newTier)?.label} — the smallest context that fits your prompt, saving you money.`,
       });
+    } else {
+      console.log("pendingRecommendedTier is null, cannot accept recommendation");
     }
   };
 
@@ -1711,23 +1721,23 @@ export default function ChatPage() {
                     </Tooltip>
                   </div>
                   
-                  {/* Why this recommendation? */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="mt-2 text-xs text-amber-600 hover:text-amber-800 flex items-center gap-1 hover:underline">
+                  {/* Why this recommendation? - Click-based popover for better mobile/touch support */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="mt-2 text-xs text-amber-600 hover:text-amber-800 flex items-center gap-1 hover:underline cursor-pointer">
                         <Info className="w-3 h-3" />
                         Why this recommendation?
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-sm p-3">
+                    </PopoverTrigger>
+                    <PopoverContent className="bg-white border-gray-200 text-gray-700 max-w-sm p-3 shadow-lg">
                       <p className="font-bold mb-2">Engineering Rule: Pick the smallest context that fits</p>
                       <ul className="text-xs space-y-1 list-disc list-inside">
                         <li>Smaller contexts cost less per query</li>
                         <li>Larger contexts waste money on unused capacity</li>
                         <li>AI engineers always optimize for cost when quality is equal</li>
                       </ul>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
