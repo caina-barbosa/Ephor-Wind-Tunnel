@@ -84,7 +84,7 @@ const COLUMNS = ["4B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "4B": { 
-    id: "openrouter/qwen/qwen3-4b", 
+    id: "together/Qwen/Qwen3-4B", 
     name: "Qwen3-4B", 
     costPer1k: 0.0001, 
     expectedLatency: "fast", 
