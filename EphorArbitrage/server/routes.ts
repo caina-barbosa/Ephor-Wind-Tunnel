@@ -301,7 +301,7 @@ function getActualModelId(modelId: string): string {
     "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
     "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
     "openrouter/qwen/qwen3-4b": "qwen/qwen3-4b",
-    "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": "deepseek/deepseek-r1-0528-qwen3-8b",
+    "openrouter/qwen/qwen3-4b:free": "qwen/qwen3-4b:free",
     "openrouter/deepseek/deepseek-r1-distill-qwen-7b": "deepseek/deepseek-r1-distill-qwen-7b",
     "openrouter/deepseek/deepseek-r1-distill-qwen-14b": "deepseek/deepseek-r1-distill-qwen-14b",
     "openrouter/qwen/qwen-2-72b-instruct": "qwen/qwen-2-72b-instruct",

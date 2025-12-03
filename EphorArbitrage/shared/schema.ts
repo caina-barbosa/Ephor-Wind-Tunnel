@@ -238,6 +238,7 @@ export const MODEL_PRICING: Record<string, { input: number; output: number }> = 
   "together/deepseek-r1": { input: 3.00, output: 7.00 },
   "together/qwq-32b": { input: 1.20, output: 1.20 },
   "openrouter/qwen/qwen3-14b": { input: 0.10, output: 0.20 },
+  "openrouter/qwen/qwen3-4b:free": { input: 0.00, output: 0.00 },
 };
 
 // Helper to calculate cost from token counts

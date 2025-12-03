@@ -84,19 +84,19 @@ const COLUMNS = ["4B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "4B": { 
-    id: "openrouter/deepseek/deepseek-r1-0528-qwen3-8b", 
-    name: "DeepSeek-R1-8B", 
-    costPer1k: 0.0001, 
+    id: "openrouter/qwen/qwen3-4b:free", 
+    name: "Qwen3-4B", 
+    costPer1k: 0.00003, 
     expectedLatency: "fast", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 72.5, humanEval: 70.2 }, 
+    benchmarks: { mmlu: 72.1, humanEval: 68.5 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
-      finetuning: { method: "DPO", variants: ["Instruct"] },
-      inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Thinking/Non-thinking dual mode"] },
+      inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
@@ -215,19 +215,19 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "4B": [
     NON_REASONING_MODELS["4B"],
     { 
-      id: "openrouter/deepseek/deepseek-r1-0528-qwen3-8b", 
-      name: "DeepSeek-R1-8B", 
-      costPer1k: 0.0001, 
+      id: "openrouter/qwen/qwen3-4b:free", 
+      name: "Qwen3-4B (alt)", 
+      costPer1k: 0.00003, 
       expectedLatency: "fast", 
-      reasoningDepth: "none", 
+      reasoningDepth: "shallow", 
       expectedAccuracy: "basic", 
-      benchmarks: { mmlu: 72.1, humanEval: 65.8 }, 
+      benchmarks: { mmlu: 72.1, humanEval: 68.5 }, 
       modality: "text",
       technical: {
         architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
-        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-        finetuning: { method: "DPO", variants: ["Instruct"] },
-        inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
+        finetuning: { method: "SFT", variants: ["Instruct", "Thinking mode"] },
+        inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
         safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },
