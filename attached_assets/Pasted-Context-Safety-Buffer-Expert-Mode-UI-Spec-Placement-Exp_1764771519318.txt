@@ -1,0 +1,200 @@
+Context Safety Buffer (Expert Mode) — UI Spec
+Placement
+
+Expert Mode only, directly under / beside the Context Window selector.
+
+Layout (compact):
+
+Context Window dropdown (Auto / 8K / 32K / 128K / 1M)
+
+Safety Buffer segmented control to the right
+
+Control design
+
+Label:
+Context Safety Buffer
+
+Segmented options (3):
+
+Off
+
++10%
+
++25%
+
+Default: Off (when Expert Mode is toggled on for the first time)
+
+Tooltip icon next to label (ⓘ)
+
+Primary inline helper text (always visible)
+
+When Off:
+
+Tight fit. Cheapest option, but leaves no room for retrieval or follow-ups.
+
+When +10%:
+
+Adds a little headroom for extra context. Small cost increase.
+
+When +25%:
+
+Adds strong headroom for RAG / long tasks. Higher cost.
+
+Keep these as single lines under the segmented control.
+
+Tooltip / explainer copy (ⓘ)
+
+Header:
+Why use a safety buffer?
+
+Body:
+Buffers reserve extra context space beyond your current prompt.
+Useful when your task may grow.
+
+Good for:
+
+Retrieval (RAG) that adds docs
+
+Follow-up questions
+
+Multi-document prompts
+
+Agent/tool runs
+
+Tradeoff:
+More buffer = higher cost + latency, and may force a model swap.
+
+Footer mini-lesson:
+Engineering rule: right-size context with just enough headroom.
+
+Dynamic behavior
+A) How the buffer changes recommended context
+
+Let:
+
+prompt_tokens = P
+
+buffer_multiplier = 1.0 / 1.1 / 1.25
+
+effective_tokens = P × buffer_multiplier
+
+Auto context recommendation uses effective_tokens.
+
+So if:
+
+P = 7,500
+
+Buffer = +10% → effective = 8,250
+Auto should recommend 32K (because 8K no longer fits safely).
+
+B) Input gauge changes
+
+In the Input Gauge area:
+
+Show two bars (simple but powerful):
+
+Used now: P tokens
+
+Reserved buffer: (effective − P) tokens
+
+Label:
+
+7,500 used + 750 buffer = 8,250 required
+
+Great for teaching what “buffer” actually means.
+
+Warnings / teaching states
+1) “Buffer forced context upgrade”
+
+If buffer makes the chosen context too small:
+
+Inline warning panel (same style as mismatch):
+Title:
+Buffer needs more context
+
+Body:
+Your prompt fits 8K, but with +10% buffer you need 8,250 tokens.
+8K will truncate if the task grows.
+
+CTA:
+
+Use 32K (recommended)
+
+Keep 8K anyway
+
+Microcopy under second CTA:
+
+Risky for RAG / follow-ups.
+
+2) “Buffer forced model swap”
+
+If increased context forces band-level model swaps, reuse your earlier “Model updated to fit context” banner, but add one extra line:
+
+Banner:
+Model updated to fit 32K + buffer
+
+Subtext:
+Buffer reserved extra space, so the previous model was no longer eligible.
+
+Tiny cost/latency preview (right under control)
+
+Always show a subtle estimate:
+
+When Off:
+
+Est. buffer cost multiplier: 1.0×
+
+When +10%:
+
+Est. buffer cost multiplier: ~1.1×
+
+When +25%:
+
+Est. buffer cost multiplier: ~1.25×
+
+If you want to make it more visceral, color shift at +25% (yellow/orange).
+
+Micro-interactions
+
+On clicking buffer segment
+
+Segmented control animates with a 120ms slide.
+
+Input gauge updates immediately with reserved buffer bar.
+
+Auto context recalculates and may:
+
+stay the same (no drama)
+
+trigger Buffer Needs More Context warning
+
+trigger model swaps per band
+
+If buffer causes changes
+
+Show one toast summary:
+
+Toast:
+Safety buffer updated constraints
+Context + models re-evaluated.
+
+If buffer removed
+
+Reverse animation and show a calm toast:
+
+Toast:
+Buffer removed
+Returning to tight-fit recommendation.
+
+Why this is a killer teaching feature
+
+This makes students discover a true systems habit:
+
+Off = cheapest safe fit
+
++10% = cautious engineering
+
++25% = robust for retrieval/agents
+
+They learn that “max context” is not default safety;
+buffered right-sizing is.

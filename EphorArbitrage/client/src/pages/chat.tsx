@@ -600,6 +600,10 @@ export default function ChatPage() {
   const [challengePromptIndex, setChallengePromptIndex] = useState(0);
   const [showReasoningExplainModal, setShowReasoningExplainModal] = useState(false);
   
+  // Expert Mode: Context Safety Buffer (off, +10%, +25%)
+  const [safetyBuffer, setSafetyBuffer] = useState<"off" | "10" | "25">("off");
+  const [showBufferWarning, setShowBufferWarning] = useState(false);
+  
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
     "3B": 0, "7B": 0, "17B": 0, "70B": 0, "Frontier": 0
@@ -613,9 +617,28 @@ export default function ChatPage() {
     return Math.ceil(prompt.length / 4);
   }, [prompt]);
 
+  // Buffer multiplier calculation (Expert Mode only)
+  const bufferMultiplier = useMemo(() => {
+    if (!expertMode || safetyBuffer === "off") return 1.0;
+    if (safetyBuffer === "10") return 1.1;
+    if (safetyBuffer === "25") return 1.25;
+    return 1.0;
+  }, [expertMode, safetyBuffer]);
+
+  // Effective tokens = prompt tokens * buffer multiplier
+  const effectiveTokens = useMemo(() => {
+    return Math.ceil(inputTokenEstimate * bufferMultiplier);
+  }, [inputTokenEstimate, bufferMultiplier]);
+
+  // Buffer tokens (the reserved headroom)
+  const bufferTokens = useMemo(() => {
+    return effectiveTokens - inputTokenEstimate;
+  }, [effectiveTokens, inputTokenEstimate]);
+
+  // Recommended context considers buffer when in Expert Mode
   const recommendedContextTier = useMemo(() => {
-    return getRecommendedContextTier(inputTokenEstimate);
-  }, [inputTokenEstimate]);
+    return getRecommendedContextTier(effectiveTokens);
+  }, [effectiveTokens]);
 
   // SPEC-EXACT: Stop auto-switching - instead show mismatch card when prompt exceeds current window
   useEffect(() => {
