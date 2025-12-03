@@ -12,8 +12,9 @@ import {
   createTogetherChatCompletion, 
   TOGETHER_QWEN_MODEL_ID, 
   TOGETHER_GLM_MODEL_ID,
-  TOGETHER_LLAMA_3B_MODEL_ID,
+  TOGETHER_QWEN_3B_MODEL_ID,
   TOGETHER_QWEN_7B_MODEL_ID,
+  TOGETHER_QWEN_14B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_DISTILL_70B_MODEL_ID,
   TOGETHER_DEEPSEEK_R1_MODEL_ID,
   TOGETHER_QWQ_32B_MODEL_ID
@@ -25,13 +26,13 @@ import OpenAI from "openai";
 const CLAUDE_MODEL_ID = "anthropic/claude-sonnet-4.5";
 const GROQ_MODEL_SELECTOR_ID = "meta-llama/llama-4-maverick:groq";
 const CEREBRAS_MODEL_SELECTOR_ID = "meta-llama/llama-3.3-70b-instruct:cerebras";
-const TOGETHER_LLAMA4_MAVERICK_SELECTOR_ID = "together/llama-4-maverick-17b";
+const TOGETHER_QWEN_14B_SELECTOR_ID = "together/qwen-2.5-14b-instruct";
 const DEEPSEEK_MODEL_SELECTOR_ID = "deepseek/deepseek-chat";
 const MINIMAX_MODEL_SELECTOR_ID = "minimax/minimax-m2";
 const KIMI_K2_MODEL_SELECTOR_ID = "moonshotai/kimi-k2";
 const QWEN_72B_MODEL_SELECTOR_ID = "qwen/qwen-2.5-72b-instruct";
 const GLM_4_32B_MODEL_SELECTOR_ID = "z-ai/glm-4-32b";
-const TOGETHER_LLAMA_3B_SELECTOR_ID = "together/llama-3.2-3b-instruct-turbo";
+const TOGETHER_QWEN_3B_SELECTOR_ID = "together/qwen-2.5-3b-instruct";
 const TOGETHER_QWEN_7B_SELECTOR_ID = "together/qwen-2.5-7b-instruct-turbo";
 const TOGETHER_DEEPSEEK_R1_DISTILL_70B_SELECTOR_ID = "together/deepseek-r1-distill-llama-70b";
 const TOGETHER_DEEPSEEK_R1_SELECTOR_ID = "together/deepseek-r1";
@@ -75,10 +76,10 @@ async function getModelCompletion(request: UnifiedChatRequest): Promise<ChatComp
     });
   }
   
-  if (request.model === TOGETHER_LLAMA4_MAVERICK_SELECTOR_ID) {
-    console.log("[API] Using Together AI for Llama 4 Maverick 17B");
+  if (request.model === TOGETHER_QWEN_14B_SELECTOR_ID) {
+    console.log("[API] Using Together AI for Qwen 2.5 14B");
     return createTogetherChatCompletion({
-      model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+      model: TOGETHER_QWEN_14B_MODEL_ID,
       messages: request.messages,
       maxTokens: request.maxTokens,
       timeoutMs: request.timeoutMs,
