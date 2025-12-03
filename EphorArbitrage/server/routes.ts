@@ -296,12 +296,14 @@ function getActualModelId(modelId: string): string {
     "together/deepseek-r1": "deepseek-ai/DeepSeek-R1",
     "together/Qwen/Qwen3-4B": "Qwen/Qwen3-4B",
     "together/Qwen/Qwen3-Next-80B-A3B-Instruct": "Qwen/Qwen3-Next-80B-A3B-Instruct",
+    "together/Qwen/Qwen2.5-72B-Instruct-Turbo": "Qwen/Qwen2.5-72B-Instruct-Turbo",
     // OpenRouter
     "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
     "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
     "openrouter/qwen/qwen2.5-vl-3b-instruct": "qwen/qwen2.5-vl-3b-instruct:free",
     "openrouter/deepseek/deepseek-r1-distill-qwen-7b": "deepseek/deepseek-r1-distill-qwen-7b",
     "openrouter/deepseek/deepseek-r1-distill-qwen-14b": "deepseek/deepseek-r1-distill-qwen-14b",
+    "openrouter/qwen/qwen-2-72b-instruct": "qwen/qwen-2-72b-instruct",
   };
   return modelMap[modelId] || modelId;
 }

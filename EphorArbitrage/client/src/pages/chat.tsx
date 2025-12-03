@@ -135,20 +135,20 @@ const NON_REASONING_MODELS: Record<string, Model> = {
     }
   },
   "70B": { 
-    id: "meta-llama/llama-3.3-70b-instruct:cerebras", 
-    name: "Llama 3.3 70B", 
-    costPer1k: 0.0006, 
+    id: "together/Qwen/Qwen2.5-72B-Instruct-Turbo", 
+    name: "Qwen2.5-72B", 
+    costPer1k: 0.0003, 
     expectedLatency: "medium", 
     reasoningDepth: "none", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 86.0, humanEval: 88.4 }, 
+    benchmarks: { mmlu: 85.3, humanEval: 86.3 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Scientific"] },
-      finetuning: { method: "RLHF", variants: ["Instruct", "Chat"] },
-      inference: { precision: "FP16", optimizations: ["Cerebras WSE"] },
-      safety: { aligned: true, methods: ["RLHF", "Constitutional AI"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+      finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
+      inference: { precision: "BF16", optimizations: ["FP8 Turbo optimized"] },
+      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "Frontier": { 
@@ -275,19 +275,19 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "70B": [
     NON_REASONING_MODELS["70B"],
     { 
-      id: "together/mixtral-8x22b-instruct", 
-      name: "Mixtral 8x22B", 
+      id: "openrouter/qwen/qwen-2-72b-instruct", 
+      name: "Qwen2-72B", 
       costPer1k: 0.0009, 
       expectedLatency: "medium", 
-      reasoningDepth: "shallow", 
+      reasoningDepth: "none", 
       expectedAccuracy: "strong", 
-      benchmarks: { mmlu: 84.5, humanEval: 75.0 }, 
+      benchmarks: { mmlu: 84.2, humanEval: 85.0 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Sparse MoE", attention: "GQA", parameters: "141B total / 39B active" },
-        training: { dataDate: "2024", dataSources: ["Web", "Code", "Math"] },
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B" },
+        training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
         finetuning: { method: "DPO", variants: ["Instruct"] },
-        inference: { precision: "BF16", optimizations: ["MoE routing"] },
+        inference: { precision: "BF16" },
         safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },

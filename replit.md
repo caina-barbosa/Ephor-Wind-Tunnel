@@ -52,15 +52,14 @@ The architecture is a client-server model with a React frontend and an Express.j
 
 **AI Model Providers**:
 *   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5.
-*   Cerebras API (`api.cerebras.ai`) for Llama 3.3 70B.
-*   Together AI API (`api.together.xyz`) for Qwen 2.5 7B, Qwen3-4B, DeepSeek R1 Distill 70B, and DeepSeek R1.
-*   Replit AI Integration for OpenRouter for Chinese open source models: Qwen2.5-3B (3B primary), DeepSeek-R1-Distill-Qwen-7B (7B secondary), DeepSeek-R1-Distill-Qwen-14B (14B primary), and Qwen3-14B (14B secondary), billed through Replit credits.
+*   Together AI API (`api.together.xyz`) for Qwen2.5-7B, Qwen3-4B, Qwen2.5-72B, DeepSeek R1 Distill 70B, and DeepSeek R1.
+*   Replit AI Integration for OpenRouter for Chinese open source models: Qwen2.5-3B (3B primary), DeepSeek-R1-Distill-Qwen-7B (7B secondary), DeepSeek-R1-Distill-Qwen-14B (14B primary), Qwen3-14B (14B secondary), and Qwen2-72B (70B secondary), billed through Replit credits.
 
 **Model Configuration by Band**:
 *   3B: Primary = Qwen2.5-3B (OpenRouter), Secondary = Qwen3-4B (Together AI)
 *   7B: Primary = Qwen2.5-7B (Together AI), Secondary = DeepSeek-R1-Distill-Qwen-7B (OpenRouter)
 *   14B: Primary = DeepSeek-R1-Distill-Qwen-14B (OpenRouter), Secondary = Qwen3-14B (OpenRouter)
-*   70B: Primary = Llama 3.3 70B (Cerebras), Secondary = Mixtral 8x22B (Together AI)
+*   70B: Primary = Qwen2.5-72B (Together AI), Secondary = Qwen2-72B (OpenRouter)
 *   Frontier: Primary = Claude Sonnet 4.5 (Anthropic), Secondary = Moonshot Kimi K2 (OpenRouter)
 
 **Database Service**:
