@@ -80,7 +80,7 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "7B", "17B", "70B", "Frontier"] as const;
+const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
@@ -117,21 +117,21 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
-  "17B": { 
-    id: "together/llama-4-maverick-17b", 
-    name: "Llama 4 Maverick 17B", 
-    costPer1k: 0.0002, 
+  "14B": { 
+    id: "openrouter/deepseek/deepseek-r1-distill-qwen-14b", 
+    name: "DeepSeek-R1-Distill-Qwen-14B", 
+    costPer1k: 0.00016, 
     expectedLatency: "fast", 
-    reasoningDepth: "none", 
+    reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 80.5, humanEval: 78.4 }, 
-    modality: "text+image",
+    benchmarks: { mmlu: 79.1, humanEval: 80.2 }, 
+    modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "17B active / 400B total" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Vision", "Multimodal"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Maverick"] },
-      inference: { precision: "BF16", optimizations: ["MoE routing"] },
-      safety: { aligned: true, methods: ["RLHF", "Safety tuning"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
+      finetuning: { method: "SFT", variants: ["Distillation", "R1"] },
+      inference: { precision: "BF16", optimizations: ["Turbo optimized"] },
+      safety: { aligned: true, methods: ["SFT", "Safety filtering"] }
     }
   },
   "70B": { 
@@ -173,7 +173,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null,
   "7B": null,
-  "17B": null,
+  "14B": null,
   "70B": { 
     id: "together/deepseek-r1-distill-llama-70b", 
     name: "DeepSeek R1 Distill 70B", 
@@ -252,22 +252,22 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
       }
     },
   ],
-  "17B": [
-    NON_REASONING_MODELS["17B"],
+  "14B": [
+    NON_REASONING_MODELS["14B"],
     { 
-      id: "together/qwen-2.5-72b-instruct", 
-      name: "Qwen 2.5 72B", 
-      costPer1k: 0.0004, 
-      expectedLatency: "medium", 
-      reasoningDepth: "none", 
+      id: "openrouter/qwen/qwen3-14b", 
+      name: "Qwen3-14B", 
+      costPer1k: 0.00018, 
+      expectedLatency: "fast", 
+      reasoningDepth: "shallow", 
       expectedAccuracy: "strong", 
-      benchmarks: { mmlu: 85.8, humanEval: 86.6 }, 
+      benchmarks: { mmlu: 79.8, humanEval: 79.5 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B" },
-        training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-        finetuning: { method: "DPO", variants: ["Instruct"] },
-        inference: { precision: "BF16" },
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14.8B" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
+        finetuning: { method: "DPO", variants: ["Instruct", "Thinking"] },
+        inference: { precision: "BF16", optimizations: ["Turbo optimized"] },
         safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },
@@ -322,7 +322,7 @@ const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "d
   switch (col) {
     case "3B": 
     case "7B": 
-    case "17B": 
+    case "14B": 
       return { depth: "none", label: "None", color: "text-gray-400" };
     case "70B": 
       return { depth: "shallow", label: "Shallow", color: "text-amber-600" };
@@ -380,7 +380,7 @@ const COLUMN_VISUALS: Record<string, {
     prominence: "small",
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
-  "17B": {
+  "14B": {
     headerSize: "text-2xl font-extrabold text-blue-800",
     headerBg: "bg-blue-50",
     cardStyle: "bg-white",
@@ -443,7 +443,7 @@ const getSkillTag = (col: string): string => {
   switch (col) {
     case "3B": return "Best for simple Q&A";
     case "7B": return "Solid general assistant";
-    case "17B": return "Good at longer documents";
+    case "14B": return "Strong reasoning with efficiency";
     case "70B": return "Great at multi-step reasoning";
     case "Frontier": return "Best at coding & complex tasks";
     default: return "General purpose model";
@@ -611,7 +611,7 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "3B": 0, "7B": 0, "17B": 0, "70B": 0, "Frontier": 0
+    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
   });
 
   // Track previous cost cap for budget change toasts (prevents spam on slider drag)
@@ -2430,7 +2430,7 @@ export default function ChatPage() {
                                     <TooltipContent side="left" className="max-w-[220px]">
                                       <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {col === "3B" || col === "7B" || col === "17B" 
+                                        {col === "3B" || col === "7B" || col === "14B" 
                                           ? "Too small for step-by-step reasoning" 
                                           : col === "70B" 
                                             ? "Can do basic chain-of-thought" 
@@ -2754,7 +2754,7 @@ export default function ChatPage() {
                                   <TooltipContent side="left" className="max-w-[220px]">
                                     <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {col === "3B" || col === "7B" || col === "17B" 
+                                      {col === "3B" || col === "7B" || col === "14B" 
                                         ? "Too small for step-by-step reasoning" 
                                         : col === "70B" 
                                           ? "Can do basic chain-of-thought" 
@@ -3184,7 +3184,7 @@ export default function ChatPage() {
                         <div className="font-mono text-lg text-gray-900">{inputTokenEstimate.toLocaleString()} tokens</div>
                         <div className="text-xs text-gray-500 mt-1">
                           {inputTokenEstimate < 100 ? "Simple query - small models work well" :
-                           inputTokenEstimate < 500 ? "Moderate query - consider 7B-17B" :
+                           inputTokenEstimate < 500 ? "Moderate query - consider 7B-14B" :
                            "Complex query - larger models recommended"}
                         </div>
                       </div>
@@ -3208,7 +3208,7 @@ export default function ChatPage() {
                         <span className="text-gray-400 text-lg">●</span>
                         <div>
                           <strong className="text-gray-900">Reasoning Requires Scale</strong>
-                          <p className="text-gray-600">Small models (3B-17B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
+                          <p className="text-gray-600">Small models (3B-14B) cannot do deep reasoning reliably. Only 70B+ models have enough parameters for chain-of-thought.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
@@ -3289,7 +3289,7 @@ export default function ChatPage() {
             <div className="space-y-4">
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-sm text-amber-800 font-medium">
-                  Reasoning mode is locked for 3B, 7B, and 17B models because they lack the capacity to "think step-by-step" reliably.
+                  Reasoning mode is locked for 3B, 7B, and 14B models because they lack the capacity to "think step-by-step" reliably.
                 </p>
               </div>
               
@@ -3331,7 +3331,7 @@ export default function ChatPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2 bg-red-50 border border-red-200 rounded text-center">
-                    <div className="font-bold text-red-600">3B - 17B</div>
+                    <div className="font-bold text-red-600">3B - 14B</div>
                     <div className="text-red-500">Too small for reliable reasoning</div>
                   </div>
                   <div className="p-2 bg-emerald-50 border border-emerald-200 rounded text-center">
