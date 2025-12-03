@@ -84,20 +84,20 @@ const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "together/qwen2.5-3b", 
-    name: "Qwen2.5-3B", 
-    costPer1k: 0.0001, 
+    id: "together/llama-3.2-3b", 
+    name: "Llama 3.2 3B", 
+    costPer1k: 0.00006, 
     expectedLatency: "fast", 
     reasoningDepth: "none", 
     expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 65.6, humanEval: 42.1 }, 
+    benchmarks: { mmlu: 63.4, humanEval: 38.0 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "3B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "SFT", variants: ["Instruct"] },
-      inference: { precision: "FP16", optimizations: ["128K context"] },
-      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Multilingual"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Turbo"] },
+      inference: { precision: "FP16", optimizations: ["131K context"] },
+      safety: { aligned: true, methods: ["RLHF", "Safety filtering"] }
     }
   },
   "7B": { 
@@ -118,20 +118,20 @@ const NON_REASONING_MODELS: Record<string, Model> = {
     }
   },
   "14B": { 
-    id: "together/deepseek-r1-distill-qwen-14b", 
-    name: "DeepSeek-R1-Distill-Qwen-14B", 
-    costPer1k: 0.0002, 
+    id: "together/llama-3.1-8b", 
+    name: "Llama 3.1 8B", 
+    costPer1k: 0.00018, 
     expectedLatency: "fast", 
-    reasoningDepth: "shallow", 
-    expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 79.9, humanEval: 80.1 }, 
+    reasoningDepth: "none", 
+    expectedAccuracy: "good", 
+    benchmarks: { mmlu: 73.0, humanEval: 72.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "DeepSeek-R1 reasoning data"] },
-      finetuning: { method: "RLHF", variants: ["Distillation", "Reasoning-enhanced"] },
-      inference: { precision: "BF16", optimizations: ["32K generation"] },
-      safety: { aligned: true, methods: ["RLHF", "Reasoning verification"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Multilingual"] },
+      finetuning: { method: "RLHF", variants: ["Instruct", "Turbo"] },
+      inference: { precision: "FP16", optimizations: ["131K context"] },
+      safety: { aligned: true, methods: ["RLHF", "Red teaming"] }
     }
   },
   "70B": { 
@@ -214,7 +214,7 @@ const REASONING_MODELS: Record<string, Model | null> = {
 // Primary = default model shown, Secondary = alternative in dropdown
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "3B": [
-    NON_REASONING_MODELS["3B"],  // Primary: Qwen2.5-3B
+    NON_REASONING_MODELS["3B"],  // Primary: Llama 3.2 3B
     { 
       id: "together/deepseek-r1-distill-qwen-1.5b", 
       name: "DeepSeek-R1-Distill-Qwen-1.5B", 
@@ -254,24 +254,7 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
     },
   ],
   "14B": [
-    NON_REASONING_MODELS["14B"],  // Primary: DeepSeek-R1-Distill-Qwen-14B
-    { 
-      id: "together/qwen3-14b", 
-      name: "Qwen3-14B", 
-      costPer1k: 0.00025, 
-      expectedLatency: "fast", 
-      reasoningDepth: "none", 
-      expectedAccuracy: "strong", 
-      benchmarks: { mmlu: 82.1, humanEval: 84.6 }, 
-      modality: "text",
-      technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
-        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-        finetuning: { method: "DPO", variants: ["Instruct", "Advanced reasoning"] },
-        inference: { precision: "BF16", optimizations: ["131K context"] },
-        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
-      }
-    },
+    NON_REASONING_MODELS["14B"],  // Primary: Llama 3.1 8B (only serverless option in this size range)
   ],
   "70B": [
     NON_REASONING_MODELS["70B"],  // Primary: DeepSeek-R1-Distill-Llama-70B
