@@ -118,20 +118,20 @@ const NON_REASONING_MODELS: Record<string, Model> = {
     }
   },
   "14B": { 
-    id: "openrouter/deepseek/deepseek-r1-distill-qwen-14b", 
-    name: "DeepSeek-R1-14B", 
-    costPer1k: 0.00016, 
+    id: "openrouter/qwen/qwen3-14b", 
+    name: "Qwen3-14B", 
+    costPer1k: 0.00015, 
     expectedLatency: "fast", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 79.1, humanEval: 80.2 }, 
+    benchmarks: { mmlu: 79.8, humanEval: 78.5 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
-      finetuning: { method: "SFT", variants: ["Distillation", "R1"] },
-      inference: { precision: "BF16", optimizations: ["Turbo optimized"] },
-      safety: { aligned: true, methods: ["SFT", "Safety filtering"] }
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Thinking/Non-thinking dual mode"] },
+      inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
+      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
   "70B": { 
