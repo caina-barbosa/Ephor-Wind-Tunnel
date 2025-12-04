@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to five different AI models (3B, 7B, 14B, 70B, Frontier) simultaneously and compare their responses in real-time. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, reasoning mode constraints, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
+Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to six different AI models (3B, 7B, 14B, 70B, Frontier, Reasoning) simultaneously and compare their responses in real-time. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, chain-of-thought reasoning, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
 
 ## User Preferences
 
@@ -12,11 +12,11 @@ Preferred communication style: Simple, everyday language.
 
 ### UI/UX Decisions
 
-The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, neutral grays). The layout is a full-screen grid presenting five model columns (4B, 7B, 14B, 70B, Frontier) with visual cues for model size, latency, and cost. Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
+The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, Purple for reasoning, neutral grays). The layout is a full-screen grid presenting six model columns (3B, 7B, 14B, 70B, Frontier, Reasoning) with visual cues for model size, latency, and cost. The Reasoning column features DeepSeek R1 which always operates in chain-of-thought mode with a "Chain-of-Thought" badge. Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
 
 ### Technical Implementations
 
-The application allows users to select context window sizes (8K-1M), set a cost cap slider ($0.00-$0.25), and toggle a reasoning mode (restricted to 70B+ models). An "Expert Mode" enables overriding cost and context limits for experimental learning. A "Benchmark Library" allows saving and rerunning prompts. Results can be shared to a public leaderboard. The system dynamically adjusts model availability and recommendations based on user-defined constraints.
+The application allows users to select context window sizes (8K-1M) and set a cost cap slider ($0.00-$0.25). The dedicated Reasoning column always operates in chain-of-thought mode using DeepSeek R1 (no toggle required). An "Expert Mode" enables overriding cost and context limits for experimental learning. A "Benchmark Library" allows saving and rerunning prompts. Results can be shared to a public leaderboard. The system dynamically adjusts model availability and recommendations based on user-defined constraints.
 
 ### Feature Specifications
 
@@ -67,11 +67,12 @@ The architecture is a client-server model with a React frontend and an Express.j
 *   Replit AI Integration for OpenRouter for Chinese open source models: DeepSeek-R1-0528-Qwen3-8B (4B primary), DeepSeek-R1-14B (14B primary), Qwen3-14B (14B secondary), and Qwen2-72B (70B secondary), billed through Replit credits.
 
 **Model Configuration by Band**:
-*   4B: Primary = DeepSeek-R1-0528-Qwen3-8B (OpenRouter), Secondary = DeepSeek-R1-0528-Qwen3-8B (OpenRouter)
+*   3B: Primary = Qwen3-Next-A3B (Together AI MoE 80B/3B active)
 *   7B: Primary = Qwen2.5-7B (Together AI), Secondary = DeepSeek-R1-Distill-Qwen-7B (OpenRouter)
-*   14B: Primary = DeepSeek-R1-Distill-Qwen-14B (OpenRouter), Secondary = Qwen3-14B (OpenRouter)
+*   14B: Primary = Qwen3-14B (OpenRouter), Secondary = DeepSeek-R1-Distill-Qwen-14B (OpenRouter)
 *   70B: Primary = Qwen2.5-72B (Together AI), Secondary = Qwen2-72B (OpenRouter)
 *   Frontier: Primary = Claude Sonnet 4.5 (Anthropic), Secondary = Moonshot Kimi K2 (OpenRouter)
+*   Reasoning: DeepSeek R1 (Together AI) - Always uses chain-of-thought reasoning
 
 **Database Service**:
 *   Neon Serverless PostgreSQL (via Drizzle ORM).
