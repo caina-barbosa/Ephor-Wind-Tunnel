@@ -367,11 +367,11 @@ const COLUMN_VISUALS: Record<string, {
   accentBorder: string;
 }> = {
   "3B": {
-    headerSize: "text-xl font-bold text-[#A3316F]",
-    headerBg: "bg-[#fdf2f8]",
+    headerSize: "text-xl font-bold text-blue-700",
+    headerBg: "bg-blue-50",
     cardStyle: "bg-white",
     prominence: "small",
-    accentBorder: "border-t-[6px] border-t-[#A3316F]"
+    accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "7B": {
     headerSize: "text-xl font-bold text-blue-700",
@@ -381,11 +381,11 @@ const COLUMN_VISUALS: Record<string, {
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "14B": {
-    headerSize: "text-2xl font-extrabold text-blue-800",
-    headerBg: "bg-blue-50",
+    headerSize: "text-2xl font-extrabold text-emerald-700",
+    headerBg: "bg-emerald-50",
     cardStyle: "bg-white",
     prominence: "medium",
-    accentBorder: "border-t-[6px] border-t-[#2563EB]"
+    accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "70B": {
     headerSize: "text-2xl font-extrabold text-emerald-700",
@@ -2078,7 +2078,7 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' || col === '14B' ? 'text-emerald-600' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
