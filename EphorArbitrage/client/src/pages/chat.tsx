@@ -2686,16 +2686,15 @@ export default function ChatPage() {
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent 
-                                  side="right" 
-                                  align="start" 
-                                  sideOffset={5}
-                                  className="max-w-[200px] p-2.5 bg-gray-900 text-white border-0 shadow-lg z-[100]"
-                                  style={{ position: 'fixed' }}
+                                  side="bottom" 
+                                  align="center" 
+                                  sideOffset={8}
+                                  className="max-w-[220px] p-3 bg-gray-900 text-white border-0 shadow-xl"
                                 >
-                                  <p className="font-semibold mb-1.5 text-white text-xs">Why latency varies:</p>
-                                  <ul className="space-y-1 text-gray-200 text-[11px]">
+                                  <p className="font-semibold mb-2 text-white text-xs">Why latency varies:</p>
+                                  <ul className="space-y-1.5 text-gray-200 text-[11px]">
                                     <li>• <span className="font-medium text-white">Cold start:</span> First query spins up model</li>
-                                    <li>• <span className="font-medium text-white">MoE:</span> Routing overhead</li>
+                                    <li>• <span className="font-medium text-white">MoE:</span> Routing adds overhead</li>
                                     <li>• <span className="font-medium text-white">Provider:</span> Infrastructure varies</li>
                                   </ul>
                                 </TooltipContent>
