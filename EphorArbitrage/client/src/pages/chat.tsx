@@ -427,10 +427,10 @@ const getSkillTag = (col: string): string => {
   switch (col) {
     case "3B": return "Fast & efficient MoE model";
     case "7B": return "Solid general assistant";
-    case "14B": return "Strong reasoning with efficiency";
-    case "70B": return "Great at multi-step reasoning";
-    case "Frontier": return "Best at coding & complex tasks";
-    case "Reasoning": return "Deep chain-of-thought reasoning";
+    case "14B": return "Strong reasoning";
+    case "70B": return "Multi-step reasoning";
+    case "Frontier": return "Coding & complex tasks";
+    case "Reasoning": return "Step-by-step thinker";
     default: return "General purpose model";
   }
 };
