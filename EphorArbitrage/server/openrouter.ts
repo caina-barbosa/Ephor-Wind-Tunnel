@@ -29,10 +29,21 @@ export async function createOpenRouterChatCompletion(
       timeout: timeoutMs,
     });
 
+    // For Qwen3 models, disable thinking mode by appending /no_think to prompt
+    // Qwen3 in thinking mode returns empty content and puts response in reasoning field
+    const isQwen3 = request.model.includes('qwen3');
+    const messages = isQwen3 
+      ? request.messages.map((m, i) => 
+          i === request.messages.length - 1 && m.role === 'user'
+            ? { ...m, content: m.content + ' /no_think' }
+            : m
+        )
+      : request.messages;
+    
     // Use streaming to measure TTFT (Time to First Token)
     const stream = await client.chat.completions.create({
       model: request.model,
-      messages: request.messages,
+      messages: messages,
       max_tokens: request.maxTokens || 4096,
       stream: true,
     });
