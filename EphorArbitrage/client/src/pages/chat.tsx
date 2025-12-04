@@ -29,7 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2, ChevronDown, ChevronUp, Cpu, Database, Settings, Shield, Layers } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2, ChevronDown, ChevronUp, Cpu, Database, Settings, Shield, Layers, Plus, Paperclip, X, File } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface TechnicalProfile {
@@ -550,9 +550,88 @@ const getCheapestEligibleBand = (
   return null;
 };
 
+// Uploaded file with token estimation
+interface UploadedFile {
+  id: string;
+  name: string;
+  type: 'image' | 'text' | 'pdf';
+  size: number;
+  estimatedTokens: number;
+  preview?: string; // For images: data URL, for text: first 100 chars
+}
+
+// Token estimation for different file types
+const estimateFileTokens = (file: File): Promise<{ tokens: number; preview?: string }> => {
+  return new Promise((resolve) => {
+    const fileType = file.type;
+    
+    // Image files: estimate based on dimensions/size
+    // OpenAI's vision pricing: ~85 tokens for low-res, ~170 tokens per 512x512 tile for high-res
+    if (fileType.startsWith('image/')) {
+      const img = document.createElement('img');
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const width = img.width;
+        const height = img.height;
+        // Simplified token estimation for images
+        // ~765 tokens for a typical 1024x1024 image, scaled by actual dimensions
+        const baseTokens = 765;
+        const scaleFactor = (width * height) / (1024 * 1024);
+        const tokens = Math.ceil(Math.max(85, baseTokens * Math.min(scaleFactor, 4)));
+        URL.revokeObjectURL(url);
+        resolve({ tokens, preview: url });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        // Fallback: estimate based on file size (~1 token per 50 bytes for images)
+        resolve({ tokens: Math.ceil(file.size / 50) });
+      };
+      // Read as data URL for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+        resolve({ tokens: Math.ceil(file.size / 50), preview: e.target?.result as string });
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+    
+    // Text files (.txt, .md): count characters and estimate tokens
+    if (fileType === 'text/plain' || fileType === 'text/markdown' || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        const tokens = Math.ceil(text.length / 4); // ~4 chars per token
+        const preview = text.substring(0, 100) + (text.length > 100 ? '...' : '');
+        resolve({ tokens, preview });
+      };
+      reader.onerror = () => {
+        // Fallback: estimate based on file size
+        resolve({ tokens: Math.ceil(file.size / 4) });
+      };
+      reader.readAsText(file);
+      return;
+    }
+    
+    // PDF files: estimate based on file size (rough approximation)
+    // PDFs typically have ~500-1000 characters per KB of text content
+    if (fileType === 'application/pdf' || file.name.endsWith('.pdf')) {
+      // Estimate ~250 tokens per KB (accounting for PDF overhead)
+      const tokens = Math.ceil((file.size / 1024) * 250);
+      resolve({ tokens, preview: `PDF document (${Math.ceil(file.size / 1024)} KB)` });
+      return;
+    }
+    
+    // Default: estimate based on file size
+    resolve({ tokens: Math.ceil(file.size / 4) });
+  });
+};
+
 export default function ChatPage() {
   const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
   const [responses, setResponses] = useState<Record<string, ModelResponse>>({});
   const [isRunning, setIsRunning] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -618,9 +697,15 @@ export default function ChatPage() {
   const [lastBudgetToastTime, setLastBudgetToastTime] = useState<number>(0);
   const [prevOverBudgetBands, setPrevOverBudgetBands] = useState<Set<string>>(new Set());
 
+  // Calculate total file tokens
+  const fileTokens = useMemo(() => {
+    return uploadedFiles.reduce((sum, file) => sum + file.estimatedTokens, 0);
+  }, [uploadedFiles]);
+
   const inputTokenEstimate = useMemo(() => {
-    return Math.ceil(prompt.length / 4);
-  }, [prompt]);
+    const promptTokens = Math.ceil(prompt.length / 4);
+    return promptTokens + fileTokens;
+  }, [prompt, fileTokens]);
 
   // Buffer multiplier calculation (Expert Mode only)
   const bufferMultiplier = useMemo(() => {
@@ -1175,6 +1260,59 @@ export default function ChatPage() {
     return sorted[0] || null;
   }, [allModelsComplete, responses, reasoningEnabled, costCap, contextSize, inputTokenEstimate]);
 
+  // File upload handler
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadMenuOpen(false);
+    
+    const newFiles: UploadedFile[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileType = file.type;
+      
+      // Determine file category
+      let type: 'image' | 'text' | 'pdf';
+      if (fileType.startsWith('image/')) {
+        type = 'image';
+      } else if (fileType === 'application/pdf' || file.name.endsWith('.pdf')) {
+        type = 'pdf';
+      } else {
+        type = 'text';
+      }
+      
+      // Estimate tokens
+      const { tokens, preview } = await estimateFileTokens(file);
+      
+      newFiles.push({
+        id: `${Date.now()}-${i}`,
+        name: file.name,
+        type,
+        size: file.size,
+        estimatedTokens: tokens,
+        preview
+      });
+    }
+    
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    
+    // Show toast with token info
+    const totalNewTokens = newFiles.reduce((sum, f) => sum + f.estimatedTokens, 0);
+    toast({
+      title: `${newFiles.length} file${newFiles.length > 1 ? 's' : ''} added`,
+      description: `~${totalNewTokens.toLocaleString()} tokens added to context`,
+    });
+    
+    // Reset the input
+    event.target.value = '';
+  };
+
+  const removeFile = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+  };
+
   const handleRunAll = async () => {
     if (!prompt.trim() || isRunning) return;
 
@@ -1530,26 +1668,114 @@ export default function ChatPage() {
           </div>
 
           <div className="bg-white rounded-lg p-2 mb-6 border border-gray-200 shadow-sm">
-            <div className="relative">
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Enter your prompt to test across all model sizes..."
-                className="w-full h-[60px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm pr-20"
-                disabled={isRunning}
-              />
-              {prompt.length > 0 && !isRunning && (
-                <button
-                  onClick={() => {
-                    setPrompt("");
-                    setResponses({});
-                  }}
-                  className="absolute right-2 top-2 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-                >
-                  Clear
-                </button>
-              )}
+            {/* Prompt input with upload button */}
+            <div className="flex items-start gap-2">
+              {/* Upload button (ChatGPT/Claude style) */}
+              <Popover open={uploadMenuOpen} onOpenChange={setUploadMenuOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    className="mt-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0"
+                    disabled={isRunning}
+                    aria-label="Add files"
+                  >
+                    <Plus className="w-5 h-5 text-gray-500" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-56 p-1" sideOffset={5}>
+                  <label className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-md cursor-pointer transition-colors">
+                    <Paperclip className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-700">Add photos & files</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*,.txt,.md,.pdf,text/plain,text/markdown,application/pdf"
+                      multiple
+                      onChange={handleFileUpload}
+                      disabled={isRunning}
+                    />
+                  </label>
+                </PopoverContent>
+              </Popover>
+              
+              <div className="relative flex-1">
+                <Textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Enter your prompt to test across all model sizes..."
+                  className="w-full h-[60px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm pr-20"
+                  disabled={isRunning}
+                />
+                {(prompt.length > 0 || uploadedFiles.length > 0) && !isRunning && (
+                  <button
+                    onClick={() => {
+                      setPrompt("");
+                      setUploadedFiles([]);
+                      setResponses({});
+                    }}
+                    className="absolute right-2 top-2 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
+            
+            {/* Uploaded files preview */}
+            {uploadedFiles.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {uploadedFiles.map((file) => (
+                  <div 
+                    key={file.id}
+                    className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg group"
+                  >
+                    {/* File icon based on type */}
+                    {file.type === 'image' ? (
+                      file.preview ? (
+                        <img 
+                          src={file.preview} 
+                          alt={file.name}
+                          className="w-6 h-6 object-cover rounded"
+                        />
+                      ) : (
+                        <Image className="w-4 h-4 text-blue-500" />
+                      )
+                    ) : file.type === 'pdf' ? (
+                      <FileText className="w-4 h-4 text-red-500" />
+                    ) : (
+                      <File className="w-4 h-4 text-gray-500" />
+                    )}
+                    
+                    {/* File name (truncated) */}
+                    <span className="text-xs text-gray-700 max-w-[100px] truncate">
+                      {file.name}
+                    </span>
+                    
+                    {/* Token count */}
+                    <span className="text-xs text-gray-400 font-mono">
+                      ~{file.estimatedTokens.toLocaleString()}
+                    </span>
+                    
+                    {/* Remove button */}
+                    <button
+                      onClick={() => removeFile(file.id)}
+                      className="p-0.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                      disabled={isRunning}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                
+                {/* Total file tokens summary */}
+                {uploadedFiles.length > 1 && (
+                  <div className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-500">
+                    <span className="font-medium">{uploadedFiles.length} files</span>
+                    <span>•</span>
+                    <span className="font-mono">~{fileTokens.toLocaleString()} tokens</span>
+                  </div>
+                )}
+              </div>
+            )}
             
             <div className={`mt-2 p-2.5 rounded-lg border ${
               inputTokenEstimate > selectedContextTokens 
