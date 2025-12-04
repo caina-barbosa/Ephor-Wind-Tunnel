@@ -187,46 +187,6 @@ const NON_REASONING_MODELS: Record<string, Model> = {
   },
 };
 
-const REASONING_MODELS: Record<string, Model | null> = {
-  "3B": null,
-  "7B": null,
-  "14B": null,
-  "70B": { 
-    id: "together/deepseek-r1-distill-llama-70b", 
-    name: "DeepSeek R1 Distill 70B", 
-    costPer1k: 0.002, 
-    expectedLatency: "slow", 
-    reasoningDepth: "deep", 
-    expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 79.0, humanEval: 57.5 }, 
-    modality: "text",
-    technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "70B (distilled)" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
-      finetuning: { method: "SFT", variants: ["Distillation", "Chain-of-thought"] },
-      inference: { precision: "BF16", optimizations: ["Long reasoning"] },
-      safety: { aligned: true, methods: ["Reasoning verification"] }
-    }
-  },
-  "Frontier": { 
-    id: "together/deepseek-r1", 
-    name: "DeepSeek R1", 
-    costPer1k: 0.003, 
-    expectedLatency: "slow", 
-    reasoningDepth: "deep", 
-    expectedAccuracy: "excellent", 
-    benchmarks: { mmlu: 90.8, humanEval: 97.3 }, 
-    modality: "text",
-    technical: {
-      architecture: { type: "Sparse MoE", attention: "MLA", parameters: "671B total / 37B active" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Scientific", "Reasoning"] },
-      finetuning: { method: "RLHF", variants: ["RL reasoning", "GRPO"] },
-      inference: { precision: "BF16", optimizations: ["MoE routing", "Long CoT"] },
-      safety: { aligned: true, methods: ["RLHF", "Reasoning safety"] }
-    }
-  },
-};
-
 // MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "3B": [
@@ -417,6 +377,13 @@ const COLUMN_VISUALS: Record<string, {
     cardStyle: "bg-white",
     prominence: "large",
     accentBorder: "border-t-[6px] border-t-[#EA580C]"
+  },
+  "Reasoning": {
+    headerSize: "text-3xl font-black text-purple-700",
+    headerBg: "bg-purple-50",
+    cardStyle: "bg-white",
+    prominence: "large",
+    accentBorder: "border-t-[6px] border-t-[#7C3AED]"
   }
 };
 
@@ -463,6 +430,7 @@ const getSkillTag = (col: string): string => {
     case "14B": return "Strong reasoning with efficiency";
     case "70B": return "Great at multi-step reasoning";
     case "Frontier": return "Best at coding & complex tasks";
+    case "Reasoning": return "Deep chain-of-thought reasoning";
     default: return "General purpose model";
   }
 };
@@ -523,10 +491,9 @@ const getContextTierLabel = (tierValue: string, tokenCount: number, recommendedT
 // Helper to get minimum cost for a band based on current settings
 const getMinimumCostForBand = (
   col: string, 
-  inputTokenEstimate: number, 
-  reasoningEnabled: boolean
+  inputTokenEstimate: number
 ): number => {
-  const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
+  const model = NON_REASONING_MODELS[col];
   if (!model) return Infinity;
   const estimatedTokens = Math.max(inputTokenEstimate, 100) + 500;
   return (estimatedTokens / 1000) * model.costPer1k;
@@ -534,13 +501,9 @@ const getMinimumCostForBand = (
 
 // Get cost multiplier explanation for why a band is over budget
 const getCostMultiplierExplanation = (
-  reasoningEnabled: boolean,
   contextSize: string
 ): string[] => {
   const explanations: string[] = [];
-  if (reasoningEnabled) {
-    explanations.push("Reasoning ON adds ~3-5× cost.");
-  }
   const contextIndex = CONTEXT_SIZES.findIndex(s => s.value === contextSize);
   if (contextIndex > 0) {
     const contextLabel = CONTEXT_SIZES[contextIndex]?.label || contextSize.toUpperCase();
@@ -555,11 +518,10 @@ const getCostMultiplierExplanation = (
 // Find the cheapest eligible band that's within budget
 const getCheapestEligibleBand = (
   costCap: number,
-  inputTokenEstimate: number,
-  reasoningEnabled: boolean
+  inputTokenEstimate: number
 ): string | null => {
   for (const col of COLUMNS) {
-    const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+    const minCost = getMinimumCostForBand(col, inputTokenEstimate);
     if (minCost <= costCap) {
       return col;
     }
@@ -680,7 +642,7 @@ export default function ChatPage() {
     displayName: string | null;
     prompt: string;
     recommendedModel: string | null;
-    settings: { contextSize: string; costCap: number; reasoningEnabled: boolean } | null;
+    settings: { contextSize: string; costCap: number } | null;
     results: Record<string, { latency: number; cost: number; modelName: string; modelId: string }> | null;
     createdAt: string;
   }>>([]);
@@ -696,7 +658,6 @@ export default function ChatPage() {
   const [truncationAccepted, setTruncationAccepted] = useState(false); // Persists after modal closes
   const [costFlash, setCostFlash] = useState(false);
   const [costCap, setCostCap] = useState<number>(0.25);
-  const [reasoningEnabled, setReasoningEnabled] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
   const [challengePromptIndex, setChallengePromptIndex] = useState(0);
   const [showReasoningExplainModal, setShowReasoningExplainModal] = useState(false);
@@ -707,7 +668,7 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
+    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0, "Reasoning": 0
   });
 
   // Track previous cost cap for budget change toasts (prevents spam on slider drag)
@@ -890,12 +851,7 @@ export default function ChatPage() {
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
   const getModelForColumn = (col: string): Model | null => {
-    // Reasoning mode takes precedence - reasoning models are specialized
-    if (reasoningEnabled) {
-      return REASONING_MODELS[col];
-    }
-    
-    // Expert Mode model swap (only applies when NOT in reasoning mode)
+    // Expert Mode model swap (for columns that have alternatives)
     if (expertMode && MODEL_ALTERNATIVES[col]) {
       const selectedIndex = selectedModelPerBand[col] || 0;
       const alternatives = MODEL_ALTERNATIVES[col];
@@ -907,15 +863,9 @@ export default function ChatPage() {
     return NON_REASONING_MODELS[col];
   };
 
-  // Always returns a model for display purposes, even when reasoning mode is on for small models.
-  // Used to display existing results when the model would otherwise return null from getModelForColumn.
+  // Always returns a model for display purposes
   const getModelForDisplay = (col: string): Model | null => {
-    // Reasoning mode takes precedence - reasoning models are specialized
-    if (reasoningEnabled && REASONING_MODELS[col]) {
-      return REASONING_MODELS[col];
-    }
-    
-    // Expert Mode model swap (only applies when NOT in reasoning mode)
+    // Expert Mode model swap (for columns that have alternatives)
     if (expertMode && MODEL_ALTERNATIVES[col]) {
       const selectedIndex = selectedModelPerBand[col] || 0;
       const alternatives = MODEL_ALTERNATIVES[col];
@@ -924,7 +874,6 @@ export default function ChatPage() {
       }
     }
     
-    // Fall back to non-reasoning model (always exists for all columns)
     return NON_REASONING_MODELS[col];
   };
 
@@ -936,9 +885,9 @@ export default function ChatPage() {
   const isModelDisabled = (col: string): { disabled: boolean; reason: string; warning?: string } => {
     const model = getModelForColumn(col);
     
-    // Reasoning mode on small models truly doesn't work - can't override this
+    // Should never happen now that all columns have models
     if (!model) {
-      return { disabled: true, reason: "Reasoning requires 70B+" };
+      return { disabled: true, reason: "Model not available" };
     }
     
     // Check if input exceeds selected context window
@@ -992,28 +941,7 @@ export default function ChatPage() {
     const constraintParts: string[] = [];
     constraintParts.push(`under your $${costCap.toFixed(2)} budget`);
     constraintParts.push(`with ${contextSize.toUpperCase()} context`);
-    if (reasoningEnabled) {
-      constraintParts.push(`reasoning mode enabled`);
-    }
     const constraintSummary = constraintParts.join(", ");
-    
-    if (reasoningEnabled) {
-      const headline = col === "70B"
-        ? `Best value ${constraintSummary} — cheapest reasoning-capable model at ${actualLatency}ms.`
-        : `Best option ${constraintSummary} — 70B exceeded your budget, so Frontier is the only reasoning choice.`;
-      
-      return (
-        <div className="space-y-2">
-          <p className="font-semibold text-[#1a3a8f]">{headline}</p>
-          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-            <li>Cost: ${actualCost.toFixed(4)} (within ${costCap.toFixed(2)} cap)</li>
-            <li>Speed: {actualLatency}ms</li>
-            <li>Capability: {capability}</li>
-            <li>Reasoning Mode: requires 70B+ parameters</li>
-          </ul>
-        </div>
-      );
-    }
     
     const headline = wasTieBreaker
       ? `Best quality ${constraintSummary}, finishing fastest (${actualLatency}ms) among ${modelsAtSameCost.length} equally-priced models.`
@@ -1100,37 +1028,35 @@ export default function ChatPage() {
     });
     
     return allBlockedByCost;
-  }, [costCap, inputTokenEstimate, reasoningEnabled]);
+  }, [costCap, inputTokenEstimate]);
 
-  // Compute which bands are currently over budget (excluding reasoning-locked bands)
+  // Compute which bands are currently over budget
   const overBudgetBands = useMemo(() => {
     const overBudget = new Set<string>();
     COLUMNS.forEach(col => {
-      // Skip bands that are reasoning-locked (no model available, not a cost issue)
-      const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
-      if (!model) return; // This is reasoning-locked, not over-budget
+      const model = NON_REASONING_MODELS[col];
+      if (!model) return;
       
-      const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+      const minCost = getMinimumCostForBand(col, inputTokenEstimate);
       if (minCost > costCap && minCost !== Infinity) {
         overBudget.add(col);
       }
     });
     return overBudget;
-  }, [costCap, inputTokenEstimate, reasoningEnabled]);
+  }, [costCap, inputTokenEstimate]);
 
   // Handle cost cap change with budget toast notifications
   const handleCostCapChange = (newCap: number) => {
     const oldOverBudget = prevOverBudgetBands;
     setCostCap(newCap);
     
-    // Calculate new over-budget bands (excluding reasoning-locked bands)
+    // Calculate new over-budget bands
     const newOverBudget = new Set<string>();
     COLUMNS.forEach(col => {
-      // Skip bands that are reasoning-locked
-      const model = reasoningEnabled ? REASONING_MODELS[col] : NON_REASONING_MODELS[col];
+      const model = NON_REASONING_MODELS[col];
       if (!model) return;
       
-      const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+      const minCost = getMinimumCostForBand(col, inputTokenEstimate);
       if (minCost > newCap && minCost !== Infinity) {
         newOverBudget.add(col);
       }
@@ -1146,9 +1072,9 @@ export default function ChatPage() {
     const now = Date.now();
     if (now - lastBudgetToastTime > 500) {
       if (newlyRemoved.length > 0) {
-        const cheapestEligible = getCheapestEligibleBand(newCap, inputTokenEstimate, reasoningEnabled);
+        const cheapestEligible = getCheapestEligibleBand(newCap, inputTokenEstimate);
         const cheapestCost = cheapestEligible 
-          ? getMinimumCostForBand(cheapestEligible, inputTokenEstimate, reasoningEnabled)
+          ? getMinimumCostForBand(cheapestEligible, inputTokenEstimate)
           : null;
         
         toast({
@@ -1172,9 +1098,9 @@ export default function ChatPage() {
 
   // Handle "Increase budget" button click for a specific band
   const handleIncreaseBudgetForBand = (col: string) => {
-    const minCost = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
+    const minCost = getMinimumCostForBand(col, inputTokenEstimate);
     
-    // Bail out if no valid model available (e.g., reasoning-locked band)
+    // Bail out if no valid model available
     if (minCost === Infinity || !isFinite(minCost)) {
       return;
     }
@@ -1189,13 +1115,13 @@ export default function ChatPage() {
       description: `Budget increased to $${cappedValue.toFixed(2)}.`,
     });
     
-    // Update over-budget tracking (excluding reasoning-locked bands)
+    // Update over-budget tracking
     const newOverBudget = new Set<string>();
     COLUMNS.forEach(c => {
-      const model = reasoningEnabled ? REASONING_MODELS[c] : NON_REASONING_MODELS[c];
+      const model = NON_REASONING_MODELS[c];
       if (!model) return;
       
-      const cost = getMinimumCostForBand(c, inputTokenEstimate, reasoningEnabled);
+      const cost = getMinimumCostForBand(c, inputTokenEstimate);
       if (cost > cappedValue && cost !== Infinity) {
         newOverBudget.add(c);
       }
@@ -1205,7 +1131,7 @@ export default function ChatPage() {
 
   // Scroll to cheapest eligible band
   const scrollToCheapestBand = () => {
-    const cheapest = getCheapestEligibleBand(costCap, inputTokenEstimate, reasoningEnabled);
+    const cheapest = getCheapestEligibleBand(costCap, inputTokenEstimate);
     if (cheapest) {
       // Find the band element and scroll to it
       const bandElement = document.getElementById(`band-${cheapest}`);
@@ -1244,16 +1170,9 @@ export default function ChatPage() {
     
     if (completedModels.length === 0) return null;
     
-    // If Reasoning Mode is ON, only consider 70B and Frontier
-    let candidates = completedModels;
-    if (reasoningEnabled) {
-      candidates = completedModels.filter(m => m === "70B" || m === "Frontier");
-      if (candidates.length === 0) return null;
-    }
-    
     // Sort by actual cost (ascending), then by actual latency (ascending) to break ties
     // Round costs to 4 decimal places (what's displayed) so visually-equal costs trigger latency tie-break
-    const sorted = [...candidates].sort((a, b) => {
+    const sorted = [...completedModels].sort((a, b) => {
       const respA = responses[a];
       const respB = responses[b];
       const costA = respA?.cost ?? Infinity;
@@ -1275,7 +1194,7 @@ export default function ChatPage() {
     });
     
     return sorted[0] || null;
-  }, [allModelsComplete, responses, reasoningEnabled, costCap, contextSize, inputTokenEstimate]);
+  }, [allModelsComplete, responses, costCap, contextSize, inputTokenEstimate]);
 
   // File upload handler
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1604,7 +1523,6 @@ export default function ChatPage() {
         settings: {
           contextSize,
           costCap,
-          reasoningEnabled,
         },
         results: resultsData,
       });
@@ -2099,34 +2017,6 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-gray-500" />
-                  <span className="font-bold text-gray-900 text-sm">Reasoning Mode</span>
-                </div>
-                {reasoningEnabled && (
-                  <span className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 font-medium">
-                    3-5x Cost
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={reasoningEnabled}
-                  onCheckedChange={setReasoningEnabled}
-                  disabled={isRunning}
-                />
-                <span className={`text-sm font-bold ${reasoningEnabled ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {reasoningEnabled ? 'ENABLED' : 'DISABLED'}
-                </span>
-              </div>
-              {reasoningEnabled && (
-                <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">
-                  Reasoning works best on 70B+ models. Smaller ones are locked.
-                </p>
-              )}
-            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 mb-4">
@@ -2321,7 +2211,7 @@ export default function ChatPage() {
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <div className="min-w-[700px] sm:min-w-0">
-                <div className="grid grid-cols-5 border-b border-gray-200">
+                <div className="grid grid-cols-6 border-b border-gray-200">
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const isRecommended = showResults && col === recommendedModel;
@@ -2331,10 +2221,10 @@ export default function ChatPage() {
                       <div 
                         key={col} 
                         id={`band-${col}`}
-                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
+                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Reasoning' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' || col === '14B' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === 'Reasoning' ? 'text-purple-600' : col === '70B' || col === '14B' ? 'text-emerald-600' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -2356,7 +2246,7 @@ export default function ChatPage() {
                   })}
                 </div>
 
-                <div className="grid grid-cols-5">
+                <div className="grid grid-cols-6">
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const displayModel = getModelForDisplay(col); // Always returns a model for display
@@ -2377,18 +2267,17 @@ export default function ChatPage() {
                     // 1. No results AND model is null (reasoning mode on small models), OR
                     // 2. No results AND model is disabled due to cost/other constraints
                     if ((!model && !hasResults) || (disabled && !hasResults)) {
-                      const isReasoningLocked = !model;
                       const isCostExceeded = reason.includes("Exceeds");
-                      const minCostForBand = getMinimumCostForBand(col, inputTokenEstimate, reasoningEnabled);
-                      const costExplanations = getCostMultiplierExplanation(reasoningEnabled, contextSize);
-                      const cheapestBand = getCheapestEligibleBand(costCap, inputTokenEstimate, reasoningEnabled);
+                      const minCostForBand = getMinimumCostForBand(col, inputTokenEstimate);
+                      const costExplanations = getCostMultiplierExplanation(contextSize);
+                      const cheapestBand = getCheapestEligibleBand(costCap, inputTokenEstimate);
                       
                       return (
                         <div 
                           key={col}
                           className={`p-3 min-h-[280px] flex flex-col transition-all duration-150 ${
                             isCostExceeded ? 'bg-gray-100' : 'bg-gray-50'
-                          } ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                          } ${col !== 'Reasoning' ? 'border-r border-gray-200' : ''}`}
                         >
                           {isCostExceeded ? (
                             <div className="flex flex-col h-full">
@@ -2455,32 +2344,6 @@ export default function ChatPage() {
                                 </Tooltip>
                               </div>
                             </div>
-                          ) : isReasoningLocked ? (
-                                <div className="flex flex-col items-center text-center px-2">
-                                  <div className="flex items-center gap-1.5 mb-2">
-                                    <Lock className="w-4 h-4 text-gray-400" />
-                                    <span className="text-sm font-bold text-gray-600">Reasoning Locked</span>
-                                  </div>
-                                  <p className="text-xs text-gray-500 mb-2 leading-relaxed">
-                                    This model is too small to "think step-by-step."
-                                  </p>
-                                  <div className="text-[10px] text-gray-400 leading-relaxed mb-2 space-y-0.5">
-                                    <p>Reasoning uses extra compute (3–5× cost).</p>
-                                    <p>Small models don't have enough parameters to do it reliably.</p>
-                                  </div>
-                                  <p className="text-[11px] text-[#1a3a8f] font-medium">
-                                    Try reasoning on 70B or Frontier instead.
-                                  </p>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setShowReasoningExplainModal(true);
-                                    }}
-                                    className="mt-2 text-[10px] text-[#1a3a8f] hover:text-[#2a4a9f] underline font-medium"
-                                  >
-                                    Learn more
-                                  </button>
-                                </div>
                           ) : (
                             <div className="flex flex-col items-center justify-center h-full text-center px-2">
                               <Lock className="w-5 h-5 sm:w-6 sm:h-6 mb-2 text-gray-400" />
@@ -2511,7 +2374,7 @@ export default function ChatPage() {
                         className={`
                           p-3 transition-all flex flex-col overflow-hidden
                           ${hasResults ? 'min-h-[260px]' : 'min-h-[140px]'}
-                          ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
+                          ${col !== 'Reasoning' ? 'border-r border-gray-200' : ''}
                           ${cardVisuals.cardStyle}
                           ${cardVisuals.accentBorder}
                           ${isRecommended ? 'ring-2 ring-[#f5a623] ring-offset-1 bg-[#fffbf5]' : ''}
@@ -2524,19 +2387,19 @@ export default function ChatPage() {
                           <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {renderModel.name}
                           </div>
-                          {reasoningEnabled && (col === "70B" || col === "Frontier") && (
+                          {col === "Reasoning" && (
                             <div className="mt-1.5 flex justify-center">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-1.5 sm:px-2 py-0.5 rounded font-bold border border-emerald-200 cursor-help">
+                                  <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-1.5 sm:px-2 py-0.5 rounded font-bold border border-purple-200 cursor-help">
                                     <Brain className="w-3 h-3" />
-                                    Reasoning Ready
+                                    Chain-of-Thought
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
-                                  <p className="font-semibold text-gray-900 mb-1">Why this works</p>
+                                  <p className="font-semibold text-gray-900 mb-1">Deep Reasoning Model</p>
                                   <p className="text-xs text-gray-600">
-                                    Big models have enough parameters to keep multi-step thoughts consistent.
+                                    DeepSeek R1 always thinks step-by-step before answering. Slower but more thorough.
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
@@ -2557,48 +2420,36 @@ export default function ChatPage() {
                             </Tooltip>
                           )}
                           
-                          {/* Expert Mode: Model Swap Dropdown (disabled when reasoning is on) */}
+                          {/* Expert Mode: Model Swap Dropdown */}
                           {expertMode && !hasResults && MODEL_ALTERNATIVES[col] && MODEL_ALTERNATIVES[col].length > 1 && (
                             <div className="mt-2 w-full">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="w-full">
-                                    <Select
-                                      value={String(selectedModelPerBand[col] || 0)}
-                                      onValueChange={(val) => {
-                                        setSelectedModelPerBand(prev => ({ ...prev, [col]: parseInt(val) }));
-                                      }}
-                                      disabled={reasoningEnabled}
-                                    >
-                                      <SelectTrigger className={`w-full h-7 text-xs ${reasoningEnabled ? 'bg-gray-100 opacity-60' : 'bg-gray-50'} border-gray-200`}>
-                                        <SelectValue placeholder="Change model" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {MODEL_ALTERNATIVES[col].map((altModel, idx) => (
-                                          <SelectItem key={altModel.id} value={String(idx)} className="text-xs">
-                                            {altModel.name} {altModel.technical.architecture.type === "Sparse MoE" ? "(MoE)" : ""}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </TooltipTrigger>
-                                {reasoningEnabled && (
-                                  <TooltipContent side="bottom" className="max-w-[200px]">
-                                    <p className="text-xs">Model swap disabled during reasoning mode. Reasoning uses specialized models.</p>
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
+                              <Select
+                                value={String(selectedModelPerBand[col] || 0)}
+                                onValueChange={(val) => {
+                                  setSelectedModelPerBand(prev => ({ ...prev, [col]: parseInt(val) }));
+                                }}
+                              >
+                                <SelectTrigger className="w-full h-7 text-xs bg-gray-50 border-gray-200">
+                                  <SelectValue placeholder="Change model" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {MODEL_ALTERNATIVES[col].map((altModel, idx) => (
+                                    <SelectItem key={altModel.id} value={String(idx)} className="text-xs">
+                                      {altModel.name} {altModel.technical.architecture.type === "Sparse MoE" ? "(MoE)" : ""}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           )}
                         </div>
                         
-                        {/* Reasoning Ready explanation for 70B/Frontier */}
-                        {reasoningEnabled && (col === "70B" || col === "Frontier") && !hasResults && (
-                          <div className="mb-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-center">
-                            <p className="text-xs text-emerald-700 font-medium">Reasoning ON for this model</p>
-                            <p className="text-[10px] text-emerald-600 mt-0.5">It will think step-by-step before answering.</p>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Higher quality, slower + 3–5× cost.</p>
+                        {/* Reasoning column explanation */}
+                        {col === "Reasoning" && !hasResults && (
+                          <div className="mb-2 p-2 bg-purple-50 border border-purple-100 rounded text-center">
+                            <p className="text-xs text-purple-700 font-medium">Always thinks step-by-step</p>
+                            <p className="text-[10px] text-purple-600 mt-0.5">DeepSeek R1 produces chain-of-thought reasoning.</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Higher quality, slower + costs more.</p>
                           </div>
                         )}
 
@@ -3463,14 +3314,12 @@ export default function ChatPage() {
                         </div>
                       </div>
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="text-xs text-gray-500 mb-1">Reasoning Mode</div>
-                        <div className={`text-lg ${reasoningEnabled ? 'text-gray-900' : 'text-gray-400'}`}>
-                          {reasoningEnabled ? 'ENABLED' : 'OFF'}
+                        <div className="text-xs text-gray-500 mb-1">Model Bands</div>
+                        <div className="text-lg text-gray-900">
+                          6 Columns
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {reasoningEnabled 
-                            ? "Deep thinking enabled. Only 70B+ models support this."
-                            : "Standard mode. All model sizes available."}
+                          3B → 7B → 14B → 70B → Frontier → Reasoning
                         </div>
                       </div>
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -3563,7 +3412,6 @@ export default function ChatPage() {
                   </p>
                   <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
                     <li>Increase the <strong>Max Cost Per Query</strong> slider</li>
-                    {reasoningEnabled && <li>Turn off <strong>Reasoning Mode</strong> to access cheaper models</li>}
                     {inputPercentage > 100 && <li>Choose a larger <strong>Context Window</strong> or shorten your input</li>}
                   </ul>
                 </div>
@@ -3912,12 +3760,6 @@ export default function ChatPage() {
                             <span>{entry.settings.contextSize.toUpperCase()}</span>
                             <span>|</span>
                             <span>${entry.settings.costCap.toFixed(2)} cap</span>
-                            {entry.settings.reasoningEnabled && (
-                              <>
-                                <span>|</span>
-                                <Brain className="w-3 h-3" />
-                              </>
-                            )}
                           </div>
                         )}
                       </div>
