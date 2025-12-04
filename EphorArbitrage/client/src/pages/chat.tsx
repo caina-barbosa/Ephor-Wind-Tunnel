@@ -2963,13 +2963,14 @@ export default function ChatPage() {
                 </div>
                 
                 {/* Plot the 5 models */}
-                {COLUMNS.map(col => {
+                {COLUMNS.map((col, colIndex) => {
                   const model = getModelForColumn(col);
                   if (!model) return null;
                   
                   const { disabled } = isModelDisabled(col);
                   const isRecommended = showResults && col === recommendedModel;
                   const hasResult = responses[col]?.content;
+                  const response = responses[col];
                   
                   // Map capability to Y position (0-100%)
                   const capabilityMap: Record<string, number> = {
@@ -2978,15 +2979,30 @@ export default function ChatPage() {
                     "strong": 65,
                     "excellent": 90
                   };
-                  const yPos = 100 - capabilityMap[model.expectedAccuracy];
+                  const baseYPos = 100 - capabilityMap[model.expectedAccuracy];
                   
                   // Map cost to X position (logarithmic scale for better distribution)
-                  const cost = estimateCost(model);
-                  const minCost = 0.00005;
-                  const maxCost = 0.015;
+                  // Use actual response cost when available, otherwise estimated cost
+                  const cost = response?.cost ?? estimateCost(model);
+                  const minCost = 0.00001;
+                  const maxCost = 0.02;
                   const logMin = Math.log(minCost);
                   const logMax = Math.log(maxCost);
-                  const xPos = ((Math.log(Math.max(cost, minCost)) - logMin) / (logMax - logMin)) * 85 + 5;
+                  // Clamp very low costs to minCost to avoid log(0) issues
+                  const effectiveCost = Math.max(cost, minCost);
+                  const baseXPos = ((Math.log(effectiveCost) - logMin) / (logMax - logMin)) * 80 + 5;
+                  
+                  // Apply small offset for models at same capability tier to prevent overlap
+                  // 3B and 7B are both "good", 14B and 70B are both "strong"
+                  const tierOffsets: Record<string, number> = {
+                    "3B": -3,
+                    "7B": 3,
+                    "14B": -3,
+                    "70B": 3,
+                    "Frontier": 0
+                  };
+                  const yPos = baseYPos + (tierOffsets[col] || 0);
+                  const xPos = Math.max(5, Math.min(90, baseXPos));
                   
                   return (
                     <div
