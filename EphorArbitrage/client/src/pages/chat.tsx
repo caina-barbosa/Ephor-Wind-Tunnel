@@ -2444,15 +2444,6 @@ export default function ChatPage() {
                           )}
                         </div>
                         
-                        {/* Reasoning column explanation */}
-                        {col === "Reasoning" && !hasResults && (
-                          <div className="mb-2 p-2 bg-purple-50 border border-purple-100 rounded text-center">
-                            <p className="text-xs text-purple-700 font-medium">Always thinks step-by-step</p>
-                            <p className="text-[10px] text-purple-600 mt-0.5">DeepSeek R1 produces chain-of-thought reasoning.</p>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Higher quality, slower + costs more.</p>
-                          </div>
-                        )}
-
                         {!hasResults && (
                           <div className="space-y-1.5">
                             <div className={`grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5 transition-all rounded px-1 -mx-1 ${
