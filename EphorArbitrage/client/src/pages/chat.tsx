@@ -2685,12 +2685,18 @@ export default function ChatPage() {
                                     </div>
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="bottom" align="center" className="max-w-[240px] p-3 bg-gray-900 text-white border-0 shadow-lg z-50">
-                                  <p className="font-semibold mb-2 text-white">Why latency varies:</p>
-                                  <ul className="space-y-1.5 text-gray-200 text-xs">
-                                    <li>• <span className="font-medium text-white">Cold start:</span> First query spins up the model</li>
-                                    <li>• <span className="font-medium text-white">MoE overhead:</span> Routing adds latency despite fewer active params</li>
-                                    <li>• <span className="font-medium text-white">Provider:</span> Different infrastructure speeds</li>
+                                <TooltipContent 
+                                  side="right" 
+                                  align="start" 
+                                  sideOffset={5}
+                                  className="max-w-[200px] p-2.5 bg-gray-900 text-white border-0 shadow-lg z-[100]"
+                                  style={{ position: 'fixed' }}
+                                >
+                                  <p className="font-semibold mb-1.5 text-white text-xs">Why latency varies:</p>
+                                  <ul className="space-y-1 text-gray-200 text-[11px]">
+                                    <li>• <span className="font-medium text-white">Cold start:</span> First query spins up model</li>
+                                    <li>• <span className="font-medium text-white">MoE:</span> Routing overhead</li>
+                                    <li>• <span className="font-medium text-white">Provider:</span> Infrastructure varies</li>
                                   </ul>
                                 </TooltipContent>
                               </Tooltip>
