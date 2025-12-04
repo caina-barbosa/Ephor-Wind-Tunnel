@@ -1190,9 +1190,20 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       const client = getStreamingClient(modelId);
       const actualModelId = getActualModelId(modelId);
       
+      // For Qwen3 models, disable thinking mode by appending /no_think to prompt
+      // Qwen3 in thinking mode returns empty content and puts response in reasoning field
+      const isQwen3 = actualModelId.includes('qwen3');
+      const streamMessages = isQwen3 
+        ? messages.map((m, i) => 
+            i === messages.length - 1 && m.role === 'user'
+              ? { ...m, content: m.content + ' /no_think' }
+              : m
+          )
+        : messages;
+      
       const stream = await client.chat.completions.create({
         model: actualModelId,
-        messages,
+        messages: streamMessages,
         max_tokens: 1024,
         stream: true,
       });
