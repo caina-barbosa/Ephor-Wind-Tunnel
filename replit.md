@@ -43,6 +43,17 @@ The application allows users to select context window sizes (8K-1M), set a cost 
     - Toast notifications for buffer state changes
     - Educational tooltips explaining buffer use cases (RAG, follow-ups, agent runs)
     - Teaching point: right-size context with just enough headroom
+*   **File Upload for Context Sizing**: Helps students understand context window economics with:
+    - "+" button next to prompt textarea (Claude/ChatGPT style UI)
+    - Support for images (.png, .jpg, .gif, .webp), text files (.txt, .md), and PDFs
+    - Estimated token count per file displayed in preview chips
+    - Image tokens estimated based on dimensions (~765 tokens for 1024x1024)
+    - Text file tokens counted at ~4 characters per token
+    - PDF tokens estimated at ~250 tokens per KB
+    - File tokens automatically added to Input Gauge total
+    - Remove button (X) on each file chip
+    - Clear button resets both prompt and uploaded files
+    - Teaching point: understand real-world context consumption
 
 ### System Design Choices
 
