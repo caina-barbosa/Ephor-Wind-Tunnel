@@ -80,7 +80,7 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier", "Reasoning"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
@@ -166,6 +166,23 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       finetuning: { method: "RLHF", variants: ["Constitutional AI", "RLAIF"] },
       inference: { precision: "BF16" },
       safety: { aligned: true, methods: ["Constitutional AI", "RLHF", "Red teaming"] }
+    }
+  },
+  "Reasoning": { 
+    id: "together/deepseek-r1", 
+    name: "DeepSeek R1", 
+    costPer1k: 0.003, 
+    expectedLatency: "slow", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 90.8, humanEval: 97.3 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "MLA", parameters: "671B total / 37B active" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Scientific", "Reasoning"] },
+      finetuning: { method: "RLHF", variants: ["RL reasoning", "GRPO"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Long CoT"] },
+      safety: { aligned: true, methods: ["RLHF", "Reasoning safety"] }
     }
   },
 };
