@@ -84,18 +84,18 @@ const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "openrouter/qwen/qwen3-30b-a3b", 
-    name: "Qwen3-30B-A3B", 
-    costPer1k: 0.00014, 
+    id: "together/Qwen/Qwen3-Next-80B-A3B-Instruct", 
+    name: "Qwen3-Next-A3B", 
+    costPer1k: 0.00015, 
     expectedLatency: "fast", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "good", 
-    benchmarks: { mmlu: 75.8, humanEval: 72.3 }, 
+    benchmarks: { mmlu: 76.2, humanEval: 73.5 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Sparse MoE", attention: "GQA", parameters: "30B total / 3B active" },
+      architecture: { type: "Sparse MoE", attention: "GQA", parameters: "80B total / 3B active" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Thinking/Non-thinking dual mode"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Next generation"] },
       inference: { precision: "FP16", optimizations: ["MoE routing", "3B active params"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
@@ -215,19 +215,19 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "3B": [
     NON_REASONING_MODELS["3B"],
     { 
-      id: "openrouter/qwen/qwen3-8b", 
-      name: "Qwen3-8B", 
-      costPer1k: 0.00012, 
-      expectedLatency: "fast", 
-      reasoningDepth: "shallow", 
+      id: "together/Qwen/Qwen3-Next-80B-A3B-Thinking", 
+      name: "Qwen3-Next-A3B (Thinking)", 
+      costPer1k: 0.00018, 
+      expectedLatency: "medium", 
+      reasoningDepth: "deep", 
       expectedAccuracy: "good", 
-      benchmarks: { mmlu: 74.5, humanEval: 70.8 }, 
+      benchmarks: { mmlu: 76.5, humanEval: 74.2 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+        architecture: { type: "Sparse MoE", attention: "GQA", parameters: "80B total / 3B active" },
         training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
-        finetuning: { method: "SFT", variants: ["Instruct", "Thinking mode"] },
-        inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
+        finetuning: { method: "SFT", variants: ["Thinking mode", "Next generation"] },
+        inference: { precision: "FP16", optimizations: ["MoE routing", "Deep reasoning"] },
         safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },
