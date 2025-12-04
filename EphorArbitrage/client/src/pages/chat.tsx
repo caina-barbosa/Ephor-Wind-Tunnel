@@ -2402,28 +2402,6 @@ export default function ChatPage() {
                             </Tooltip>
                           )}
                           
-                          {/* Expert Mode: Model Swap Dropdown */}
-                          {expertMode && !hasResults && MODEL_ALTERNATIVES[col] && MODEL_ALTERNATIVES[col].length > 1 && (
-                            <div className="mt-2 w-full">
-                              <Select
-                                value={String(selectedModelPerBand[col] || 0)}
-                                onValueChange={(val) => {
-                                  setSelectedModelPerBand(prev => ({ ...prev, [col]: parseInt(val) }));
-                                }}
-                              >
-                                <SelectTrigger className="w-full h-7 text-xs bg-gray-50 border-gray-200">
-                                  <SelectValue placeholder="Change model" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {MODEL_ALTERNATIVES[col].map((altModel, idx) => (
-                                    <SelectItem key={altModel.id} value={String(idx)} className="text-xs">
-                                      {altModel.name} {altModel.technical.architecture.type === "Sparse MoE" ? "(MoE)" : ""}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
                         </div>
                         
                         {!hasResults && (
