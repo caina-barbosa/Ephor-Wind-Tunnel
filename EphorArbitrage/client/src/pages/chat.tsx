@@ -1530,13 +1530,27 @@ export default function ChatPage() {
           </div>
 
           <div className="bg-white rounded-lg p-2 mb-6 border border-gray-200 shadow-sm">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter your prompt to test across all model sizes..."
-              className="w-full h-[60px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm"
-              disabled={isRunning}
-            />
+            <div className="relative">
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Enter your prompt to test across all model sizes..."
+                className="w-full h-[60px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm pr-20"
+                disabled={isRunning}
+              />
+              {prompt.length > 0 && !isRunning && (
+                <button
+                  onClick={() => {
+                    setPrompt("");
+                    setResults({});
+                    setHasRun(false);
+                  }}
+                  className="absolute right-2 top-2 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             
             <div className={`mt-2 p-2.5 rounded-lg border ${
               inputTokenEstimate > selectedContextTokens 
