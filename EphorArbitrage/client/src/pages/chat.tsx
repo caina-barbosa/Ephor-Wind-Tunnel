@@ -2405,31 +2405,31 @@ export default function ChatPage() {
                         </div>
                         
                         {!hasResults && (
-                          <div className="space-y-1.5">
-                            <div className={`grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5 transition-all rounded px-1 -mx-1 ${
+                          <div className="space-y-2">
+                            <div className={`grid grid-cols-[1fr_auto] items-center gap-x-3 py-1 transition-all rounded px-1 -mx-1 ${
                               costFlash ? 'bg-amber-100 scale-[1.02]' : ''
                             }`}>
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 <DollarSign className="w-4 h-4 flex-shrink-0" /> Est. Cost
                               </span>
-                              <span className={`font-mono text-sm tabular-nums text-right transition-all min-w-[70px] ${
+                              <span className={`font-mono text-sm tabular-nums text-right transition-all ${
                                 costFlash ? 'text-amber-700 font-bold' : 'text-gray-700'
                               }`}>
                                 ${estimatedCost.toFixed(4)}
                               </span>
                             </div>
                             
-                            <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 py-1">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 <Target className="w-4 h-4 flex-shrink-0" /> Capability
                               </span>
-                              <span className={`text-sm font-semibold text-right min-w-[70px] ${capabilityConfig.textColor}`}>
+                              <span className={`text-sm font-semibold text-right ${capabilityConfig.textColor}`}>
                                 {capabilityConfig.label}
                               </span>
                             </div>
 
                             {/* GAP 2A: Skill tag - always visible */}
-                            <div className="text-xs text-gray-500 italic py-1.5 border-t border-gray-100 mt-1 min-h-[32px] flex items-center">
+                            <div className="text-xs text-gray-500 italic py-2 border-t border-gray-100 mt-1.5 min-h-[36px] flex items-center">
                               {getSkillTag(col)}
                             </div>
 
@@ -2437,7 +2437,7 @@ export default function ChatPage() {
                             {expertMode && (
                               <>
                                 {/* MMLU with delta vs baseline */}
-                                <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 py-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
@@ -2449,19 +2449,19 @@ export default function ChatPage() {
                                       <p className="text-xs text-gray-500 mt-1">{model!.benchmarks.mmlu ? formatMmluDelta(model!.benchmarks.mmlu) : ""}</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <div className="text-right min-w-[70px]">
+                                  <div className="text-right flex items-center justify-end gap-1">
                                     <span className="text-sm font-mono text-gray-700 tabular-nums">
                                       {model!.benchmarks.mmlu?.toFixed(0)}%
                                     </span>
                                     {col !== "3B" && model!.benchmarks.mmlu && (
-                                      <span className="text-[10px] text-emerald-600 ml-1">
+                                      <span className="text-xs text-emerald-600">
                                         +{(model!.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
                                       </span>
                                     )}
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 py-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
@@ -2472,13 +2472,13 @@ export default function ChatPage() {
                                       <p className="text-xs">HumanEval: How well it writes correct code. Higher % = better coder.</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <span className="text-sm font-mono text-gray-700 tabular-nums text-right min-w-[70px]">
+                                  <span className="text-sm font-mono text-gray-700 tabular-nums text-right">
                                     {model!.benchmarks.humanEval ? `${model!.benchmarks.humanEval.toFixed(0)}%` : "—"}
                                   </span>
                                 </div>
 
                                 {/* Reasoning Depth per band - shows capability regardless of toggle */}
-                                <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 py-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium cursor-help">
@@ -2496,14 +2496,14 @@ export default function ChatPage() {
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <span className={`text-sm font-medium text-right min-w-[70px] ${getReasoningDepthForBand(col).color}`}>
+                                  <span className={`text-sm font-medium text-right ${getReasoningDepthForBand(col).color}`}>
                                     {getReasoningDepthForBand(col).label}
                                   </span>
                                 </div>
                               </>
                             )}
 
-                            <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 py-1">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 {model!.modality === "text" ? (
                                   <FileText className="w-4 h-4 flex-shrink-0" />
@@ -2512,7 +2512,7 @@ export default function ChatPage() {
                                 )}
                                 Input
                               </span>
-                              <span className={`text-sm font-medium text-right min-w-[70px] ${
+                              <span className={`text-sm font-medium text-right ${
                                 model!.modality === "text" 
                                   ? "text-gray-500" 
                                   : "text-purple-600"
@@ -2521,11 +2521,11 @@ export default function ChatPage() {
                               </span>
                             </div>
                             
-                            <div className="grid grid-cols-[1fr_80px] items-center gap-x-2 py-0.5">
+                            <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 py-1">
                               <span className="text-gray-600 flex items-center gap-1.5 text-sm font-medium">
                                 <Clock className="w-4 h-4 flex-shrink-0" /> Speed
                               </span>
-                              <span className="text-sm text-gray-400 italic text-right min-w-[70px]">
+                              <span className="text-sm text-gray-400 italic text-right">
                                 Run test
                               </span>
                             </div>
