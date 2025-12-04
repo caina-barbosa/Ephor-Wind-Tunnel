@@ -1542,8 +1542,7 @@ export default function ChatPage() {
                 <button
                   onClick={() => {
                     setPrompt("");
-                    setResults({});
-                    setHasRun(false);
+                    setResponses({});
                   }}
                   className="absolute right-2 top-2 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                 >
@@ -2668,17 +2667,34 @@ export default function ChatPage() {
                           
                           {/* 1. Latency & Cost metrics (always shown) */}
                           <div className="mb-3 space-y-2">
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-gray-500">Latency</span>
-                                <span className={`font-mono font-bold ${actualLatencyConfig.color.replace('bg-', 'text-')}`}>
-                                  {response.latency}ms
-                                </span>
-                              </div>
-                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div className={`h-full ${actualLatencyConfig.width} ${actualLatencyConfig.color} rounded-full`}></div>
-                              </div>
-                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="cursor-help">
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                      <span className="text-gray-500 flex items-center gap-1">
+                                        Latency
+                                        <Info className="w-3 h-3 text-gray-400" />
+                                      </span>
+                                      <span className={`font-mono font-bold ${actualLatencyConfig.color.replace('bg-', 'text-')}`}>
+                                        {response.latency}ms
+                                      </span>
+                                    </div>
+                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                      <div className={`h-full ${actualLatencyConfig.width} ${actualLatencyConfig.color} rounded-full`}></div>
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[220px] text-xs">
+                                  <p className="font-medium mb-1">Why latency varies:</p>
+                                  <ul className="space-y-1 text-gray-600">
+                                    <li>• <strong>Cold start:</strong> First query spins up the model</li>
+                                    <li>• <strong>MoE overhead:</strong> Routing adds latency despite fewer active params</li>
+                                    <li>• <strong>Provider:</strong> Different infrastructure speeds</li>
+                                  </ul>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-500">Cost</span>
