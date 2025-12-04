@@ -239,6 +239,8 @@ export const MODEL_PRICING: Record<string, { input: number; output: number }> = 
   "together/qwq-32b": { input: 1.20, output: 1.20 },
   "openrouter/qwen/qwen3-14b": { input: 0.10, output: 0.20 },
   "openrouter/qwen/qwen3-4b:free": { input: 0.00, output: 0.00 },
+  "openrouter/qwen/qwen3-30b-a3b": { input: 0.06, output: 0.22 },
+  "openrouter/qwen/qwen3-8b": { input: 0.04, output: 0.12 },
 };
 
 // Helper to calculate cost from token counts

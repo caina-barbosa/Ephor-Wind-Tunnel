@@ -80,23 +80,23 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["4B", "7B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "4B": { 
-    id: "openrouter/qwen/qwen3-4b:free", 
-    name: "Qwen3-4B", 
-    costPer1k: 0.00003, 
+  "3B": { 
+    id: "openrouter/qwen/qwen3-30b-a3b", 
+    name: "Qwen3-30B-A3B", 
+    costPer1k: 0.00014, 
     expectedLatency: "fast", 
     reasoningDepth: "shallow", 
-    expectedAccuracy: "basic", 
-    benchmarks: { mmlu: 72.1, humanEval: 68.5 }, 
+    expectedAccuracy: "good", 
+    benchmarks: { mmlu: 75.8, humanEval: 72.3 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
+      architecture: { type: "Sparse MoE", attention: "GQA", parameters: "30B total / 3B active" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Thinking/Non-thinking dual mode"] },
-      inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
+      inference: { precision: "FP16", optimizations: ["MoE routing", "3B active params"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
@@ -171,7 +171,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 };
 
 const REASONING_MODELS: Record<string, Model | null> = {
-  "4B": null,
+  "3B": null,
   "7B": null,
   "14B": null,
   "70B": { 
@@ -212,19 +212,19 @@ const REASONING_MODELS: Record<string, Model | null> = {
 
 // MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
-  "4B": [
-    NON_REASONING_MODELS["4B"],
+  "3B": [
+    NON_REASONING_MODELS["3B"],
     { 
-      id: "openrouter/qwen/qwen3-4b:free", 
-      name: "Qwen3-4B (alt)", 
-      costPer1k: 0.00003, 
+      id: "openrouter/qwen/qwen3-8b", 
+      name: "Qwen3-8B", 
+      costPer1k: 0.00012, 
       expectedLatency: "fast", 
       reasoningDepth: "shallow", 
-      expectedAccuracy: "basic", 
-      benchmarks: { mmlu: 72.1, humanEval: 68.5 }, 
+      expectedAccuracy: "good", 
+      benchmarks: { mmlu: 74.5, humanEval: 70.8 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "4B" },
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
         training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
         finetuning: { method: "SFT", variants: ["Instruct", "Thinking mode"] },
         inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
@@ -320,7 +320,7 @@ const BASELINE_MMLU = 72.5;
 // Helper: Get reasoning depth for a band (shows capability even when reasoning mode is off)
 const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {
   switch (col) {
-    case "4B": 
+    case "3B": 
     case "7B": 
     case "14B": 
       return { depth: "none", label: "None", color: "text-gray-400" };
@@ -336,8 +336,8 @@ const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "d
 // Helper: Format MMLU delta vs baseline
 const formatMmluDelta = (mmlu: number): string => {
   const delta = mmlu - BASELINE_MMLU;
-  if (delta > 0) return `+${delta.toFixed(0)} pts vs 4B`;
-  if (delta < 0) return `${delta.toFixed(0)} pts vs 4B`;
+  if (delta > 0) return `+${delta.toFixed(0)} pts vs 3B`;
+  if (delta < 0) return `${delta.toFixed(0)} pts vs 3B`;
   return "baseline";
 };
 
@@ -366,7 +366,7 @@ const COLUMN_VISUALS: Record<string, {
   prominence: "small" | "medium" | "large";
   accentBorder: string;
 }> = {
-  "4B": {
+  "3B": {
     headerSize: "text-xl font-bold text-[#A3316F]",
     headerBg: "bg-[#fdf2f8]",
     cardStyle: "bg-white",
@@ -441,7 +441,7 @@ const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excel
 
 const getSkillTag = (col: string): string => {
   switch (col) {
-    case "4B": return "Best for simple Q&A";
+    case "3B": return "Fast & efficient MoE model";
     case "7B": return "Solid general assistant";
     case "14B": return "Strong reasoning with efficiency";
     case "70B": return "Great at multi-step reasoning";
@@ -611,7 +611,7 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "4B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
+    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
   });
 
   // Track previous cost cap for budget change toasts (prevents spam on slider drag)
@@ -2078,7 +2078,7 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '4B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' ? 'text-emerald-600' : col === '3B' ? 'text-[#A3316F]' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -2395,7 +2395,7 @@ export default function ChatPage() {
                                     <span className="text-sm font-mono text-gray-700 tabular-nums">
                                       {model!.benchmarks.mmlu?.toFixed(0)}%
                                     </span>
-                                    {col !== "4B" && model!.benchmarks.mmlu && (
+                                    {col !== "3B" && model!.benchmarks.mmlu && (
                                       <span className="text-[10px] text-emerald-600 ml-1">
                                         +{(model!.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
                                       </span>
@@ -2430,7 +2430,7 @@ export default function ChatPage() {
                                     <TooltipContent side="left" className="max-w-[220px]">
                                       <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {col === "4B" || col === "7B" || col === "14B" 
+                                        {col === "3B" || col === "7B" || col === "14B" 
                                           ? "Too small for step-by-step reasoning" 
                                           : col === "70B" 
                                             ? "Can do basic chain-of-thought" 
@@ -2719,7 +2719,7 @@ export default function ChatPage() {
                                   <span className="text-xs font-mono text-gray-700 tabular-nums">
                                     {renderModel.benchmarks.mmlu?.toFixed(0)}%
                                   </span>
-                                  {col !== "4B" && renderModel.benchmarks.mmlu && (
+                                  {col !== "3B" && renderModel.benchmarks.mmlu && (
                                     <span className="text-[10px] text-emerald-600 ml-1">
                                       +{(renderModel.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
                                     </span>
@@ -2754,7 +2754,7 @@ export default function ChatPage() {
                                   <TooltipContent side="left" className="max-w-[220px]">
                                     <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {col === "4B" || col === "7B" || col === "14B" 
+                                      {col === "3B" || col === "7B" || col === "14B" 
                                         ? "Too small for step-by-step reasoning" 
                                         : col === "70B" 
                                           ? "Can do basic chain-of-thought" 
