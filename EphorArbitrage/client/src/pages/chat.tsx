@@ -2387,24 +2387,6 @@ export default function ChatPage() {
                           <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {renderModel.name}
                           </div>
-                          {col === "Reasoning" && (
-                            <div className="mt-1.5 flex justify-center">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-1.5 sm:px-2 py-0.5 rounded font-bold border border-purple-200 cursor-help">
-                                    <Brain className="w-3 h-3" />
-                                    Chain-of-Thought
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
-                                  <p className="font-semibold text-gray-900 mb-1">Deep Reasoning Model</p>
-                                  <p className="text-xs text-gray-600">
-                                    DeepSeek R1 always thinks step-by-step before answering. Slower but more thorough.
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          )}
                           {warning && (
                             <Tooltip>
                               <TooltipTrigger asChild>
