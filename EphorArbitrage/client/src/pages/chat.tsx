@@ -2677,7 +2677,7 @@ export default function ChatPage() {
                                         <Info className="w-3 h-3 text-gray-400" />
                                       </span>
                                       <span className={`font-mono font-bold ${actualLatencyConfig.color.replace('bg-', 'text-')}`}>
-                                        {response.latency}ms
+                                        {((response.latency || 0) / 1000).toFixed(2)}s
                                       </span>
                                     </div>
                                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -3129,7 +3129,7 @@ export default function ChatPage() {
                     <div className={`font-mono text-sm sm:text-lg font-bold ${
                       'text-gray-900'
                     }`}>
-                      {selectedModel.response.latency}ms
+                      {((selectedModel.response.latency || 0) / 1000).toFixed(2)}s
                     </div>
                   </div>
                   <div className="text-center">
@@ -3693,7 +3693,7 @@ export default function ChatPage() {
                                     : 'bg-gray-100 text-gray-600'
                                 }`}
                               >
-                                {col}: {result.latency}ms / ${result.cost.toFixed(4)}
+                                {col}: {(result.latency / 1000).toFixed(2)}s / ${result.cost.toFixed(4)}
                               </div>
                             ))}
                           </div>
