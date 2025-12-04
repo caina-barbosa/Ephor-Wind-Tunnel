@@ -1917,7 +1917,7 @@ export default function ChatPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -2210,8 +2210,8 @@ export default function ChatPage() {
 
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <div className="min-w-[700px] sm:min-w-0">
-                <div className="grid grid-cols-6 border-b border-gray-200">
+              <div className="min-w-[900px] sm:min-w-0">
+                <div className="grid grid-cols-6 border-b border-gray-200" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const isRecommended = showResults && col === recommendedModel;
@@ -2246,7 +2246,7 @@ export default function ChatPage() {
                   })}
                 </div>
 
-                <div className="grid grid-cols-6">
+                <div className="grid grid-cols-6" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const displayModel = getModelForDisplay(col); // Always returns a model for display
