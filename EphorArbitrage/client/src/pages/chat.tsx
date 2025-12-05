@@ -3670,6 +3670,149 @@ export default function ChatPage() {
             </div>
           )}
 
+          {/* Cost vs Capability Pareto Chart */}
+          {COLUMNS.some(col => responses[col]?.content) && (
+            <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-4 h-4 text-gray-500" />
+                <span className="font-bold text-sm text-gray-900">Cost vs Capability</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-[220px] bg-white border-gray-200 text-gray-700">
+                    <p className="text-xs font-medium mb-1">The Pareto Frontier</p>
+                    <p className="text-xs">Models on the orange dashed line are "optimal" - no other model is both cheaper AND better. Models below the line are "dominated."</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              
+              {(() => {
+                const chartModels = COLUMNS.map(col => {
+                  const model = getModelForColumn(col);
+                  if (!model) return null;
+                  const response = responses[col];
+                  const hasResult = response?.content && !response?.error;
+                  const rawCost = response?.cost;
+                  const cost = (typeof rawCost === 'number' && rawCost > 0) ? rawCost : estimateCost(model);
+                  const mmlu = model.benchmarks.mmlu || 70;
+                  const { disabled } = isModelDisabled(col);
+                  const isRec = showResults && col === recommendedModel;
+                  return { col, cost, mmlu, hasResult, disabled, isRec };
+                }).filter(Boolean) as { col: string; cost: number; mmlu: number; hasResult: boolean; disabled: boolean; isRec: boolean }[];
+                
+                const costs = chartModels.map(m => m.cost);
+                const minCost = Math.min(...costs);
+                const maxCost = Math.max(...costs);
+                const minMmlu = 60;
+                const maxMmlu = 95;
+                
+                const getX = (cost: number) => {
+                  if (maxCost === minCost) return 50;
+                  const logMin = Math.log10(minCost);
+                  const logMax = Math.log10(maxCost);
+                  const logCost = Math.log10(cost);
+                  return 8 + ((logCost - logMin) / (logMax - logMin)) * 84;
+                };
+                
+                const getY = (mmlu: number) => {
+                  return 92 - ((mmlu - minMmlu) / (maxMmlu - minMmlu)) * 84;
+                };
+                
+                const paretoFrontier = chartModels
+                  .filter(m => m.hasResult && !m.disabled)
+                  .filter(m => !chartModels.some(o => 
+                    o.col !== m.col && 
+                    o.hasResult && 
+                    !o.disabled && 
+                    o.cost <= m.cost && 
+                    o.mmlu >= m.mmlu && 
+                    (o.cost < m.cost || o.mmlu > m.mmlu)
+                  ))
+                  .sort((a, b) => a.cost - b.cost);
+                
+                return (
+                  <div className="relative h-[200px]">
+                    <div className="absolute left-8 right-4 top-2 bottom-8 border-l-2 border-b-2 border-gray-300 bg-gray-50/30">
+                      {[0, 25, 50, 75, 100].map(pct => (
+                        <div key={pct} className="absolute w-full border-t border-dashed border-gray-200" style={{ top: `${pct}%` }} />
+                      ))}
+                    </div>
+                    
+                    <div className="absolute left-0 top-2 bottom-8 w-8 flex flex-col justify-between text-[10px] text-gray-400 pr-1">
+                      <span className="text-right">{maxMmlu}%</span>
+                      <span className="text-right">{Math.round((maxMmlu + minMmlu) / 2)}%</span>
+                      <span className="text-right">{minMmlu}%</span>
+                    </div>
+                    
+                    <div className="absolute left-8 right-4 bottom-0 h-6 flex justify-between text-[10px] text-gray-400 pt-1">
+                      <span>Cheap</span>
+                      <span>Cost →</span>
+                      <span>Expensive</span>
+                    </div>
+                    
+                    <svg className="absolute left-8 right-4 top-2 bottom-8" viewBox="0 0 100 100" preserveAspectRatio="none">
+                      {paretoFrontier.length >= 2 && (
+                        <polyline
+                          points={paretoFrontier.map(m => `${getX(m.cost)},${getY(m.mmlu)}`).join(' ')}
+                          fill="none"
+                          stroke="#f5a623"
+                          strokeWidth="1.5"
+                          strokeDasharray="4 2"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                      )}
+                      
+                      {chartModels.map(m => {
+                        const x = getX(m.cost);
+                        const y = getY(m.mmlu);
+                        const isOnFrontier = paretoFrontier.some(f => f.col === m.col);
+                        return (
+                          <circle
+                            key={m.col}
+                            cx={x}
+                            cy={y}
+                            r={m.isRec ? 4 : 3}
+                            fill={m.isRec ? '#f5a623' : m.disabled ? '#d1d5db' : m.col === 'Frontier' ? '#f97316' : '#1a3a8f'}
+                            stroke={isOnFrontier ? '#f5a623' : 'white'}
+                            strokeWidth={isOnFrontier ? 2 : 1}
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        );
+                      })}
+                    </svg>
+                    
+                    {chartModels.map((m, i) => {
+                      const x = getX(m.cost);
+                      const y = getY(m.mmlu);
+                      const labelOffset = i % 2 === 0 ? -16 : 12;
+                      return (
+                        <div
+                          key={m.col}
+                          className="absolute text-[10px] font-bold whitespace-nowrap pointer-events-none"
+                          style={{
+                            left: `calc(8% + ${x * 0.84}%)`,
+                            top: `calc(2% + ${y * 0.84}% + ${labelOffset}px)`,
+                            transform: 'translateX(-50%)',
+                            color: m.isRec ? '#f5a623' : m.disabled ? '#9ca3af' : m.col === 'Frontier' ? '#ea580c' : '#1e40af'
+                          }}
+                        >
+                          {m.col}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+              
+              <div className="flex items-center justify-center gap-4 mt-2 text-[10px] text-gray-500">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#f5a623]"></span> Recommended</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#1a3a8f]"></span> Open Source</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span> Frontier</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-0 border-t-2 border-dashed border-[#f5a623]"></span> Pareto Frontier</span>
+              </div>
+            </div>
+          )}
 
           {showResults && allModelsComplete && (
             <div className="mt-6 p-4 bg-gradient-to-r from-[#1a3a8f]/5 to-[#f5a623]/5 rounded-lg border border-gray-200">
