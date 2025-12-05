@@ -65,7 +65,26 @@ The application allows users to select context window sizes (8K-1M) and set a co
     - Only Frontier (Claude) supports vision/image analysis - other tiers receive text description
     - Remove button (X) on each file chip
     - Clear button resets both prompt and uploaded files
+    - Educational toasts when compression happens (explains API limits and compression concept)
     - Teaching point: understand real-world context consumption
+*   **Multi-Segment Input Gauge**: Visual breakdown of context consumption with:
+    - Stacked bar showing distinct segments for each token source
+    - Prompt tokens (blue) - text typed by user
+    - Image tokens (purple) - uploaded images
+    - Text file tokens (emerald) - uploaded documents
+    - Search tokens (striped blue) - estimated ~20,000 tokens when Search mode is on
+    - Buffer tokens (amber) - reserved headroom in Expert Mode
+    - Color-coded legend explaining each segment
+    - Cumulative positioning ensures segments stack sequentially without overlap
+    - All overflow detection uses total including search estimate
+    - Teaching point: visualize how different inputs consume context
+*   **Search Mode Context Auto-Upgrade**: Educational flow when enabling Search:
+    - Warning toast: "Search needs more memory!" (explains 20,000+ token overhead)
+    - Automatic context upgrade to 128K if using 8K or 32K
+    - Confirmation toast explaining the upgrade
+    - Tooltip tip: "Search works best with 128K+ context"
+    - Friendly error messages for context overflow instead of cryptic API errors
+    - Teaching point: understand why search requires larger context windows
 
 ### System Design Choices
 
