@@ -80,37 +80,20 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "8B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["8B", "14B", "32B", "72B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
-  "3B": { 
-    id: "together/Qwen/Qwen3-Next-80B-A3B-Instruct", 
-    name: "Qwen3-Next-A3B", 
-    costPer1k: 0.00015, 
-    expectedLatency: "fast", 
-    reasoningDepth: "shallow", 
-    expectedAccuracy: "good", 
-    benchmarks: { mmlu: 76.2, humanEval: 73.5 }, 
-    modality: "text",
-    technical: {
-      architecture: { type: "Sparse MoE", attention: "GQA", parameters: "80B total / 3B active" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Next generation"] },
-      inference: { precision: "FP16", optimizations: ["MoE routing", "3B active params"] },
-      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
-    }
-  },
   "8B": { 
     id: "openrouter/qwen/qwen3-8b", 
     name: "Qwen3-8B", 
-    costPer1k: 0.00015, 
+    costPer1k: 0.00012, 
     expectedLatency: "fast", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "good", 
     benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8.2B" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Thinking/Non-thinking dual mode"] },
       inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
@@ -134,20 +117,37 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
-  "70B": { 
-    id: "together/Qwen/Qwen2.5-72B-Instruct-Turbo", 
+  "32B": { 
+    id: "openrouter/qwen/qwen3-32b", 
+    name: "Qwen3-32B", 
+    costPer1k: 0.0002, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 83.5, humanEval: 82.4 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "32B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Thinking/Non-thinking dual mode"] },
+      inference: { precision: "BF16", optimizations: ["Dual-mode architecture"] },
+      safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
+    }
+  },
+  "72B": { 
+    id: "openrouter/qwen/qwen2.5-72b-instruct", 
     name: "Qwen2.5-72B", 
     costPer1k: 0.0003, 
     expectedLatency: "medium", 
     reasoningDepth: "none", 
-    expectedAccuracy: "strong", 
+    expectedAccuracy: "excellent", 
     benchmarks: { mmlu: 85.3, humanEval: 86.3 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B" },
       training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
-      inference: { precision: "BF16", optimizations: ["FP8 Turbo optimized"] },
+      finetuning: { method: "DPO", variants: ["Instruct"] },
+      inference: { precision: "BF16", optimizations: ["GQA optimized"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
@@ -172,10 +172,10 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 
 // REASONING MODELS - Used when Reasoning toggle is ON (models that support chain-of-thought)
 const REASONING_MODELS: Record<string, Model | null> = {
-  "3B": null, // Too small for reasoning
   "8B": null, // Too small for reasoning
   "14B": null, // Too small for reasoning
-  "70B": { 
+  "32B": null, // Too small for deep reasoning
+  "72B": { 
     id: "together/deepseek-r1", 
     name: "DeepSeek R1", 
     costPer1k: 0.003, 
@@ -215,34 +215,17 @@ const REASONING_MODELS: Record<string, Model | null> = {
 // Uses OpenRouter's :online suffix for web search on the same models
 // Exa search costs ~$0.02/request (5 results), Claude uses native search
 const SEARCH_MODELS: Record<string, Model> = {
-  "3B": { 
-    id: "openrouter/qwen/qwen3-30b-a3b:online", 
-    name: "Qwen3-30B-A3B + Search", 
-    costPer1k: 0.00018,
-    expectedLatency: "medium", 
-    reasoningDepth: "shallow", 
-    expectedAccuracy: "good", 
-    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
-    modality: "text",
-    technical: {
-      architecture: { type: "Sparse MoE", attention: "GQA", parameters: "30B total / 3B active" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
-      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
-      inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
-      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
-    }
-  },
   "8B": { 
     id: "openrouter/qwen/qwen3-8b:online", 
     name: "Qwen3-8B + Search", 
-    costPer1k: 0.0003, 
+    costPer1k: 0.00015, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "good", 
     benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8.2B" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
@@ -252,11 +235,11 @@ const SEARCH_MODELS: Record<string, Model> = {
   "14B": { 
     id: "openrouter/qwen/qwen3-14b:online", 
     name: "Qwen3-14B + Search", 
-    costPer1k: 0.0003, 
+    costPer1k: 0.00018, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 79.3, humanEval: 72.1 }, 
+    benchmarks: { mmlu: 79.8, humanEval: 78.5 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
@@ -266,14 +249,31 @@ const SEARCH_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
-  "70B": { 
+  "32B": { 
+    id: "openrouter/qwen/qwen3-32b:online", 
+    name: "Qwen3-32B + Search", 
+    costPer1k: 0.00025, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 83.5, humanEval: 82.4 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "32B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
+    }
+  },
+  "72B": { 
     id: "openrouter/qwen/qwen2.5-72b-instruct:online", 
     name: "Qwen2.5-72B + Search", 
-    costPer1k: 0.0008, 
+    costPer1k: 0.0005, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "excellent", 
-    benchmarks: { mmlu: 85.3, humanEval: 86.8 }, 
+    benchmarks: { mmlu: 85.3, humanEval: 86.3 }, 
     modality: "text",
     technical: {
       architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B (128K context)" },
@@ -286,7 +286,7 @@ const SEARCH_MODELS: Record<string, Model> = {
   "Frontier": { 
     id: "openrouter/anthropic/claude-sonnet-4:online", 
     name: "Claude Sonnet 4 + Search", 
-    costPer1k: 0.018, // Uses native Anthropic search
+    costPer1k: 0.018, 
     expectedLatency: "medium", 
     reasoningDepth: "deep", 
     expectedAccuracy: "excellent", 
@@ -304,15 +304,15 @@ const SEARCH_MODELS: Record<string, Model> = {
 
 // REASONING + SEARCH MODELS - Used when BOTH toggles are ON
 // Combines chain-of-thought reasoning with web search capabilities
-// Only 70B and Frontier truly support both; smaller tiers use search-only
+// Only 72B and Frontier truly support both; smaller tiers use search-only
 const REASONING_SEARCH_MODELS: Record<string, Model | null> = {
-  "3B": null, // Reasoning not available - will fall back to search-only
   "8B": null, // Reasoning not available - will fall back to search-only
   "14B": null, // Reasoning not available - will fall back to search-only
-  "70B": { 
+  "32B": null, // Reasoning not available - will fall back to search-only
+  "72B": { 
     id: "openrouter/deepseek/deepseek-r1:online", 
     name: "DeepSeek R1 + Reasoning + Search", 
-    costPer1k: 0.0028, // R1 + search overhead
+    costPer1k: 0.0028, 
     expectedLatency: "slow", 
     reasoningDepth: "deep", 
     expectedAccuracy: "excellent", 
@@ -329,7 +329,7 @@ const REASONING_SEARCH_MODELS: Record<string, Model | null> = {
   "Frontier": { 
     id: "openrouter/anthropic/claude-sonnet-4:online", 
     name: "Claude Sonnet 4 + Reasoning + Search", 
-    costPer1k: 0.022, // Claude + native search
+    costPer1k: 0.022, 
     expectedLatency: "medium", 
     reasoningDepth: "deep", 
     expectedAccuracy: "excellent", 
@@ -347,26 +347,6 @@ const REASONING_SEARCH_MODELS: Record<string, Model | null> = {
 
 // MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
-  "3B": [
-    NON_REASONING_MODELS["3B"],
-    { 
-      id: "together/Qwen/Qwen3-Next-80B-A3B-Thinking", 
-      name: "Qwen3-Next-A3B (Thinking)", 
-      costPer1k: 0.00018, 
-      expectedLatency: "medium", 
-      reasoningDepth: "deep", 
-      expectedAccuracy: "good", 
-      benchmarks: { mmlu: 76.5, humanEval: 74.2 }, 
-      modality: "text",
-      technical: {
-        architecture: { type: "Sparse MoE", attention: "GQA", parameters: "80B total / 3B active" },
-        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
-        finetuning: { method: "SFT", variants: ["Thinking mode", "Next generation"] },
-        inference: { precision: "FP16", optimizations: ["MoE routing", "Deep reasoning"] },
-        safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
-      }
-    },
-  ],
   "8B": [
     NON_REASONING_MODELS["8B"],
     { 
@@ -390,25 +370,45 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "14B": [
     NON_REASONING_MODELS["14B"],
     { 
-      id: "openrouter/qwen/qwen3-14b", 
-      name: "Qwen3-14B", 
-      costPer1k: 0.00018, 
+      id: "openrouter/deepseek/deepseek-r1-distill-qwen-14b", 
+      name: "DeepSeek-R1-14B", 
+      costPer1k: 0.00025, 
       expectedLatency: "fast", 
       reasoningDepth: "shallow", 
       expectedAccuracy: "strong", 
-      benchmarks: { mmlu: 79.8, humanEval: 79.5 }, 
+      benchmarks: { mmlu: 80.2, humanEval: 79.8 }, 
       modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14.8B" },
-        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-        finetuning: { method: "DPO", variants: ["Instruct", "Thinking"] },
-        inference: { precision: "BF16", optimizations: ["Turbo optimized"] },
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning traces"] },
+        finetuning: { method: "SFT", variants: ["Distillation", "R1"] },
+        inference: { precision: "BF16" },
+        safety: { aligned: true, methods: ["SFT", "Safety filtering"] }
+      }
+    },
+  ],
+  "32B": [
+    NON_REASONING_MODELS["32B"],
+    { 
+      id: "openrouter/qwen/qwq-32b", 
+      name: "QwQ-32B", 
+      costPer1k: 0.00025, 
+      expectedLatency: "medium", 
+      reasoningDepth: "deep", 
+      expectedAccuracy: "strong", 
+      benchmarks: { mmlu: 84.5, humanEval: 83.1 }, 
+      modality: "text",
+      technical: {
+        architecture: { type: "Dense Transformer", attention: "GQA", parameters: "32B" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning"] },
+        finetuning: { method: "DPO", variants: ["Reasoning", "QwQ"] },
+        inference: { precision: "BF16" },
         safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
       }
     },
   ],
-  "70B": [
-    NON_REASONING_MODELS["70B"],
+  "72B": [
+    NON_REASONING_MODELS["72B"],
     { 
       id: "openrouter/qwen/qwen-2-72b-instruct", 
       name: "Qwen2-72B", 
@@ -430,20 +430,20 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "Frontier": [
     NON_REASONING_MODELS["Frontier"],
     { 
-      id: "openai/gpt-4o", 
-      name: "GPT-4o", 
-      costPer1k: 0.0125, 
+      id: "openrouter/moonshotai/kimi-k2-instruct", 
+      name: "Kimi K2", 
+      costPer1k: 0.012, 
       expectedLatency: "medium", 
       reasoningDepth: "deep", 
       expectedAccuracy: "excellent", 
-      benchmarks: { mmlu: 88.7, humanEval: 90.2 }, 
-      modality: "text+image",
+      benchmarks: { mmlu: 87.5, humanEval: 91.2 }, 
+      modality: "text",
       technical: {
-        architecture: { type: "Dense Transformer", attention: "MHA", parameters: "Undisclosed" },
-        training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Scientific", "Curated"] },
-        finetuning: { method: "RLHF", variants: ["InstructGPT"] },
-        inference: { precision: "BF16" },
-        safety: { aligned: true, methods: ["RLHF", "Red teaming", "Constitutional AI"] }
+        architecture: { type: "Sparse MoE", attention: "MHA", parameters: "1T+ total / 32B active" },
+        training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Scientific", "Curated"] },
+        finetuning: { method: "RLHF", variants: ["Instruct"] },
+        inference: { precision: "BF16", optimizations: ["MoE routing"] },
+        safety: { aligned: true, methods: ["RLHF", "Safety filtering"] }
       }
     },
   ],
@@ -455,11 +455,11 @@ const BASELINE_MMLU = 72.5;
 // Helper: Get reasoning depth for a band (shows capability even when reasoning mode is off)
 const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {
   switch (col) {
-    case "3B": 
     case "8B": 
     case "14B": 
+    case "32B": 
       return { depth: "none", label: "None", color: "text-gray-400" };
-    case "70B": 
+    case "72B": 
       return { depth: "shallow", label: "Shallow", color: "text-amber-600" };
     case "Frontier": 
       return { depth: "deep", label: "Deep", color: "text-emerald-600" };
@@ -501,13 +501,6 @@ const COLUMN_VISUALS: Record<string, {
   prominence: "small" | "medium" | "large";
   accentBorder: string;
 }> = {
-  "3B": {
-    headerSize: "text-xl font-bold text-blue-700",
-    headerBg: "bg-blue-50",
-    cardStyle: "bg-white",
-    prominence: "small",
-    accentBorder: "border-t-[6px] border-t-[#2563EB]"
-  },
   "8B": {
     headerSize: "text-xl font-bold text-blue-700",
     headerBg: "bg-blue-50",
@@ -516,13 +509,20 @@ const COLUMN_VISUALS: Record<string, {
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "14B": {
+    headerSize: "text-xl font-bold text-blue-700",
+    headerBg: "bg-blue-50",
+    cardStyle: "bg-white",
+    prominence: "small",
+    accentBorder: "border-t-[6px] border-t-[#2563EB]"
+  },
+  "32B": {
     headerSize: "text-2xl font-extrabold text-emerald-700",
     headerBg: "bg-emerald-50",
     cardStyle: "bg-white",
     prominence: "medium",
     accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
-  "70B": {
+  "72B": {
     headerSize: "text-2xl font-extrabold text-emerald-700",
     headerBg: "bg-emerald-50",
     cardStyle: "bg-white",
@@ -576,10 +576,10 @@ const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excel
 
 const getSkillTag = (col: string): string => {
   switch (col) {
-    case "3B": return "Fast & efficient MoE model";
-    case "8B": return "Solid general assistant";
-    case "14B": return "Strong reasoning";
-    case "70B": return "Multi-step reasoning";
+    case "8B": return "Fast & efficient baseline";
+    case "14B": return "Solid general assistant";
+    case "32B": return "Strong reasoning";
+    case "72B": return "Multi-step reasoning";
     case "Frontier": return "Coding & complex tasks";
     default: return "General purpose model";
   }
@@ -821,7 +821,7 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "3B": 0, "8B": 0, "14B": 0, "70B": 0, "Frontier": 0
+    "8B": 0, "14B": 0, "32B": 0, "72B": 0, "Frontier": 0
   });
   
   // Global mode toggles
@@ -1504,10 +1504,10 @@ export default function ChatPage() {
     
     // Tier order: prefer smaller models when costs are similar
     const TIER_ORDER: Record<string, number> = {
-      "3B": 1,
-      "8B": 2,
-      "14B": 3,
-      "70B": 4,
+      "8B": 1,
+      "14B": 2,
+      "32B": 3,
+      "72B": 4,
       "Frontier": 5
     };
     
@@ -1695,9 +1695,6 @@ export default function ChatPage() {
     setIsRunning(true);
     setShowResults(true);
 
-    // TEMP FIX: 3B and 70B search models are broken - mark them as unavailable
-    const SEARCH_UNAVAILABLE_TIERS = ["3B", "70B"];
-
     const modelsToRun: { col: string; model: Model }[] = [];
     COLUMNS.forEach(col => {
       const model = getModelForColumn(col);
@@ -1708,19 +1705,7 @@ export default function ChatPage() {
 
     const initialResponses: Record<string, ModelResponse> = {};
     modelsToRun.forEach(({ col }) => {
-      // TEMP FIX: If search mode and tier is 3B or 70B, show unavailable immediately
-      if (searchMode && SEARCH_UNAVAILABLE_TIERS.includes(col)) {
-        initialResponses[col] = { 
-          content: "__SEARCH_UNAVAILABLE__", 
-          loading: false, 
-          error: null, 
-          latency: null, 
-          cost: null, 
-          progress: 100 
-        };
-      } else {
-        initialResponses[col] = { content: "", loading: true, error: null, latency: null, cost: null, progress: 0 };
-      }
+      initialResponses[col] = { content: "", loading: true, error: null, latency: null, cost: null, progress: 0 };
     });
     setResponses(initialResponses);
 
@@ -1894,12 +1879,7 @@ export default function ChatPage() {
       }
     };
 
-    // TEMP FIX: Skip running 3B and 70B when search is enabled (already marked unavailable)
-    const modelsToActuallyRun = searchMode 
-      ? modelsToRun.filter(({ col }) => !SEARCH_UNAVAILABLE_TIERS.includes(col))
-      : modelsToRun;
-    
-    await Promise.all(modelsToActuallyRun.map(({ col, model }) => runModel(col, model)));
+    await Promise.all(modelsToRun.map(({ col, model }) => runModel(col, model)));
     setIsRunning(false);
     setTestRunCount(prev => prev + 1);
   };
@@ -2891,7 +2871,7 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' || col === '14B' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '72B' || col === '32B' ? 'text-emerald-600' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -3177,7 +3157,7 @@ export default function ChatPage() {
                                     <span className="text-sm font-mono text-gray-700 tabular-nums">
                                       {model!.benchmarks.mmlu?.toFixed(0)}%
                                     </span>
-                                    {col !== "3B" && model!.benchmarks.mmlu && (
+                                    {col !== "8B" && model!.benchmarks.mmlu && (
                                       <span className="text-xs text-emerald-600">
                                         +{(model!.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
                                       </span>
@@ -3212,9 +3192,9 @@ export default function ChatPage() {
                                     <TooltipContent side="left" className="max-w-[220px]">
                                       <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {col === "3B" || col === "8B" || col === "14B" 
+                                        {col === "8B" || col === "14B" || col === "32B" 
                                           ? "Too small for step-by-step reasoning" 
-                                          : col === "70B" 
+                                          : col === "72B" 
                                             ? "Can do basic chain-of-thought" 
                                             : "Full deep reasoning capability"}
                                       </p>
@@ -3546,7 +3526,7 @@ export default function ChatPage() {
                                   <span className="text-xs font-mono text-gray-700 tabular-nums">
                                     {renderModel.benchmarks.mmlu?.toFixed(0)}%
                                   </span>
-                                  {col !== "3B" && renderModel.benchmarks.mmlu && (
+                                  {col !== "8B" && renderModel.benchmarks.mmlu && (
                                     <span className="text-[10px] text-emerald-600 ml-1">
                                       +{(renderModel.benchmarks.mmlu - BASELINE_MMLU).toFixed(0)}
                                     </span>
@@ -3581,9 +3561,9 @@ export default function ChatPage() {
                                   <TooltipContent side="left" className="max-w-[220px]">
                                     <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {col === "3B" || col === "8B" || col === "14B" 
+                                      {col === "8B" || col === "14B" || col === "32B" 
                                         ? "Too small for step-by-step reasoning" 
-                                        : col === "70B" 
+                                        : col === "72B" 
                                           ? "Can do basic chain-of-thought" 
                                           : "Full deep reasoning capability"}
                                     </p>
@@ -3768,10 +3748,10 @@ export default function ChatPage() {
                 const maxMmlu = 95;
                 
                 const FIXED_X_POSITIONS: Record<string, number> = {
-                  "3B": 5,
-                  "8B": 20,
-                  "14B": 35,
-                  "70B": 55,
+                  "8B": 5,
+                  "14B": 25,
+                  "32B": 45,
+                  "72B": 70,
                   "Frontier": 95
                 };
                 

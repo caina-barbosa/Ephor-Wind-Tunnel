@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to five different AI model size bands (3B, 7B, 14B, 70B, Frontier) simultaneously and compare their responses in real-time. Global toggles for **Reasoning** and **Search** modes allow students to explore chain-of-thought reasoning and web-augmented generation across supported tiers. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, chain-of-thought reasoning, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
+Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to five different AI model size bands (8B, 14B, 32B, 72B, Frontier) simultaneously and compare their responses in real-time. All open-source models are from the Qwen family (Alibaba Cloud) for stability and consistency. Global toggles for **Reasoning** and **Search** modes allow students to explore chain-of-thought reasoning and web-augmented generation across supported tiers. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, chain-of-thought reasoning, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
 
 ## User Preferences
 
@@ -14,12 +14,12 @@ CRITICAL: DO NOT make changes without asking first.
 
 ### UI/UX Decisions
 
-The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, Purple for reasoning, neutral grays). The layout is a full-screen grid presenting **five model columns** (3B, 7B, 14B, 70B, Frontier) with visual cues for model size, latency, and cost. Column styling: 3B/7B (blue accent), 14B/70B (green accent), Frontier (orange accent). Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
+The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, Purple for reasoning, neutral grays). The layout is a full-screen grid presenting **five model columns** (8B, 14B, 32B, 72B, Frontier) with visual cues for model size, latency, and cost. Column styling: 8B/14B (blue accent), 32B/72B (green accent), Frontier (orange accent). Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
 
 ### Global Mode Toggles
 
-*   **Reasoning Toggle** (purple): Activates chain-of-thought reasoning for supported tiers. Only 70B (DeepSeek R1) and Frontier (Claude with extended thinking) support reasoning mode. Smaller tiers show "Not Available" with educational guidance.
-*   **Search Toggle** (blue): Activates web search mode using Perplexity models. 7B uses Sonar ($1/M), 14B/70B/Frontier use Sonar Pro ($3/M). 3B shows "Not Available" with guidance.
+*   **Reasoning Toggle** (purple): Activates chain-of-thought reasoning for supported tiers. Only 72B (DeepSeek R1) and Frontier (Claude with extended thinking) support reasoning mode. Smaller tiers show "Not Available" with educational guidance.
+*   **Search Toggle** (blue): Activates web search mode using OpenRouter's `:online` suffix powered by Exa.ai (~$0.02/request). All tiers support search mode.
 *   Only one mode can be active at a time (mutually exclusive).
 
 ### Technical Implementations
@@ -38,7 +38,7 @@ The application allows users to select context window sizes (8K-1M) and set a co
 *   **Smart Model Recommendation**: Picks the smallest/cheapest model that completed successfully:
     - Filters out empty responses and explicit refusals
     - Sorts by cost (cheapest wins), uses latency as tiebreaker
-    - For simple queries where all models succeed → picks cheapest (e.g., 3B)
+    - For simple queries where all models succeed → picks cheapest (e.g., 8B)
     - For hard queries where smaller models fail → picks smallest that succeeded
     - Latency strings (fast/medium/slow) converted to ms for proper comparison
 *   **Context Window Management**: Auto-selects the smallest appropriate context, visually indicates token usage (used/unused), and provides cost-related feedback.
@@ -107,31 +107,30 @@ The architecture is a client-server model with a React frontend and an Express.j
 
 **AI Model Providers**:
 *   Anthropic API (`api.anthropic.com`) for Claude Sonnet 4.5.
-*   Together AI API (`api.together.xyz`) for Qwen2.5-7B, Qwen2.5-72B, DeepSeek R1 Distill 70B, and DeepSeek R1.
-*   Replit AI Integration for OpenRouter for Chinese open source models: DeepSeek-R1-0528-Qwen3-8B (4B primary), DeepSeek-R1-14B (14B primary), Qwen3-14B (14B secondary), and Qwen2-72B (70B secondary), billed through Replit credits.
+*   Together AI API (`api.together.xyz`) for DeepSeek R1 (reasoning mode).
+*   Replit AI Integration for OpenRouter for all Qwen models and Kimi K2, billed through Replit credits.
 
-**Model Configuration by Band**:
-*   3B: Primary = Qwen3-Next-A3B (Together AI MoE 80B/3B active)
-*   7B: Primary = Qwen2.5-7B (Together AI), Secondary = DeepSeek-R1-Distill-Qwen-7B (OpenRouter)
-*   14B: Primary = Qwen3-14B (OpenRouter), Secondary = DeepSeek-R1-Distill-Qwen-14B (OpenRouter)
-*   70B: Primary = Qwen2.5-72B (Together AI), Secondary = Qwen2-72B (OpenRouter)
-*   Frontier: Primary = Claude Sonnet 4.5 (Anthropic), Secondary = Moonshot Kimi K2 (OpenRouter)
-*   Reasoning: DeepSeek R1 (Together AI) - Always uses chain-of-thought reasoning
+**Model Configuration by Band** (all using stable Qwen family models via OpenRouter):
+*   8B: Primary = Qwen3-8B (8.2B dense), Secondary = DeepSeek-R1-Distill-Qwen-7B
+*   14B: Primary = Qwen3-14B (14B dense), Secondary = DeepSeek-R1-Distill-Qwen-14B
+*   32B: Primary = Qwen3-32B (32B dense), Secondary = QwQ-32B (reasoning-focused)
+*   72B: Primary = Qwen2.5-72B (72B dense), Secondary = Qwen2-72B
+*   Frontier: Primary = Claude Sonnet 4.5 (Anthropic), Secondary = Kimi K2 (Moonshot, 1T+ params)
+*   Reasoning: DeepSeek R1 (Together AI) for 72B tier - Always uses chain-of-thought
 
 **Search Models** (when Search toggle is ON):
-*   Uses OpenRouter's `:online` suffix for web search on the same models
-*   All tiers support search - uses Exa for open source models (~$0.02/request)
-*   Claude (Frontier) uses native Anthropic search
-*   3B: Qwen3-Next-A3B + Search
-*   7B: Qwen2.5-7B + Search  
+*   Uses OpenRouter's `:online` suffix for web search powered by Exa.ai (~$0.02/request)
+*   All tiers support search mode
+*   8B: Qwen3-8B + Search
 *   14B: Qwen3-14B + Search
-*   70B: Qwen2.5-72B + Search
-*   Frontier: Claude Sonnet 4.5 + Search (native)
+*   32B: Qwen3-32B + Search
+*   72B: Qwen2.5-72B + Search
+*   Frontier: Claude Sonnet 4 + Search (via OpenRouter)
 
 **Reasoning Models** (when Reasoning toggle is ON):
-*   70B: DeepSeek R1 (Together AI) with chain-of-thought
+*   72B: DeepSeek R1 (Together AI) with chain-of-thought
 *   Frontier: Claude Sonnet 4.5 with extended thinking
-*   3B/7B/14B: Not available (too small for reasoning)
+*   8B/14B/32B: Not available (too small for deep reasoning)
 
 **Database Service**:
 *   Neon Serverless PostgreSQL (via Drizzle ORM).

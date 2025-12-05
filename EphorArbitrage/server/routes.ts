@@ -340,21 +340,27 @@ function getActualModelId(modelId: string): string {
     "together/Qwen/Qwen3-4B": "Qwen/Qwen3-4B",
     "together/Qwen/Qwen3-Next-80B-A3B-Instruct": "Qwen/Qwen3-Next-80B-A3B-Instruct",
     "together/Qwen/Qwen2.5-72B-Instruct-Turbo": "Qwen/Qwen2.5-72B-Instruct-Turbo",
-    // OpenRouter
+    // OpenRouter - Qwen models
+    "openrouter/qwen/qwen3-8b": "qwen/qwen3-8b",
     "openrouter/qwen/qwen3-14b": "qwen/qwen3-14b",
-    "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
+    "openrouter/qwen/qwen3-32b": "qwen/qwen3-32b",
+    "openrouter/qwen/qwen2.5-72b-instruct": "qwen/qwen2.5-72b-instruct",
+    "openrouter/qwen/qwq-32b": "qwen/qwq-32b",
+    "openrouter/qwen/qwen-2-72b-instruct": "qwen/qwen-2-72b-instruct",
+    "openrouter/qwen/qwen3-30b-a3b": "qwen/qwen3-30b-a3b",
     "openrouter/qwen/qwen3-4b": "qwen/qwen3-4b",
     "openrouter/qwen/qwen3-4b:free": "qwen/qwen3-4b:free",
-    "openrouter/qwen/qwen3-30b-a3b": "qwen/qwen3-30b-a3b",
-    "openrouter/qwen/qwen3-8b": "qwen/qwen3-8b",
+    // OpenRouter - DeepSeek distilled models
     "openrouter/deepseek/deepseek-r1-distill-qwen-7b": "deepseek/deepseek-r1-distill-qwen-7b",
     "openrouter/deepseek/deepseek-r1-distill-qwen-14b": "deepseek/deepseek-r1-distill-qwen-14b",
-    "openrouter/qwen/qwen-2-72b-instruct": "qwen/qwen-2-72b-instruct",
-    // OpenRouter :online models (web search enabled)
-    "openrouter/qwen/qwen3-30b-a3b:online": "qwen/qwen3-30b-a3b:online",
+    // OpenRouter - Other providers
+    "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
+    // OpenRouter :online models (web search enabled via Exa)
     "openrouter/qwen/qwen3-8b:online": "qwen/qwen3-8b:online",
     "openrouter/qwen/qwen3-14b:online": "qwen/qwen3-14b:online",
     "openrouter/qwen/qwen3-32b:online": "qwen/qwen3-32b:online",
+    "openrouter/qwen/qwen2.5-72b-instruct:online": "qwen/qwen2.5-72b-instruct:online",
+    "openrouter/qwen/qwen3-30b-a3b:online": "qwen/qwen3-30b-a3b:online",
     "openrouter/anthropic/claude-sonnet-4:online": "anthropic/claude-sonnet-4:online",
     // Reasoning + Search combined models
     "openrouter/deepseek/deepseek-r1:online": "deepseek/deepseek-r1:online",
