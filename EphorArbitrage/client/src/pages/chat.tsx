@@ -211,75 +211,93 @@ const REASONING_MODELS: Record<string, Model | null> = {
   },
 };
 
-// SEARCH MODELS - Used when Search toggle is ON (Perplexity models with web search)
-const SEARCH_MODELS: Record<string, Model | null> = {
-  "3B": null, // No Perplexity equivalent at this tier
-  "7B": { 
-    id: "perplexity/sonar", 
-    name: "Perplexity Sonar", 
-    costPer1k: 0.001, 
-    expectedLatency: "fast", 
+// SEARCH MODELS - Used when Search toggle is ON
+// Uses OpenRouter's :online suffix for web search on the same models
+// Exa search costs ~$0.02/request (5 results), Claude uses native search
+const SEARCH_MODELS: Record<string, Model> = {
+  "3B": { 
+    id: "openrouter/qwen/qwen3-next-a3b:online", 
+    name: "Qwen3-Next-A3B + Search", 
+    costPer1k: 0.00012, // Base cost + search overhead
+    expectedLatency: "medium", 
     reasoningDepth: "none", 
     expectedAccuracy: "good", 
-    benchmarks: { mmlu: 70, humanEval: 65 }, 
+    benchmarks: { mmlu: 65.2, humanEval: 61.4 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "8B" },
-      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search"] },
-      finetuning: { method: "SFT", variants: ["Search-augmented"] },
-      inference: { precision: "FP16", optimizations: ["Live web grounding"] },
-      safety: { aligned: true, methods: ["Content filtering", "Source verification"] }
+      architecture: { type: "Sparse MoE", attention: "MHA", parameters: "80B total / 3B active" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
+    }
+  },
+  "7B": { 
+    id: "openrouter/qwen/qwen-2.5-7b-instruct:online", 
+    name: "Qwen2.5-7B + Search", 
+    costPer1k: 0.00027, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "good", 
+    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7.6B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
+      finetuning: { method: "DPO", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["RLHF", "Source verification"] }
     }
   },
   "14B": { 
-    id: "perplexity/sonar-pro", 
-    name: "Perplexity Sonar Pro", 
-    costPer1k: 0.003, 
+    id: "openrouter/qwen/qwen3-14b:online", 
+    name: "Qwen3-14B + Search", 
+    costPer1k: 0.00015, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 78, humanEval: 72 }, 
+    benchmarks: { mmlu: 79.3, humanEval: 72.1 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "70B" },
-      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search", "Academic"] },
-      finetuning: { method: "SFT", variants: ["Search-augmented", "Pro"] },
-      inference: { precision: "BF16", optimizations: ["Live web grounding", "Multi-hop search"] },
-      safety: { aligned: true, methods: ["Content filtering", "Source verification", "Citation"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
   "70B": { 
-    id: "perplexity/sonar-pro", 
-    name: "Perplexity Sonar Pro", 
-    costPer1k: 0.003, 
+    id: "openrouter/qwen/qwen-2.5-72b-instruct:online", 
+    name: "Qwen2.5-72B + Search", 
+    costPer1k: 0.0006, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
-    expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 78, humanEval: 72 }, 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 85.3, humanEval: 86.8 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "70B" },
-      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search", "Academic"] },
-      finetuning: { method: "SFT", variants: ["Search-augmented", "Pro"] },
-      inference: { precision: "BF16", optimizations: ["Live web grounding", "Multi-hop search"] },
-      safety: { aligned: true, methods: ["Content filtering", "Source verification", "Citation"] }
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72.7B" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
+      finetuning: { method: "DPO", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["RLHF", "Source verification"] }
     }
   },
   "Frontier": { 
-    id: "perplexity/sonar-pro", 
-    name: "Perplexity Sonar Pro", 
-    costPer1k: 0.003, 
+    id: "anthropic/claude-sonnet-4.5:online", 
+    name: "Claude Sonnet 4.5 + Search", 
+    costPer1k: 0.015, // Uses native Anthropic search
     expectedLatency: "medium", 
-    reasoningDepth: "shallow", 
-    expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 78, humanEval: 72 }, 
-    modality: "text",
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 86.5, humanEval: 93.7 }, 
+    modality: "text+image",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "70B" },
-      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search", "Academic"] },
-      finetuning: { method: "SFT", variants: ["Search-augmented", "Pro"] },
-      inference: { precision: "BF16", optimizations: ["Live web grounding", "Multi-hop search"] },
-      safety: { aligned: true, methods: ["Content filtering", "Source verification", "Citation"] }
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "Undisclosed" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Native Search"] },
+      finetuning: { method: "RLHF", variants: ["Constitutional AI", "Native web search"] },
+      inference: { precision: "BF16", optimizations: ["Native Anthropic search"] },
+      safety: { aligned: true, methods: ["Constitutional AI", "RLHF", "Source verification"] }
     }
   },
 };
@@ -946,12 +964,9 @@ export default function ChatPage() {
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
   const getModelForColumn = (col: string): Model | null => {
-    // Search mode takes priority - swap to Perplexity models
+    // Search mode - use same models with :online suffix via OpenRouter
     if (searchMode) {
-      const searchModel = SEARCH_MODELS[col];
-      if (searchModel) return searchModel;
-      // If no search model for this tier, return null (will show "Not available")
-      return null;
+      return SEARCH_MODELS[col]; // All tiers now support search
     }
     
     // Reasoning mode - swap to reasoning-capable models
@@ -976,9 +991,9 @@ export default function ChatPage() {
 
   // Always returns a model for display purposes (for showing what would run)
   const getModelForDisplay = (col: string): Model | null => {
-    // Search mode takes priority
+    // Search mode - all tiers supported
     if (searchMode) {
-      return SEARCH_MODELS[col] || NON_REASONING_MODELS[col];
+      return SEARCH_MODELS[col];
     }
     
     // Reasoning mode
@@ -1000,9 +1015,7 @@ export default function ChatPage() {
   
   // Check if a mode is not available for a column
   const getModeUnavailableReason = (col: string): string | null => {
-    if (searchMode && !SEARCH_MODELS[col]) {
-      return "Search not available for this size";
-    }
+    // Search is now available for all tiers via :online suffix
     if (reasoningMode && !REASONING_MODELS[col]) {
       return "Reasoning not available for this size";
     }
@@ -2216,7 +2229,7 @@ export default function ChatPage() {
                 </TooltipTrigger>
                 <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
                   <p className="font-bold mb-1">Web Search Mode</p>
-                  <p className="text-xs">Switch to Perplexity Sonar models with live web search capability. 7B uses Sonar ($1/M), 14B+ uses Sonar Pro ($3/M). 3B not available.</p>
+                  <p className="text-xs">Add real-time web search to any model via OpenRouter. Claude uses native Anthropic search, others use Exa (~$0.02/request). Compare how different model sizes handle search-augmented responses!</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -2477,34 +2490,29 @@ export default function ChatPage() {
                       const costExplanations = getCostMultiplierExplanation(contextSize);
                       const cheapestBand = getCheapestEligibleBand(costCap, inputTokenEstimate);
                       
-                      // Special UI for mode unavailability
+                      // Special UI for mode unavailability (only Reasoning mode now, Search works on all tiers)
                       if (modeUnavailableReason) {
                         return (
                           <div 
                             key={col}
-                            className={`p-3 min-h-[280px] flex flex-col items-center justify-center transition-all duration-150 bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                            className={`p-3 min-h-[280px] flex flex-col items-center justify-center transition-all duration-150 bg-purple-50/50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                           >
-                            <div className={`w-10 h-10 mb-3 rounded-full flex items-center justify-center ${
-                              searchMode ? 'bg-blue-100' : 'bg-purple-100'
-                            }`}>
-                              {searchMode ? (
-                                <Search className="w-5 h-5 text-blue-400" />
-                              ) : (
-                                <Brain className="w-5 h-5 text-purple-400" />
-                              )}
+                            <div className="w-10 h-10 mb-3 rounded-full flex items-center justify-center bg-purple-100">
+                              <Brain className="w-5 h-5 text-purple-400" />
                             </div>
-                            <span className="text-sm font-medium text-gray-500 text-center mb-1">
+                            <span className="text-sm font-medium text-purple-600 text-center mb-1">
                               Not Available
                             </span>
-                            <span className="text-xs text-gray-400 text-center px-4">
+                            <span className="text-xs text-gray-500 text-center px-4">
                               {modeUnavailableReason}
                             </span>
-                            <div className="mt-4 text-[10px] text-gray-400 text-center px-3">
-                              {searchMode ? (
-                                <span>Try 7B or larger for web search</span>
-                              ) : (
-                                <span>Try 70B or Frontier for reasoning</span>
-                              )}
+                            <div className="mt-4 p-2 bg-white rounded-lg border border-purple-100">
+                              <p className="text-[10px] text-gray-500 text-center">
+                                Chain-of-thought reasoning requires larger models.
+                              </p>
+                              <p className="text-[10px] text-purple-600 font-medium text-center mt-1">
+                                Try 70B or Frontier
+                              </p>
                             </div>
                           </div>
                         );

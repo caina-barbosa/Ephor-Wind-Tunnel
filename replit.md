@@ -83,9 +83,14 @@ The architecture is a client-server model with a React frontend and an Express.j
 *   Reasoning: DeepSeek R1 (Together AI) - Always uses chain-of-thought reasoning
 
 **Search Models** (when Search toggle is ON):
-*   7B: Perplexity Sonar ($1/M tokens)
-*   14B/70B/Frontier: Perplexity Sonar Pro ($3/M tokens)
-*   3B: Not available (too small for search)
+*   Uses OpenRouter's `:online` suffix for web search on the same models
+*   All tiers support search - uses Exa for open source models (~$0.02/request)
+*   Claude (Frontier) uses native Anthropic search
+*   3B: Qwen3-Next-A3B + Search
+*   7B: Qwen2.5-7B + Search  
+*   14B: Qwen3-14B + Search
+*   70B: Qwen2.5-72B + Search
+*   Frontier: Claude Sonnet 4.5 + Search (native)
 
 **Reasoning Models** (when Reasoning toggle is ON):
 *   70B: DeepSeek R1 (Together AI) with chain-of-thought
