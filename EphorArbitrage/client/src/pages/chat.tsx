@@ -3707,12 +3707,16 @@ export default function ChatPage() {
                         const isRecommended = showResults && col === recommendedModel;
                         const hasResult = responses[col]?.content;
                         
-                        // X: log scale from $0.00001 to $0.05
-                        const logX = ((Math.log10(Math.max(cost, 0.00001)) + 5) / 3.7) * 100;
-                        // Y: MMLU 60-90 mapped to 100-0
+                        // X: linear scale based on actual cost range
+                        // Typical costs: 3B=$0.00001, 7B=$0.0002, 14B=$0.0005, 70B=$0.002, Frontier=$0.01
+                        // Use log10 scale: -5 (cheap) to -2 (expensive)
+                        const logCost = Math.log10(Math.max(cost, 0.000001));
+                        // Map log range [-6, -1.5] to [5%, 95%]
+                        const x = ((logCost + 6) / 4.5) * 90 + 5;
+                        // Y: MMLU 60-90 mapped to 100-0 (higher capability = higher on chart)
                         const y = 100 - ((mmlu - 60) / 30) * 100;
                         
-                        return { col, x: Math.max(5, Math.min(95, logX)), y: Math.max(5, Math.min(95, y)), cost, mmlu, disabled, isRecommended, hasResult };
+                        return { col, x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)), cost, mmlu, disabled, isRecommended, hasResult };
                       }).filter(Boolean) as any[];
                       
                       // Pareto frontier: models where no other is both cheaper AND better
@@ -3762,10 +3766,12 @@ export default function ChatPage() {
                       const { disabled } = isModelDisabled(col);
                       const isRecommended = showResults && col === recommendedModel;
                       
-                      const logX = ((Math.log10(Math.max(cost, 0.00001)) + 5) / 3.7) * 100;
+                      // Same log scale as SVG points
+                      const logCost = Math.log10(Math.max(cost, 0.000001));
+                      const x = ((logCost + 6) / 4.5) * 90 + 5;
                       const y = 100 - ((mmlu - 60) / 30) * 100;
                       
-                      return { col, x: Math.max(5, Math.min(95, logX)), y: Math.max(5, Math.min(95, y)), cost, isRecommended, disabled };
+                      return { col, x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)), cost, isRecommended, disabled };
                     }).filter(Boolean) as any[];
                     
                     return modelData.map((m, i) => (

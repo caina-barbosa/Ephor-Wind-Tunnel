@@ -1495,19 +1495,37 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
           // If content is empty, check for tool call results
           if (!content.trim()) {
             const message = completion.choices[0]?.message as any;
+            console.log(`[Search Debug] ${modelId} message:`, JSON.stringify(message, null, 2));
+            
             if (message?.tool_calls) {
               for (const tc of message.tool_calls) {
+                console.log(`[Search Debug] Tool call:`, JSON.stringify(tc, null, 2));
                 if (tc.function?.arguments) {
+                  // Try to parse as JSON first
                   try {
                     const args = JSON.parse(tc.function.arguments);
                     if (args.response) content += args.response;
                     if (args.content) content += args.content;
                     if (args.answer) content += args.answer;
-                  } catch {}
+                    if (args.text) content += args.text;
+                    if (args.result) content += args.result;
+                    if (args.output) content += args.output;
+                  } catch (e) {
+                    // If not valid JSON, use the raw string as the response
+                    console.log(`[Search Debug] Not JSON, using raw arguments`);
+                    content += tc.function.arguments;
+                  }
                 }
               }
             }
+            
+            // Also check for reasoning field (some models put response there)
+            if (!content.trim() && message?.reasoning) {
+              content = message.reasoning;
+            }
           }
+          
+          console.log(`[Search Debug] Final content length: ${content.length}`);
           
           // Use usage data if available
           inputTokens = completion.usage?.prompt_tokens || Math.ceil(prompt.length / 4);
