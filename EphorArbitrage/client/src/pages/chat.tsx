@@ -1627,12 +1627,21 @@ export default function ChatPage() {
         });
       } catch (err: any) {
         console.error(`[${col}] Stream error:`, err);
+        // Better error message extraction
+        let errorMessage = "Failed";
+        if (err instanceof TypeError && err.message === "Failed to fetch") {
+          errorMessage = "Network error - request failed";
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === 'string') {
+          errorMessage = err;
+        }
         setResponses((prev) => ({
           ...prev,
           [col]: {
             content: "",
             loading: false,
-            error: err.message || "Failed",
+            error: errorMessage,
             latency: null,
             cost: null,
             progress: 0,
