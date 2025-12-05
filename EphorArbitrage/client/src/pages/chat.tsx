@@ -1708,9 +1708,9 @@ export default function ChatPage() {
       // TEMP FIX: If search mode and tier is 3B or 70B, show unavailable immediately
       if (searchMode && SEARCH_UNAVAILABLE_TIERS.includes(col)) {
         initialResponses[col] = { 
-          content: "Search is temporarily unavailable for this model. Please try 8B, 14B, or Frontier tiers for search queries.", 
+          content: "__SEARCH_UNAVAILABLE__", 
           loading: false, 
-          error: "Search unavailable", 
+          error: null, 
           latency: null, 
           cost: null, 
           progress: 100 
@@ -2918,14 +2918,16 @@ export default function ChatPage() {
                     const response = responses[col];
                     const isLoading = response?.loading;
                     const hasError = response?.error;
-                    const hasContent = response?.content;
+                    // TEMP FIX: Check if this is the special "search unavailable" marker
+                    const isSearchUnavailable = response?.content === "__SEARCH_UNAVAILABLE__";
+                    const hasContent = response?.content && !isSearchUnavailable;
                     const isRecommended = showResults && col === recommendedModel;
                     
-                    // IMPORTANT: If we have results (content, loading, or error), 
+                    // IMPORTANT: If we have results (content, loading, error, or search unavailable), 
                     // ALWAYS show them even if model would be "disabled" under current settings.
                     // This preserves results from Expert Mode runs when Expert Mode is later toggled off.
                     // Use displayModel (which always exists) to render results even when getModelForColumn returns null.
-                    const hasResults = hasContent || isLoading || hasError;
+                    const hasResults = hasContent || isLoading || hasError || isSearchUnavailable;
 
                     // Check if mode is unavailable for this column
                     const modeUnavailableReason = getModeUnavailableReason(col);
@@ -3404,6 +3406,29 @@ export default function ChatPage() {
                       <div className="text-center py-4">
                         <XCircle className="w-10 h-10 mx-auto text-red-500 mb-2" />
                         <p className="text-xs text-red-600 font-medium">{response.error}</p>
+                      </div>
+                    )}
+
+                    {/* TEMP FIX: Special UI for search unavailable on 3B and 70B */}
+                    {isSearchUnavailable && (
+                      <div className="text-center py-4 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 mb-3 rounded-full flex items-center justify-center bg-blue-100">
+                          <Search className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <span className="text-sm font-medium text-blue-600 text-center mb-1">
+                          Search Not Available
+                        </span>
+                        <span className="text-xs text-gray-500 text-center px-4">
+                          Web search is temporarily unavailable for this model size.
+                        </span>
+                        <div className="mt-4 p-2 bg-white rounded-lg border border-blue-100">
+                          <p className="text-[10px] text-gray-500 text-center">
+                            Search works best with mid-size or larger models.
+                          </p>
+                          <p className="text-[10px] text-blue-600 font-medium text-center mt-1">
+                            Try 8B, 14B, or Frontier
+                          </p>
+                        </div>
                       </div>
                     )}
 
