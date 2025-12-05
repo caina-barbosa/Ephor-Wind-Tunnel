@@ -311,7 +311,7 @@ const REASONING_SEARCH_MODELS: Record<string, Model | null> = {
   "14B": null, // Reasoning not available - will fall back to search-only
   "70B": { 
     id: "openrouter/deepseek/deepseek-r1:online", 
-    name: "DeepSeek R1 + Search", 
+    name: "DeepSeek R1 + Reasoning + Search", 
     costPer1k: 0.0028, // R1 + search overhead
     expectedLatency: "slow", 
     reasoningDepth: "deep", 
@@ -2699,23 +2699,23 @@ export default function ChatPage() {
                           <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
                             {renderModel.name}
                           </div>
-                          {/* Reasoning unavailable warning - show when reasoning is ON but not available for this tier */}
+                          {/* Search-only indicator - show when reasoning is ON but not available for this tier */}
                           {reasoningMode && !REASONING_MODELS[col] && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button className="mt-1.5 inline-flex items-center gap-1 text-[10px] bg-purple-100 text-purple-700 px-2 py-1 rounded font-medium border border-purple-200 touch-manipulation">
-                                  <Brain className="w-3 h-3" />
-                                  <span>Reasoning N/A</span>
+                                <button className="mt-1.5 inline-flex items-center gap-1 text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded font-medium border border-gray-200 touch-manipulation">
+                                  <Search className="w-3 h-3" />
+                                  <span>Search only</span>
                                   <Info className="w-2.5 h-2.5 ml-0.5" />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent side="bottom" className="bg-white border-gray-200 text-gray-700 max-w-[220px] p-3">
-                                <p className="font-bold text-purple-600 text-xs mb-1.5">Reasoning Not Available</p>
+                                <p className="font-bold text-gray-700 text-xs mb-1.5">Search Only at This Tier</p>
                                 <p className="text-[10px] text-gray-600 mb-2">
-                                  This tier only supports <span className="font-semibold">Search</span>. Chain-of-thought reasoning requires larger models (70B+).
+                                  Smaller models can search the web but lack the parameter count for chain-of-thought reasoning.
                                 </p>
-                                <p className="text-[10px] text-purple-600 font-medium">
-                                  For full Reasoning + Search, try 70B or Frontier.
+                                <p className="text-[10px] text-blue-600 font-medium">
+                                  For Reasoning + Search, try 70B or Frontier.
                                 </p>
                               </TooltipContent>
                             </Tooltip>
