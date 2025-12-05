@@ -40,6 +40,9 @@ export async function createOpenRouterChatCompletion(
         )
       : request.messages;
     
+    // Check if this is a search-enabled model (:online suffix)
+    const isSearchModel = request.model.endsWith(':online');
+    
     // Use streaming to measure TTFT (Time to First Token)
     const stream = await client.chat.completions.create({
       model: request.model,
@@ -51,6 +54,7 @@ export async function createOpenRouterChatCompletion(
     let ttftMs = 0;
     let content = "";
     let firstChunkReceived = false;
+    let toolCallContent = ""; // Capture tool call outputs for :online models
     
     for await (const chunk of stream) {
       if (!firstChunkReceived) {
@@ -59,8 +63,43 @@ export async function createOpenRouterChatCompletion(
         console.log(`[OpenRouter] ${request.model} TTFT: ${ttftMs}ms`);
       }
       
+      // Primary: regular content delta
       const delta = chunk.choices[0]?.delta?.content || "";
       content += delta;
+      
+      // For :online search models, also check for tool call outputs
+      // Some models return search results via tool_calls instead of content
+      if (isSearchModel && chunk.choices[0]?.delta) {
+        const deltaAny = chunk.choices[0].delta as any;
+        
+        // Check for tool call output text (some models use this for search results)
+        if (deltaAny.tool_calls) {
+          for (const tc of deltaAny.tool_calls) {
+            if (tc.output_text) {
+              toolCallContent += tc.output_text;
+            }
+            // Also check function arguments (some models embed response here)
+            if (tc.function?.arguments) {
+              try {
+                const args = JSON.parse(tc.function.arguments);
+                if (args.response) toolCallContent += args.response;
+                if (args.content) toolCallContent += args.content;
+              } catch {}
+            }
+          }
+        }
+        
+        // Check message-level content as fallback
+        if (deltaAny.message?.content) {
+          toolCallContent += deltaAny.message.content;
+        }
+      }
+    }
+    
+    // For :online models, prefer tool call content if main content is empty
+    if (isSearchModel && !content.trim() && toolCallContent.trim()) {
+      console.log(`[OpenRouter] ${request.model}: Using tool call content (${toolCallContent.length} chars)`);
+      content = toolCallContent;
     }
     
     // Estimate tokens (streaming doesn't provide usage in chunks)

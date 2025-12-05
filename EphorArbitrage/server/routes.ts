@@ -1474,6 +1474,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       let content = "";
       let tokenCount = 0;
       let firstTokenTime = 0;
+      let toolCallContent = ""; // Capture tool call outputs for :online search models
       
       for await (const chunk of stream) {
         if (firstTokenTime === 0) {
@@ -1493,6 +1494,48 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
             elapsed: Date.now() - startTime
           })}\n\n`);
         }
+        
+        // For :online search models, also capture tool call outputs
+        // Some models (like Qwen) return search results via tool_calls instead of content
+        if (isSearchModel && chunk.choices[0]?.delta) {
+          const deltaAny = chunk.choices[0].delta as any;
+          
+          // Check for tool call output text
+          if (deltaAny.tool_calls) {
+            for (const tc of deltaAny.tool_calls) {
+              if (tc.output_text) {
+                toolCallContent += tc.output_text;
+              }
+              // Also check function arguments
+              if (tc.function?.arguments) {
+                try {
+                  const args = JSON.parse(tc.function.arguments);
+                  if (args.response) toolCallContent += args.response;
+                  if (args.content) toolCallContent += args.content;
+                } catch {}
+              }
+            }
+          }
+          
+          // Check message-level content as fallback
+          if (deltaAny.message?.content) {
+            toolCallContent += deltaAny.message.content;
+          }
+        }
+      }
+      
+      // For :online models, use tool call content if main content is empty
+      if (isSearchModel && !content.trim() && toolCallContent.trim()) {
+        console.log(`[Wind Tunnel Stream] ${modelId}: Using tool call content (${toolCallContent.length} chars)`);
+        content = toolCallContent;
+        
+        // Send the content we recovered from tool calls
+        res.write(`data: ${JSON.stringify({ 
+          type: 'token', 
+          content: toolCallContent,
+          tokenCount: Math.ceil(toolCallContent.length / 4),
+          elapsed: Date.now() - startTime
+        })}\n\n`);
       }
 
       const latency = Date.now() - startTime;
