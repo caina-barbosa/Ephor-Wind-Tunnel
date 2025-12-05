@@ -682,13 +682,14 @@ const getCheapestEligibleBand = (
 // Uploaded file with token estimation
 interface UploadedFile {
   id: string;
+  serverId?: string; // Server-side file ID for large files uploaded via multipart
   name: string;
   type: 'image' | 'text' | 'pdf';
   mimeType: string; // Full MIME type like 'image/png', 'text/plain'
   size: number;
   estimatedTokens: number;
   preview?: string; // For images: data URL, for text: first 100 chars
-  dataUrl?: string; // Full base64 data URL for sending to API (images)
+  dataUrl?: string; // Full base64 data URL for sending to API (images) - only for small files
   textContent?: string; // Full text content for text files
 }
 
@@ -1413,8 +1414,8 @@ export default function ChatPage() {
     return sorted[0] || null;
   }, [allModelsComplete, responses, costCap, contextSize, inputTokenEstimate]);
 
-  // File upload handler
-  const MAX_FILE_SIZE_MB = 4; // Max 4MB per file to avoid network issues
+  // File upload handler - uses server endpoint for reliable large file handling
+  const MAX_FILE_SIZE_MB = 10; // Max 10MB per file (server limit)
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
   
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1425,7 +1426,9 @@ export default function ChatPage() {
     
     const newFiles: UploadedFile[] = [];
     const skippedFiles: string[] = [];
+    const filesToUpload: File[] = [];
     
+    // First pass: validate files and estimate tokens
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileType = file.type;
@@ -1436,33 +1439,8 @@ export default function ChatPage() {
         continue;
       }
       
-      // Determine file category
-      let type: 'image' | 'text' | 'pdf';
-      if (fileType.startsWith('image/')) {
-        type = 'image';
-      } else if (fileType === 'application/pdf' || file.name.endsWith('.pdf')) {
-        type = 'pdf';
-      } else {
-        type = 'text';
-      }
-      
-      // Estimate tokens and get file data
-      const { tokens, preview, dataUrl, textContent } = await estimateFileTokens(file);
-      
-      newFiles.push({
-        id: `${Date.now()}-${i}`,
-        name: file.name,
-        type,
-        mimeType: fileType || 'application/octet-stream',
-        size: file.size,
-        estimatedTokens: tokens,
-        preview,
-        dataUrl,
-        textContent
-      });
+      filesToUpload.push(file);
     }
-    
-    setUploadedFiles(prev => [...prev, ...newFiles]);
     
     // Show warning for skipped files
     if (skippedFiles.length > 0) {
@@ -1473,12 +1451,83 @@ export default function ChatPage() {
       });
     }
     
-    // Show toast with token info for added files
-    if (newFiles.length > 0) {
+    if (filesToUpload.length === 0) {
+      event.target.value = '';
+      return;
+    }
+    
+    // Show uploading toast
+    toast({
+      title: "Uploading files...",
+      description: `Processing ${filesToUpload.length} file${filesToUpload.length > 1 ? 's' : ''}`,
+    });
+    
+    try {
+      // Upload files to server using FormData
+      const formData = new FormData();
+      for (const file of filesToUpload) {
+        formData.append('files', file);
+      }
+      
+      const uploadResponse = await fetch('/api/wind-tunnel/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed: ${uploadResponse.status}`);
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      
+      // Process uploaded files and create local entries
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+        const serverFile = uploadResult.files[i];
+        const fileType = file.type;
+        
+        // Determine file category
+        let type: 'image' | 'text' | 'pdf';
+        if (fileType.startsWith('image/')) {
+          type = 'image';
+        } else if (fileType === 'application/pdf' || file.name.endsWith('.pdf')) {
+          type = 'pdf';
+        } else {
+          type = 'text';
+        }
+        
+        // Estimate tokens and get preview (for display only)
+        const { tokens, preview, textContent } = await estimateFileTokens(file);
+        
+        newFiles.push({
+          id: `${Date.now()}-${i}`,
+          serverId: serverFile.id, // Server-side file ID for API requests
+          name: file.name,
+          type,
+          mimeType: fileType || 'application/octet-stream',
+          size: file.size,
+          estimatedTokens: tokens,
+          preview,
+          textContent // Keep text content for text files (small enough)
+        });
+      }
+      
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+      
+      // Show success toast with token info
       const totalNewTokens = newFiles.reduce((sum, f) => sum + f.estimatedTokens, 0);
       toast({
-        title: `${newFiles.length} file${newFiles.length > 1 ? 's' : ''} added`,
+        title: `${newFiles.length} file${newFiles.length > 1 ? 's' : ''} uploaded`,
         description: `~${totalNewTokens.toLocaleString()} tokens added to context`,
+      });
+      
+    } catch (error: any) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload files. Please try again.",
+        variant: "destructive",
       });
     }
     
@@ -1512,14 +1561,22 @@ export default function ChatPage() {
 
     const runModel = async (col: string, model: Model) => {
       try {
-        // Prepare files for API request (only include data for vision-capable models)
-        const filesToSend = uploadedFiles.map(f => ({
-          type: f.type,
-          mimeType: f.mimeType,
-          name: f.name,
-          dataUrl: f.dataUrl,
-          textContent: f.textContent
-        }));
+        // Use server-side file IDs for files uploaded to the server
+        // This avoids sending large base64 data in JSON and prevents network failures
+        const fileIds = uploadedFiles
+          .filter(f => f.serverId) // Only include files with server IDs
+          .map(f => f.serverId as string);
+        
+        // For backward compatibility: include text content for text files (small)
+        // Text files still need to be sent directly as they're not handled by the server upload
+        const textFiles = uploadedFiles
+          .filter(f => f.type === 'text' && f.textContent && !f.serverId)
+          .map(f => ({
+            type: f.type,
+            mimeType: f.mimeType,
+            name: f.name,
+            textContent: f.textContent
+          }));
         
         const response = await fetch("/api/wind-tunnel/stream", {
           method: "POST",
@@ -1527,7 +1584,8 @@ export default function ChatPage() {
           body: JSON.stringify({ 
             modelId: model.id, 
             prompt: prompt,
-            files: filesToSend.length > 0 ? filesToSend : undefined
+            fileIds: fileIds.length > 0 ? fileIds : undefined,
+            files: textFiles.length > 0 ? textFiles : undefined
           }),
         });
 

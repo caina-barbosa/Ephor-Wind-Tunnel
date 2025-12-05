@@ -1,7 +1,41 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
 import { storage } from "./storage";
 import type { ChatMessage, ChatCompletionResult } from "./types";
+
+// Configure multer for memory storage (files stored in RAM)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+  },
+});
+
+// Temporary storage for uploaded files (in-memory with auto-cleanup)
+interface UploadedFileData {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  dataUrl: string;
+  uploadedAt: number;
+}
+
+const uploadedFilesStore = new Map<string, UploadedFileData>();
+
+// Clean up old files every 5 minutes (remove files older than 30 minutes)
+setInterval(() => {
+  const now = Date.now();
+  const maxAge = 30 * 60 * 1000; // 30 minutes
+  const entries = Array.from(uploadedFilesStore.entries());
+  for (const [id, file] of entries) {
+    if (now - file.uploadedAt > maxAge) {
+      uploadedFilesStore.delete(id);
+      console.log(`[Upload] Cleaned up expired file: ${id}`);
+    }
+  }
+}, 5 * 60 * 1000);
 import { createGroqChatCompletion, GROQ_MODEL_ID } from "./groq";
 import { createCerebrasChatCompletion, CEREBRAS_MODEL_ID } from "./cerebras";
 import { createDeepSeekChatCompletion, DEEPSEEK_MODEL_ID } from "./deepseek";
@@ -1074,9 +1108,55 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
     }
   });
 
+  // Wind Tunnel: File upload endpoint
+  app.post("/api/wind-tunnel/upload", upload.array("files", 10), (async (req: any, res: any) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+      }
+
+      const uploadedFiles: UploadedFileData[] = [];
+
+      for (const file of files) {
+        const id = `upload_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        const base64 = file.buffer.toString("base64");
+        const dataUrl = `data:${file.mimetype};base64,${base64}`;
+
+        const fileData: UploadedFileData = {
+          id,
+          name: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          dataUrl,
+          uploadedAt: Date.now(),
+        };
+
+        uploadedFilesStore.set(id, fileData);
+        uploadedFiles.push(fileData);
+        
+        console.log(`[Upload] Stored file: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB) as ${id}`);
+      }
+
+      // Return file metadata (without the full dataUrl to keep response small)
+      res.json({
+        success: true,
+        files: uploadedFiles.map(f => ({
+          id: f.id,
+          name: f.name,
+          mimeType: f.mimeType,
+          size: f.size,
+        })),
+      });
+    } catch (error: any) {
+      console.error("[Upload] Error:", error);
+      res.status(500).json({ error: error.message || "Upload failed" });
+    }
+  }) as any);
+
   // Wind Tunnel: Run a single model with streaming
   app.post("/api/wind-tunnel/stream", async (req, res) => {
-    const { modelId, prompt, files } = req.body;
+    const { modelId, prompt, files, fileIds } = req.body;
 
     if (!modelId || typeof modelId !== "string") {
       return res.status(400).json({ error: "Model ID is required" });
@@ -1092,7 +1172,44 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    console.log(`[Wind Tunnel Stream] Running model: ${modelId}, files: ${files?.length || 0}`);
+    // Resolve files from fileIds or use directly provided files
+    let resolvedFiles: any[] = files || [];
+    
+    // If fileIds provided, look up files from the upload store
+    if (fileIds && Array.isArray(fileIds) && fileIds.length > 0) {
+      resolvedFiles = [];
+      for (const fileId of fileIds) {
+        const storedFile = uploadedFilesStore.get(fileId);
+        if (storedFile) {
+          const isImage = storedFile.mimeType.startsWith('image/');
+          const resolvedFile: any = {
+            type: isImage ? 'image' : 'text',
+            mimeType: storedFile.mimeType,
+            name: storedFile.name,
+            dataUrl: storedFile.dataUrl,
+          };
+          
+          // For text files, extract text content from base64 dataUrl
+          if (!isImage && storedFile.dataUrl) {
+            try {
+              const base64Match = storedFile.dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+              if (base64Match) {
+                resolvedFile.textContent = Buffer.from(base64Match[1], 'base64').toString('utf-8');
+              }
+            } catch (e) {
+              console.warn(`[Wind Tunnel] Could not decode text content for ${storedFile.name}`);
+            }
+          }
+          
+          resolvedFiles.push(resolvedFile);
+          console.log(`[Wind Tunnel] Resolved file from store: ${storedFile.name} (${fileId}), type: ${resolvedFile.type}`);
+        } else {
+          console.warn(`[Wind Tunnel] File not found in store: ${fileId}`);
+        }
+      }
+    }
+
+    console.log(`[Wind Tunnel Stream] Running model: ${modelId}, files: ${resolvedFiles.length}`);
 
     try {
       const messages: ChatMessage[] = [{ role: "user", content: prompt }];
@@ -1109,11 +1226,11 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         // Build multimodal content for Claude if there are files
         let messageContent: any = prompt;
         
-        if (files && Array.isArray(files) && files.length > 0) {
+        if (resolvedFiles && Array.isArray(resolvedFiles) && resolvedFiles.length > 0) {
           const contentParts: any[] = [];
           
           // Add images first
-          for (const file of files) {
+          for (const file of resolvedFiles) {
             if (file.type === 'image' && file.dataUrl) {
               // Extract base64 data from data URL (format: data:image/png;base64,XXXXX)
               const matches = file.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -1252,10 +1369,10 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       let enhancedPrompt = prompt;
       let hasImages = false;
       
-      if (files && Array.isArray(files) && files.length > 0) {
+      if (resolvedFiles && Array.isArray(resolvedFiles) && resolvedFiles.length > 0) {
         const textParts: string[] = [];
         
-        for (const file of files) {
+        for (const file of resolvedFiles) {
           if (file.type === 'text' && file.textContent) {
             textParts.push(`[File: ${file.name}]\n${file.textContent}\n`);
           } else if (file.type === 'image') {
@@ -1269,7 +1386,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         
         if (hasImages) {
           console.log(`[Wind Tunnel] Warning: ${modelId} does not support vision - images will be ignored`);
-          enhancedPrompt = `[Note: ${files.filter(f => f.type === 'image').length} image(s) were uploaded but this model does not support vision]\n\n` + enhancedPrompt;
+          enhancedPrompt = `[Note: ${resolvedFiles.filter((f: any) => f.type === 'image').length} image(s) were uploaded but this model does not support vision]\n\n` + enhancedPrompt;
         }
       }
       
