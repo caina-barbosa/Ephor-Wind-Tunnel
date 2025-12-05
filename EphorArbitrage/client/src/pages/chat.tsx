@@ -80,7 +80,7 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
+const COLUMNS = ["3B", "8B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
@@ -100,7 +100,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
-  "7B": { 
+  "8B": { 
     id: "together/qwen-2.5-7b-instruct-turbo", 
     name: "Qwen2.5-7B", 
     costPer1k: 0.00015, 
@@ -173,7 +173,7 @@ const NON_REASONING_MODELS: Record<string, Model> = {
 // REASONING MODELS - Used when Reasoning toggle is ON (models that support chain-of-thought)
 const REASONING_MODELS: Record<string, Model | null> = {
   "3B": null, // Too small for reasoning
-  "7B": null, // Too small for reasoning
+  "8B": null, // Too small for reasoning
   "14B": null, // Too small for reasoning
   "70B": { 
     id: "together/deepseek-r1", 
@@ -232,7 +232,7 @@ const SEARCH_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
-  "7B": { 
+  "8B": { 
     id: "openrouter/qwen/qwen3-8b:online", 
     name: "Qwen3-8B + Search", 
     costPer1k: 0.0003, 
@@ -307,7 +307,7 @@ const SEARCH_MODELS: Record<string, Model> = {
 // Only 70B and Frontier truly support both; smaller tiers use search-only
 const REASONING_SEARCH_MODELS: Record<string, Model | null> = {
   "3B": null, // Reasoning not available - will fall back to search-only
-  "7B": null, // Reasoning not available - will fall back to search-only
+  "8B": null, // Reasoning not available - will fall back to search-only
   "14B": null, // Reasoning not available - will fall back to search-only
   "70B": { 
     id: "openrouter/deepseek/deepseek-r1:online", 
@@ -367,8 +367,8 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
       }
     },
   ],
-  "7B": [
-    NON_REASONING_MODELS["7B"],
+  "8B": [
+    NON_REASONING_MODELS["8B"],
     { 
       id: "openrouter/deepseek/deepseek-r1-distill-qwen-7b", 
       name: "DeepSeek-R1-7B", 
@@ -456,7 +456,7 @@ const BASELINE_MMLU = 72.5;
 const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "deep"; label: string; color: string } => {
   switch (col) {
     case "3B": 
-    case "7B": 
+    case "8B": 
     case "14B": 
       return { depth: "none", label: "None", color: "text-gray-400" };
     case "70B": 
@@ -508,7 +508,7 @@ const COLUMN_VISUALS: Record<string, {
     prominence: "small",
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
-  "7B": {
+  "8B": {
     headerSize: "text-xl font-bold text-blue-700",
     headerBg: "bg-blue-50",
     cardStyle: "bg-white",
@@ -577,7 +577,7 @@ const getCapabilityDescription = (accuracy: "basic" | "good" | "strong" | "excel
 const getSkillTag = (col: string): string => {
   switch (col) {
     case "3B": return "Fast & efficient MoE model";
-    case "7B": return "Solid general assistant";
+    case "8B": return "Solid general assistant";
     case "14B": return "Strong reasoning";
     case "70B": return "Multi-step reasoning";
     case "Frontier": return "Coding & complex tasks";
@@ -821,7 +821,7 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
+    "3B": 0, "8B": 0, "14B": 0, "70B": 0, "Frontier": 0
   });
   
   // Global mode toggles
@@ -3172,7 +3172,7 @@ export default function ChatPage() {
                                     <TooltipContent side="left" className="max-w-[220px]">
                                       <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {col === "3B" || col === "7B" || col === "14B" 
+                                        {col === "3B" || col === "8B" || col === "14B" 
                                           ? "Too small for step-by-step reasoning" 
                                           : col === "70B" 
                                             ? "Can do basic chain-of-thought" 
@@ -3518,7 +3518,7 @@ export default function ChatPage() {
                                   <TooltipContent side="left" className="max-w-[220px]">
                                     <p className="text-xs font-medium">Reasoning capability for this size band</p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {col === "3B" || col === "7B" || col === "14B" 
+                                      {col === "3B" || col === "8B" || col === "14B" 
                                         ? "Too small for step-by-step reasoning" 
                                         : col === "70B" 
                                           ? "Can do basic chain-of-thought" 
