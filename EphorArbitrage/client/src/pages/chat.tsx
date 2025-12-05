@@ -1499,24 +1499,36 @@ export default function ChatPage() {
       }
     };
     
+    // Tier order: prefer smaller models when costs are similar
+    const TIER_ORDER: Record<string, number> = {
+      "3B": 1,
+      "8B": 2,
+      "14B": 3,
+      "70B": 4,
+      "Frontier": 5
+    };
+    
     const modelScores = completedModels.map(col => {
       const model = getModelForColumn(col);
       const resp = responses[col];
       const cost = resp?.cost ?? estimateCost(model!);
       // Use actual latency if available, otherwise convert expectedLatency string to ms
       const latency = resp?.latency ?? latencyToMs(model?.expectedLatency || "medium");
+      const tierRank = TIER_ORDER[col] || 99;
       
-      return { col, cost, latency };
+      return { col, cost, latency, tierRank };
     });
     
-    // Sort by cost first (cheapest wins), then by latency (faster wins)
-    // This ensures we pick the smallest/cheapest model that handled the task
+    // Sort by cost first, but when costs are very similar (< $0.001), prefer smaller tiers
     modelScores.sort((a, b) => {
-      // Primary: cost (lower is better)
+      // If costs are very similar (within $0.001), prefer smaller tier
       const costDiff = a.cost - b.cost;
-      if (Math.abs(costDiff) > 0.00001) return costDiff;
-      // Tiebreaker: latency (lower is better)
-      return a.latency - b.latency;
+      if (Math.abs(costDiff) < 0.001) {
+        // Costs are similar - prefer smaller tier (3B > 8B > 14B > 70B > Frontier)
+        return a.tierRank - b.tierRank;
+      }
+      // Otherwise sort by cost (cheaper wins)
+      return costDiff;
     });
     
     // Pick the cheapest model that passed quality checks
