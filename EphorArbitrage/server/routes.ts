@@ -1486,12 +1486,23 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         })}\n\n`);
         
         try {
+          // Check if this is an OpenRouter model for provider preferences
+          const isOpenRouterModel = modelId.startsWith("openrouter/") || modelId.endsWith(":online");
+          
           const completion = await client.chat.completions.create({
             model: actualModelId,
             messages: streamMessages,
             max_tokens: maxTokens,
             stream: false,
-          });
+            // Add OpenRouter provider preferences for latency optimization
+            ...(isOpenRouterModel && {
+              // @ts-ignore - OpenRouter-specific parameter
+              provider: {
+                order: ["Latency"],
+                allow_fallbacks: true
+              }
+            })
+          } as any);
           
           latency = Date.now() - startTime;
           
@@ -1566,12 +1577,23 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         }
       } else {
         // Regular streaming for non-search models
+        // Check if this is an OpenRouter model for provider preferences
+        const isOpenRouterModel = modelId.startsWith("openrouter/");
+        
         const stream = await client.chat.completions.create({
           model: actualModelId,
           messages: streamMessages,
           max_tokens: maxTokens,
           stream: true,
-        });
+          // Add OpenRouter provider preferences for latency optimization
+          ...(isOpenRouterModel && {
+            // @ts-ignore - OpenRouter-specific parameter
+            provider: {
+              order: ["Latency"],
+              allow_fallbacks: true
+            }
+          })
+        } as any);
 
         let tokenCount = 0;
         let firstTokenTime = 0;

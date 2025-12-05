@@ -44,12 +44,18 @@ export async function createOpenRouterChatCompletion(
     const isSearchModel = request.model.endsWith(':online');
     
     // Use streaming to measure TTFT (Time to First Token)
+    // Add provider preferences to optimize for lowest latency
     const stream = await client.chat.completions.create({
       model: request.model,
       messages: messages,
       max_tokens: request.maxTokens || 4096,
       stream: true,
-    });
+      // @ts-ignore - OpenRouter-specific parameter for provider selection
+      provider: {
+        order: ["Latency"],      // Prioritize fastest providers
+        allow_fallbacks: true    // Fall back if preferred provider unavailable
+      }
+    } as any);
 
     let ttftMs = 0;
     let content = "";
