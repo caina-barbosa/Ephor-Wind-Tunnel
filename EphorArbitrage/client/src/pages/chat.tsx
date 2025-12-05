@@ -1706,7 +1706,7 @@ export default function ChatPage() {
     const initialResponses: Record<string, ModelResponse> = {};
     modelsToRun.forEach(({ col }) => {
       // TEMP FIX: If search mode and tier is 3B or 70B, show unavailable immediately
-      if (searchEnabled && SEARCH_UNAVAILABLE_TIERS.includes(col)) {
+      if (searchMode && SEARCH_UNAVAILABLE_TIERS.includes(col)) {
         initialResponses[col] = { 
           content: "Search is temporarily unavailable for this model. Please try 8B, 14B, or Frontier tiers for search queries.", 
           loading: false, 
@@ -1892,7 +1892,7 @@ export default function ChatPage() {
     };
 
     // TEMP FIX: Skip running 3B and 70B when search is enabled (already marked unavailable)
-    const modelsToActuallyRun = searchEnabled 
+    const modelsToActuallyRun = searchMode 
       ? modelsToRun.filter(({ col }) => !SEARCH_UNAVAILABLE_TIERS.includes(col))
       : modelsToRun;
     
