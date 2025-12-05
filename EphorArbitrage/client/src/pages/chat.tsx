@@ -1414,6 +1414,9 @@ export default function ChatPage() {
   }, [allModelsComplete, responses, costCap, contextSize, inputTokenEstimate]);
 
   // File upload handler
+  const MAX_FILE_SIZE_MB = 4; // Max 4MB per file to avoid network issues
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+  
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -1421,10 +1424,17 @@ export default function ChatPage() {
     setUploadMenuOpen(false);
     
     const newFiles: UploadedFile[] = [];
+    const skippedFiles: string[] = [];
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileType = file.type;
+      
+      // Check file size limit
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        skippedFiles.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB > ${MAX_FILE_SIZE_MB}MB limit)`);
+        continue;
+      }
       
       // Determine file category
       let type: 'image' | 'text' | 'pdf';
@@ -1454,12 +1464,23 @@ export default function ChatPage() {
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
     
-    // Show toast with token info
-    const totalNewTokens = newFiles.reduce((sum, f) => sum + f.estimatedTokens, 0);
-    toast({
-      title: `${newFiles.length} file${newFiles.length > 1 ? 's' : ''} added`,
-      description: `~${totalNewTokens.toLocaleString()} tokens added to context`,
-    });
+    // Show warning for skipped files
+    if (skippedFiles.length > 0) {
+      toast({
+        title: `${skippedFiles.length} file${skippedFiles.length > 1 ? 's' : ''} too large`,
+        description: `Skipped: ${skippedFiles.join(', ')}. Max file size is ${MAX_FILE_SIZE_MB}MB.`,
+        variant: "destructive",
+      });
+    }
+    
+    // Show toast with token info for added files
+    if (newFiles.length > 0) {
+      const totalNewTokens = newFiles.reduce((sum, f) => sum + f.estimatedTokens, 0);
+      toast({
+        title: `${newFiles.length} file${newFiles.length > 1 ? 's' : ''} added`,
+        description: `~${totalNewTokens.toLocaleString()} tokens added to context`,
+      });
+    }
     
     // Reset the input
     event.target.value = '';
