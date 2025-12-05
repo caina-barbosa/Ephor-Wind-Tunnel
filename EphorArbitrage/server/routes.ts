@@ -316,11 +316,11 @@ function getActualModelId(modelId: string): string {
     "openrouter/deepseek/deepseek-r1-distill-qwen-14b": "deepseek/deepseek-r1-distill-qwen-14b",
     "openrouter/qwen/qwen-2-72b-instruct": "qwen/qwen-2-72b-instruct",
     // OpenRouter :online models (web search enabled)
-    "openrouter/qwen/qwen3-next-a3b:online": "qwen/qwen3-next-a3b:online",
+    "openrouter/qwen/qwen3-30b-a3b:online": "qwen/qwen3-30b-a3b:online",
     "openrouter/qwen/qwen-2.5-7b-instruct:online": "qwen/qwen-2.5-7b-instruct:online",
     "openrouter/qwen/qwen3-14b:online": "qwen/qwen3-14b:online",
     "openrouter/qwen/qwen-2.5-72b-instruct:online": "qwen/qwen-2.5-72b-instruct:online",
-    "anthropic/claude-sonnet-4.5:online": "anthropic/claude-sonnet-4-20250514:online",
+    "openrouter/anthropic/claude-sonnet-4:online": "anthropic/claude-sonnet-4:online",
   };
   return modelMap[modelId] || modelId;
 }

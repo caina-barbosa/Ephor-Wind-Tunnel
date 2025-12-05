@@ -216,16 +216,16 @@ const REASONING_MODELS: Record<string, Model | null> = {
 // Exa search costs ~$0.02/request (5 results), Claude uses native search
 const SEARCH_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "openrouter/qwen/qwen3-next-a3b:online", 
-    name: "Qwen3-Next-A3B + Search", 
-    costPer1k: 0.00012, // Base cost + search overhead
+    id: "openrouter/qwen/qwen3-30b-a3b:online", 
+    name: "Qwen3-30B-A3B + Search", 
+    costPer1k: 0.0001, // Base cost + search overhead
     expectedLatency: "medium", 
     reasoningDepth: "none", 
     expectedAccuracy: "good", 
     benchmarks: { mmlu: 65.2, humanEval: 61.4 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Sparse MoE", attention: "MHA", parameters: "80B total / 3B active" },
+      architecture: { type: "Sparse MoE", attention: "MHA", parameters: "30B total / 3B active" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
@@ -235,7 +235,7 @@ const SEARCH_MODELS: Record<string, Model> = {
   "7B": { 
     id: "openrouter/qwen/qwen-2.5-7b-instruct:online", 
     name: "Qwen2.5-7B + Search", 
-    costPer1k: 0.00027, 
+    costPer1k: 0.0003, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "good", 
@@ -252,7 +252,7 @@ const SEARCH_MODELS: Record<string, Model> = {
   "14B": { 
     id: "openrouter/qwen/qwen3-14b:online", 
     name: "Qwen3-14B + Search", 
-    costPer1k: 0.00015, 
+    costPer1k: 0.0003, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
@@ -269,7 +269,7 @@ const SEARCH_MODELS: Record<string, Model> = {
   "70B": { 
     id: "openrouter/qwen/qwen-2.5-72b-instruct:online", 
     name: "Qwen2.5-72B + Search", 
-    costPer1k: 0.0006, 
+    costPer1k: 0.0008, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "excellent", 
@@ -284,9 +284,9 @@ const SEARCH_MODELS: Record<string, Model> = {
     }
   },
   "Frontier": { 
-    id: "anthropic/claude-sonnet-4.5:online", 
-    name: "Claude Sonnet 4.5 + Search", 
-    costPer1k: 0.015, // Uses native Anthropic search
+    id: "openrouter/anthropic/claude-sonnet-4:online", 
+    name: "Claude Sonnet 4 + Search", 
+    costPer1k: 0.018, // Uses native Anthropic search
     expectedLatency: "medium", 
     reasoningDepth: "deep", 
     expectedAccuracy: "excellent", 
