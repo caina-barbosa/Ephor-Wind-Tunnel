@@ -1416,12 +1416,17 @@ export default function ChatPage() {
   };
 
   // Recommendation logic: PICK THE SMALLEST/CHEAPEST MODEL that completed successfully
+  // SPECIAL CASE: If images are uploaded, ONLY Frontier (Claude) can see them!
   // Philosophy: For simple queries, all models work - so prefer cheap & fast
   // For hard queries, smaller models may fail - pick smallest that succeeded
   // ONLY shows after all models have completed
   const recommendedModel = useMemo(() => {
     // Don't show recommendation until all models have completed
     if (!allModelsComplete) return null;
+    
+    // CRITICAL: Check if there are any image files uploaded
+    // Only Claude (Frontier) can actually see and analyze images!
+    const hasImages = uploadedFiles.some(f => f.type === 'image');
     
     // Get all columns that have successful responses (with quality filters)
     const completedModels = COLUMNS.filter(col => {
@@ -1430,19 +1435,47 @@ export default function ChatPage() {
       // Must not be disabled, must have a response, must not have error
       if (disabled || !resp || resp.loading || !resp.content || resp.error) return false;
       
-      // Quality checks: only filter out clear failures (empty or explicit refusals)
+      // Quality checks: filter out failures
       const content = resp.content.trim().toLowerCase();
+      
+      // Check for vision-related refusals (model can't see images)
+      const isVisionRefusal = content.includes("can't view") ||
+                              content.includes("cannot view") ||
+                              content.includes("can't see") ||
+                              content.includes("cannot see") ||
+                              content.includes("can't analyze images") ||
+                              content.includes("cannot analyze images") ||
+                              content.includes("don't have the ability to see") ||
+                              content.includes("no vision support") ||
+                              content.includes("text-based model") ||
+                              content.includes("unable to view") ||
+                              content.includes("unable to see");
+      
       // Check for explicit refusals that don't answer the question
       const isExplicitRefusal = (content.startsWith("i cannot") || 
                                  content.startsWith("i'm unable to") ||
                                  content.startsWith("i'm sorry, but i cannot") ||
                                  content.startsWith("i apologize, but i cannot")) &&
                                 content.length < 200; // Short refusals only
+      
       // Empty responses are failures
       const isEmpty = resp.content.trim().length === 0;
       
-      return !isExplicitRefusal && !isEmpty;
+      return !isVisionRefusal && !isExplicitRefusal && !isEmpty;
     });
+    
+    // If images are uploaded and Frontier passed quality checks, always recommend Frontier
+    // because it's the ONLY model that can actually see images
+    if (hasImages) {
+      const frontierResp = responses["Frontier"];
+      const { disabled: frontierDisabled } = isModelDisabled("Frontier");
+      if (!frontierDisabled && frontierResp && !frontierResp.loading && frontierResp.content && !frontierResp.error) {
+        // Frontier successfully responded - recommend it for image queries
+        return "Frontier";
+      }
+      // If Frontier failed but we have images, still try to recommend it or null
+      return completedModels.includes("Frontier") ? "Frontier" : null;
+    }
     
     if (completedModels.length === 0) return null;
     
@@ -1479,7 +1512,7 @@ export default function ChatPage() {
     
     // Pick the cheapest model that passed quality checks
     return modelScores[0]?.col || null;
-  }, [allModelsComplete, responses, costCap, contextSize, inputTokenEstimate]);
+  }, [allModelsComplete, responses, costCap, contextSize, inputTokenEstimate, uploadedFiles]);
 
   // File upload handler - uses server endpoint for reliable large file handling
   const MAX_FILE_SIZE_MB = 10; // Max 10MB per file (server limit)
@@ -3637,176 +3670,137 @@ export default function ChatPage() {
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4 text-gray-500" />
                 <span className="font-bold text-sm text-gray-900">Cost vs Capability</span>
-                <span className="text-xs text-gray-500">— The Pareto Frontier</span>
+                <span className="text-xs text-gray-500">— Model Comparison</span>
               </div>
               
-              <div className="relative h-[200px] border-l-2 border-b-2 border-gray-300 ml-8">
-                {/* Y-axis label */}
-                <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-gray-500 font-medium whitespace-nowrap">
-                  Capability (MMLU) →
+              {/* Two-tier layout: Open Source models (left) | Frontier (right) */}
+              <div className="flex gap-4">
+                {/* Left section: Open Source Models (3B, 7B, 14B, 70B) - sorted by cost */}
+                <div className="flex-1 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                  <div className="text-xs font-semibold text-gray-600 mb-2 text-center">
+                    Open Source Models
+                  </div>
+                  {/* Horizontal bar chart showing cost progression */}
+                  <div className="space-y-2">
+                    {(() => {
+                      const openSourceCols = ["3B", "7B", "14B", "70B"] as const;
+                      // Get all costs to calculate relative widths
+                      const modelData = openSourceCols.map(col => {
+                        const model = getModelForColumn(col);
+                        const response = responses[col];
+                        const cost = response?.cost ?? estimateCost(model!);
+                        const mmlu = model?.benchmarks.mmlu || 70;
+                        const { disabled } = isModelDisabled(col);
+                        const isRecommended = showResults && col === recommendedModel;
+                        const hasResult = responses[col]?.content;
+                        return { col, cost, mmlu, disabled, isRecommended, hasResult };
+                      });
+                      const maxCost = Math.max(...modelData.map(m => m.cost));
+                      
+                      return modelData.map(item => {
+                        // Width based on relative cost (min 20%, max 100%)
+                        const costRatio = item.cost / maxCost;
+                        const barWidth = 20 + (costRatio * 80);
+                        
+                        return (
+                          <div key={item.col} className="flex items-center gap-2">
+                            {/* Model name */}
+                            <div className={`w-8 text-[11px] font-bold ${
+                              item.isRecommended ? 'text-[#f5a623]' : item.disabled ? 'text-gray-400' : 'text-gray-700'
+                            }`}>
+                              {item.col}
+                            </div>
+                            {/* Cost bar */}
+                            <div className="flex-1 h-6 bg-gray-200 rounded relative overflow-hidden">
+                              <div 
+                                className={`h-full rounded transition-all ${
+                                  item.isRecommended 
+                                    ? 'bg-[#f5a623]' 
+                                    : item.disabled
+                                      ? 'bg-gray-300'
+                                      : item.hasResult
+                                        ? 'bg-[#1a3a8f]'
+                                        : 'bg-gray-400'
+                                }`}
+                                style={{ width: `${barWidth}%` }}
+                              />
+                              {/* Cost label inside bar */}
+                              <div className="absolute inset-0 flex items-center px-2">
+                                <span className="text-[9px] text-white font-medium drop-shadow">
+                                  ${item.cost < 0.0001 ? item.cost.toFixed(5) : item.cost.toFixed(4)}
+                                </span>
+                              </div>
+                            </div>
+                            {/* MMLU score */}
+                            <div className="w-10 text-[9px] text-gray-500 text-right">
+                              {item.mmlu}%
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                  <div className="mt-2 text-[9px] text-gray-400 text-center">
+                    Cost per query → | MMLU %
+                  </div>
                 </div>
                 
-                {/* X-axis label */}
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-500 font-medium">
-                  Cost per query (log scale) →
+                {/* Divider with cost jump indicator */}
+                <div className="flex flex-col items-center justify-center px-2">
+                  <div className="text-[10px] text-gray-400 -rotate-90 whitespace-nowrap">
+                    ~50x cost
+                  </div>
+                  <div className="h-12 w-px bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300" />
+                  <div className="text-lg text-gray-300">→</div>
                 </div>
                 
-                {/* Plot the 5 models - TRUE log-scale positions with label offsets for clarity */}
-                {(() => {
-                  // Calculate all model data with TRUE log-scale X positions
-                  const modelData = COLUMNS.map(col => {
-                    const model = getModelForColumn(col);
-                    if (!model) return null;
-                    const response = responses[col];
-                    const cost = response?.cost ?? estimateCost(model);
-                    const mmlu = model.benchmarks.mmlu || 70;
-                    const { disabled } = isModelDisabled(col);
-                    const isRecommended = showResults && col === recommendedModel;
-                    const hasResult = responses[col]?.content;
-                    
-                    // TRUE log-scale X position
-                    const minCost = 0.00001;
-                    const maxCost = 0.03;
-                    const logMin = Math.log(minCost);
-                    const logMax = Math.log(maxCost);
-                    const effectiveCost = Math.max(cost, minCost);
-                    const xPos = ((Math.log(effectiveCost) - logMin) / (logMax - logMin)) * 85 + 5;
-                    
-                    // MMLU Y position (60-95 range)
-                    const minMmlu = 60, maxMmlu = 95;
-                    const normalizedMmlu = (mmlu - minMmlu) / (maxMmlu - minMmlu);
-                    const yPos = 100 - (normalizedMmlu * 80 + 10);
-                    
-                    return { col, cost, mmlu, disabled, isRecommended, hasResult, xPos, yPos };
-                  }).filter(Boolean) as { col: string; cost: number; mmlu: number; disabled: boolean; isRecommended: boolean; hasResult: string | undefined; xPos: number; yPos: number }[];
-                  
-                  // Sort by X position to detect overlapping labels
-                  const sortedByX = [...modelData].sort((a, b) => a.xPos - b.xPos);
-                  
-                  // Calculate label Y offsets to prevent overlap (stagger vertically when X is close)
-                  const labelOffsets: Record<string, number> = {};
-                  sortedByX.forEach((item, idx) => {
-                    let offset = 0;
-                    // Check distance from previous model
-                    if (idx > 0) {
-                      const prev = sortedByX[idx - 1];
-                      const xDist = item.xPos - prev.xPos;
-                      if (xDist < 12) { // Too close horizontally
-                        // Alternate label position up/down
-                        offset = (idx % 2 === 0) ? -20 : 20;
-                      }
-                    }
-                    labelOffsets[item.col] = offset;
-                  });
-                  
-                  return modelData.map(item => {
-                    const labelOffset = labelOffsets[item.col] || 0;
-                    
-                    return (
-                      <div
-                        key={item.col}
-                        className="absolute transform -translate-x-1/2 flex flex-col items-center"
-                        style={{ 
-                          left: `${Math.max(5, Math.min(95, item.xPos))}%`, 
-                          top: `${Math.max(8, Math.min(92, item.yPos))}%`,
-                          transform: 'translate(-50%, -50%)'
-                        }}
-                      >
-                        {/* Connector line if label is offset */}
-                        {labelOffset !== 0 && (
-                          <div 
-                            className="absolute w-px bg-gray-300"
-                            style={{
-                              height: `${Math.abs(labelOffset)}px`,
-                              top: labelOffset > 0 ? '8px' : 'auto',
-                              bottom: labelOffset < 0 ? '8px' : 'auto'
-                            }}
-                          />
-                        )}
-                        <div 
-                          className={`w-4 h-4 rounded-full border-2 transition-all z-10 ${
-                            item.isRecommended 
-                              ? 'bg-[#f5a623] border-[#f5a623] shadow-[0_0_8px_rgba(245,166,35,0.6)] scale-125' 
-                              : item.disabled
-                                ? 'bg-gray-200 border-gray-300'
-                                : item.hasResult
-                                  ? 'bg-[#1a3a8f] border-[#1a3a8f]'
-                                  : 'bg-gray-400 border-gray-500'
-                          }`}
-                        />
-                        <div 
-                          className="flex flex-col items-center whitespace-nowrap"
-                          style={{ marginTop: labelOffset > 0 ? `${labelOffset}px` : '2px' }}
-                        >
-                          <span className={`text-[10px] font-bold ${
-                            item.isRecommended ? 'text-[#f5a623]' : item.disabled ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
-                            {item.col}
-                          </span>
-                          <span className="text-[8px] text-gray-400">
-                            ${item.cost < 0.0001 ? item.cost.toFixed(5) : item.cost.toFixed(4)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-                
-                {/* Dynamic Pareto frontier line - uses TRUE log-scale positions */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
-                  {(() => {
-                    const modelData = COLUMNS.map(col => {
-                      const model = getModelForColumn(col);
+                {/* Right section: Frontier (Claude) */}
+                <div className="w-32 border border-orange-200 rounded-lg p-3 bg-orange-50">
+                  <div className="text-xs font-semibold text-orange-600 mb-3 text-center">
+                    Frontier
+                    <span className="block text-[10px] font-normal text-orange-400">$0.005 - $0.02 per query</span>
+                  </div>
+                  <div className="relative h-[140px] flex flex-col items-center justify-center">
+                    {(() => {
+                      const model = getModelForColumn("Frontier");
                       if (!model) return null;
-                      const response = responses[col];
+                      const response = responses["Frontier"];
                       const cost = response?.cost ?? estimateCost(model);
-                      const mmlu = model.benchmarks.mmlu || 70;
+                      const mmlu = model.benchmarks.mmlu || 88;
+                      const { disabled } = isModelDisabled("Frontier");
+                      const isRecommended = showResults && recommendedModel === "Frontier";
+                      const hasResult = responses["Frontier"]?.content;
                       
-                      // TRUE log-scale positions (same as dots)
-                      const minCost = 0.00001, maxCost = 0.03;
-                      const logMin = Math.log(minCost), logMax = Math.log(maxCost);
-                      const effectiveCost = Math.max(cost, minCost);
-                      const xPos = ((Math.log(effectiveCost) - logMin) / (logMax - logMin)) * 85 + 5;
-                      
-                      const minMmlu = 60, maxMmlu = 95;
-                      const normalizedMmlu = (mmlu - minMmlu) / (maxMmlu - minMmlu);
-                      const yPos = 100 - (normalizedMmlu * 80 + 10);
-                      
-                      return { col, xPos: Math.max(5, Math.min(95, xPos)), yPos: Math.max(8, Math.min(92, yPos)), cost, mmlu };
-                    }).filter(Boolean) as { col: string; xPos: number; yPos: number; cost: number; mmlu: number }[];
-                    
-                    // Find Pareto-optimal points (no other point is both cheaper AND higher MMLU)
-                    const paretoPoints = modelData.filter(model => {
-                      return !modelData.some(other => 
-                        other.col !== model.col && 
-                        other.cost <= model.cost && 
-                        other.mmlu >= model.mmlu &&
-                        (other.cost < model.cost || other.mmlu > model.mmlu)
+                      return (
+                        <div className="flex flex-col items-center">
+                          <div className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            isRecommended 
+                              ? 'bg-[#f5a623] border-[#f5a623] shadow-[0_0_12px_rgba(245,166,35,0.6)] scale-110' 
+                              : disabled
+                                ? 'bg-gray-200 border-gray-300'
+                                : hasResult
+                                  ? 'bg-orange-500 border-orange-500'
+                                  : 'bg-gray-400 border-gray-500'
+                          }`} />
+                          <span className={`text-sm font-bold mt-2 ${
+                            isRecommended ? 'text-[#f5a623]' : 'text-orange-600'
+                          }`}>Claude</span>
+                          <span className="text-xs text-orange-500 font-medium">{mmlu}% MMLU</span>
+                          <span className="text-[10px] text-gray-500 mt-1">
+                            ${cost.toFixed(4)}
+                          </span>
+                          <div className="mt-2 text-[9px] text-orange-400 text-center">
+                            Vision • Reasoning
+                          </div>
+                        </div>
                       );
-                    }).sort((a, b) => a.xPos - b.xPos);
-                    
-                    if (paretoPoints.length < 2) return null;
-                    
-                    // Create path connecting Pareto-optimal points
-                    const pathD = paretoPoints.map((p, i) => 
-                      (i === 0 ? 'M' : 'L') + ` ${p.xPos},${p.yPos}`
-                    ).join(' ');
-                    
-                    return (
-                      <path
-                        d={pathD}
-                        fill="none"
-                        stroke="#f5a623"
-                        strokeWidth="2"
-                        strokeDasharray="4 4"
-                        opacity="0.6"
-                      />
-                    );
-                  })()}
-                </svg>
+                    })()}
+                  </div>
+                </div>
               </div>
               
-              <div className="mt-6 flex items-center justify-center gap-6 text-xs text-gray-500">
+              {/* Legend */}
+              <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-500">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-[#f5a623] border border-[#f5a623]"></div>
                   <span>Recommended</span>
@@ -3819,6 +3813,11 @@ export default function ChatPage() {
                   <div className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300"></div>
                   <span>Disabled</span>
                 </div>
+              </div>
+              
+              {/* Teaching note */}
+              <div className="mt-3 text-[10px] text-gray-400 text-center">
+                Open source models are 50x cheaper but Frontier has highest capability and can see images
               </div>
             </div>
           )}
