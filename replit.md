@@ -54,11 +54,15 @@ The application allows users to select context window sizes (8K-1M) and set a co
 *   **File Upload for Context Sizing**: Helps students understand context window economics with:
     - "+" button next to prompt textarea (Claude/ChatGPT style UI)
     - Support for images (.png, .jpg, .gif, .webp), text files (.txt, .md), and PDFs
+    - Files up to 10MB supported with automatic server-side processing
+    - Large images (>3.5MB) are automatically compressed to fit Claude's 5MB API limit
+    - Image compression uses sharp library: resize to max 1920px, JPEG quality 85
     - Estimated token count per file displayed in preview chips
     - Image tokens estimated based on dimensions (~765 tokens for 1024x1024)
     - Text file tokens counted at ~4 characters per token
     - PDF tokens estimated at ~250 tokens per KB
     - File tokens automatically added to Input Gauge total
+    - Only Frontier (Claude) supports vision/image analysis - other tiers receive text description
     - Remove button (X) on each file chip
     - Clear button resets both prompt and uploaded files
     - Teaching point: understand real-world context consumption
