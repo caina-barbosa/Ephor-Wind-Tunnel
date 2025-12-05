@@ -29,7 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2, ChevronDown, ChevronUp, Cpu, Database, Settings, Shield, Layers, Plus, Paperclip, X, File } from "lucide-react";
+import { Play, Loader2, Lock, Zap, Clock, DollarSign, Brain, Info, CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Users, Trophy, MessageSquare, Bookmark, Library, Trash2, RefreshCw, Flag, ShieldAlert, FileText, Image, BarChart3, Code2, ChevronDown, ChevronUp, Cpu, Database, Settings, Shield, Layers, Plus, Paperclip, X, File, Search } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface TechnicalProfile {
@@ -80,7 +80,7 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier", "Reasoning"] as const;
+const COLUMNS = ["3B", "7B", "14B", "70B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "3B": { 
@@ -168,7 +168,14 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["Constitutional AI", "RLHF", "Red teaming"] }
     }
   },
-  "Reasoning": { 
+};
+
+// REASONING MODELS - Used when Reasoning toggle is ON (models that support chain-of-thought)
+const REASONING_MODELS: Record<string, Model | null> = {
+  "3B": null, // Too small for reasoning
+  "7B": null, // Too small for reasoning
+  "14B": null, // Too small for reasoning
+  "70B": { 
     id: "together/deepseek-r1", 
     name: "DeepSeek R1", 
     costPer1k: 0.003, 
@@ -183,6 +190,96 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       finetuning: { method: "RLHF", variants: ["RL reasoning", "GRPO"] },
       inference: { precision: "BF16", optimizations: ["MoE routing", "Long CoT"] },
       safety: { aligned: true, methods: ["RLHF", "Reasoning safety"] }
+    }
+  },
+  "Frontier": { 
+    id: "anthropic/claude-sonnet-4.5", 
+    name: "Claude Sonnet 4.5", 
+    costPer1k: 0.015, 
+    expectedLatency: "slow", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 86.5, humanEval: 93.7 }, 
+    modality: "text+image",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "Undisclosed" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Scientific", "Curated"] },
+      finetuning: { method: "RLHF", variants: ["Constitutional AI", "Extended Thinking"] },
+      inference: { precision: "BF16" },
+      safety: { aligned: true, methods: ["Constitutional AI", "RLHF", "Red teaming"] }
+    }
+  },
+};
+
+// SEARCH MODELS - Used when Search toggle is ON (Perplexity models with web search)
+const SEARCH_MODELS: Record<string, Model | null> = {
+  "3B": null, // No Perplexity equivalent at this tier
+  "7B": { 
+    id: "perplexity/sonar", 
+    name: "Perplexity Sonar", 
+    costPer1k: 0.001, 
+    expectedLatency: "fast", 
+    reasoningDepth: "none", 
+    expectedAccuracy: "good", 
+    benchmarks: { mmlu: 70, humanEval: 65 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "8B" },
+      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search"] },
+      finetuning: { method: "SFT", variants: ["Search-augmented"] },
+      inference: { precision: "FP16", optimizations: ["Live web grounding"] },
+      safety: { aligned: true, methods: ["Content filtering", "Source verification"] }
+    }
+  },
+  "14B": { 
+    id: "perplexity/sonar-pro", 
+    name: "Perplexity Sonar Pro", 
+    costPer1k: 0.003, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 78, humanEval: 72 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "70B" },
+      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search", "Academic"] },
+      finetuning: { method: "SFT", variants: ["Search-augmented", "Pro"] },
+      inference: { precision: "BF16", optimizations: ["Live web grounding", "Multi-hop search"] },
+      safety: { aligned: true, methods: ["Content filtering", "Source verification", "Citation"] }
+    }
+  },
+  "70B": { 
+    id: "perplexity/sonar-pro", 
+    name: "Perplexity Sonar Pro", 
+    costPer1k: 0.003, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 78, humanEval: 72 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "70B" },
+      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search", "Academic"] },
+      finetuning: { method: "SFT", variants: ["Search-augmented", "Pro"] },
+      inference: { precision: "BF16", optimizations: ["Live web grounding", "Multi-hop search"] },
+      safety: { aligned: true, methods: ["Content filtering", "Source verification", "Citation"] }
+    }
+  },
+  "Frontier": { 
+    id: "perplexity/sonar-pro", 
+    name: "Perplexity Sonar Pro", 
+    costPer1k: 0.003, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 78, humanEval: 72 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "70B" },
+      training: { dataDate: "2025", dataSources: ["Web (Live)", "Real-time search", "Academic"] },
+      finetuning: { method: "SFT", variants: ["Search-augmented", "Pro"] },
+      inference: { precision: "BF16", optimizations: ["Live web grounding", "Multi-hop search"] },
+      safety: { aligned: true, methods: ["Content filtering", "Source verification", "Citation"] }
     }
   },
 };
@@ -378,13 +475,6 @@ const COLUMN_VISUALS: Record<string, {
     prominence: "large",
     accentBorder: "border-t-[6px] border-t-[#EA580C]"
   },
-  "Reasoning": {
-    headerSize: "text-3xl font-black text-purple-700",
-    headerBg: "bg-purple-50",
-    cardStyle: "bg-white",
-    prominence: "large",
-    accentBorder: "border-t-[6px] border-t-[#7C3AED]"
-  }
 };
 
 const getLatencyBarConfig = (latency: "fast" | "medium" | "slow") => {
@@ -430,7 +520,6 @@ const getSkillTag = (col: string): string => {
     case "14B": return "Strong reasoning";
     case "70B": return "Multi-step reasoning";
     case "Frontier": return "Coding & complex tasks";
-    case "Reasoning": return "Step-by-step thinker";
     default: return "General purpose model";
   }
 };
@@ -670,8 +759,12 @@ export default function ChatPage() {
   
   // Expert Mode: Selected model overrides per band (for model swap feature)
   const [selectedModelPerBand, setSelectedModelPerBand] = useState<Record<string, number>>({
-    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0, "Reasoning": 0
+    "3B": 0, "7B": 0, "14B": 0, "70B": 0, "Frontier": 0
   });
+  
+  // Global mode toggles
+  const [reasoningMode, setReasoningMode] = useState(false);
+  const [searchMode, setSearchMode] = useState(false);
 
   // Track previous cost cap for budget change toasts (prevents spam on slider drag)
   const [lastBudgetToastTime, setLastBudgetToastTime] = useState<number>(0);
@@ -853,6 +946,22 @@ export default function ChatPage() {
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
   const getModelForColumn = (col: string): Model | null => {
+    // Search mode takes priority - swap to Perplexity models
+    if (searchMode) {
+      const searchModel = SEARCH_MODELS[col];
+      if (searchModel) return searchModel;
+      // If no search model for this tier, return null (will show "Not available")
+      return null;
+    }
+    
+    // Reasoning mode - swap to reasoning-capable models
+    if (reasoningMode) {
+      const reasoningModel = REASONING_MODELS[col];
+      if (reasoningModel) return reasoningModel;
+      // If no reasoning model for this tier, return null (will show "Not available")
+      return null;
+    }
+    
     // Expert Mode model swap (for columns that have alternatives)
     if (expertMode && MODEL_ALTERNATIVES[col]) {
       const selectedIndex = selectedModelPerBand[col] || 0;
@@ -865,8 +974,18 @@ export default function ChatPage() {
     return NON_REASONING_MODELS[col];
   };
 
-  // Always returns a model for display purposes
+  // Always returns a model for display purposes (for showing what would run)
   const getModelForDisplay = (col: string): Model | null => {
+    // Search mode takes priority
+    if (searchMode) {
+      return SEARCH_MODELS[col] || NON_REASONING_MODELS[col];
+    }
+    
+    // Reasoning mode
+    if (reasoningMode) {
+      return REASONING_MODELS[col] || NON_REASONING_MODELS[col];
+    }
+    
     // Expert Mode model swap (for columns that have alternatives)
     if (expertMode && MODEL_ALTERNATIVES[col]) {
       const selectedIndex = selectedModelPerBand[col] || 0;
@@ -877,6 +996,17 @@ export default function ChatPage() {
     }
     
     return NON_REASONING_MODELS[col];
+  };
+  
+  // Check if a mode is not available for a column
+  const getModeUnavailableReason = (col: string): string | null => {
+    if (searchMode && !SEARCH_MODELS[col]) {
+      return "Search not available for this size";
+    }
+    if (reasoningMode && !REASONING_MODELS[col]) {
+      return "Reasoning not available for this size";
+    }
+    return null;
   };
 
   const estimateCost = (model: Model): number => {
@@ -2037,7 +2167,61 @@ export default function ChatPage() {
 
           </div>
 
-          <div className="flex items-center justify-end gap-3 mb-4">
+          {/* Global Mode Toggles */}
+          <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-6">
+              {/* Reasoning Toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      if (!reasoningMode) setSearchMode(false); // Can only have one mode active
+                      setReasoningMode(!reasoningMode);
+                    }}
+                    disabled={isRunning}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all touch-manipulation ${
+                      reasoningMode 
+                        ? 'bg-purple-600 text-white shadow-md' 
+                        : 'bg-white text-gray-600 border border-gray-300 hover:bg-purple-50 hover:border-purple-300'
+                    }`}
+                  >
+                    <Brain className="w-4 h-4" />
+                    <span className="text-sm">Reasoning</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
+                  <p className="font-bold mb-1">Chain-of-Thought Reasoning</p>
+                  <p className="text-xs">Switch models to reasoning-capable versions (DeepSeek R1 for 70B, Claude with extended thinking for Frontier). Smaller models will show as unavailable.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Search Toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      if (!searchMode) setReasoningMode(false); // Can only have one mode active
+                      setSearchMode(!searchMode);
+                    }}
+                    disabled={isRunning}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all touch-manipulation ${
+                      searchMode 
+                        ? 'bg-blue-600 text-white shadow-md' 
+                        : 'bg-white text-gray-600 border border-gray-300 hover:bg-blue-50 hover:border-blue-300'
+                    }`}
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="text-sm">Search</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
+                  <p className="font-bold mb-1">Web Search Mode</p>
+                  <p className="text-xs">Switch to Perplexity Sonar models with live web search capability. 7B uses Sonar ($1/M), 14B+ uses Sonar Pro ($3/M). 3B not available.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Expert Mode Toggle */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2">
@@ -2229,7 +2413,7 @@ export default function ChatPage() {
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <div className="min-w-[900px] sm:min-w-0">
-                <div className="grid grid-cols-6 border-b border-gray-200" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
+                <div className="grid grid-cols-5 border-b border-gray-200" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const isRecommended = showResults && col === recommendedModel;
@@ -2239,10 +2423,10 @@ export default function ChatPage() {
                       <div 
                         key={col} 
                         id={`band-${col}`}
-                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Reasoning' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
+                        className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === 'Reasoning' ? 'text-purple-600' : col === '70B' || col === '14B' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '70B' || col === '14B' ? 'text-emerald-600' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -2264,7 +2448,7 @@ export default function ChatPage() {
                   })}
                 </div>
 
-                <div className="grid grid-cols-6" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
+                <div className="grid grid-cols-5" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const displayModel = getModelForDisplay(col); // Always returns a model for display
@@ -2281,8 +2465,11 @@ export default function ChatPage() {
                     // Use displayModel (which always exists) to render results even when getModelForColumn returns null.
                     const hasResults = hasContent || isLoading || hasError;
 
+                    // Check if mode is unavailable for this column
+                    const modeUnavailableReason = getModeUnavailableReason(col);
+
                     // Only show disabled state when:
-                    // 1. No results AND model is null (reasoning mode on small models), OR
+                    // 1. No results AND model is null (reasoning/search mode on unsupported models), OR
                     // 2. No results AND model is disabled due to cost/other constraints
                     if ((!model && !hasResults) || (disabled && !hasResults)) {
                       const isCostExceeded = reason.includes("Exceeds");
@@ -2290,12 +2477,45 @@ export default function ChatPage() {
                       const costExplanations = getCostMultiplierExplanation(contextSize);
                       const cheapestBand = getCheapestEligibleBand(costCap, inputTokenEstimate);
                       
+                      // Special UI for mode unavailability
+                      if (modeUnavailableReason) {
+                        return (
+                          <div 
+                            key={col}
+                            className={`p-3 min-h-[280px] flex flex-col items-center justify-center transition-all duration-150 bg-gray-50 ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
+                          >
+                            <div className={`w-10 h-10 mb-3 rounded-full flex items-center justify-center ${
+                              searchMode ? 'bg-blue-100' : 'bg-purple-100'
+                            }`}>
+                              {searchMode ? (
+                                <Search className="w-5 h-5 text-blue-400" />
+                              ) : (
+                                <Brain className="w-5 h-5 text-purple-400" />
+                              )}
+                            </div>
+                            <span className="text-sm font-medium text-gray-500 text-center mb-1">
+                              Not Available
+                            </span>
+                            <span className="text-xs text-gray-400 text-center px-4">
+                              {modeUnavailableReason}
+                            </span>
+                            <div className="mt-4 text-[10px] text-gray-400 text-center px-3">
+                              {searchMode ? (
+                                <span>Try 7B or larger for web search</span>
+                              ) : (
+                                <span>Try 70B or Frontier for reasoning</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+                      
                       return (
                         <div 
                           key={col}
                           className={`p-3 min-h-[280px] flex flex-col transition-all duration-150 ${
                             isCostExceeded ? 'bg-gray-100' : 'bg-gray-50'
-                          } ${col !== 'Reasoning' ? 'border-r border-gray-200' : ''}`}
+                          } ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}`}
                         >
                           {isCostExceeded ? (
                             <div className="flex flex-col h-full">
@@ -2392,7 +2612,7 @@ export default function ChatPage() {
                         className={`
                           p-3 transition-all flex flex-col overflow-hidden
                           ${hasResults ? 'min-h-[260px]' : 'min-h-[140px]'}
-                          ${col !== 'Reasoning' ? 'border-r border-gray-200' : ''}
+                          ${col !== 'Frontier' ? 'border-r border-gray-200' : ''}
                           ${cardVisuals.cardStyle}
                           ${cardVisuals.accentBorder}
                           ${isRecommended ? 'ring-2 ring-[#f5a623] ring-offset-1 bg-[#fffbf5]' : ''}

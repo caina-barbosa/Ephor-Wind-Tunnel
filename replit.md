@@ -2,21 +2,29 @@
 
 ## Overview
 
-Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to six different AI models (3B, 7B, 14B, 70B, Frontier, Reasoning) simultaneously and compare their responses in real-time. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, chain-of-thought reasoning, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
+Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to five different AI model size bands (3B, 7B, 14B, 70B, Frontier) simultaneously and compare their responses in real-time. Global toggles for **Reasoning** and **Search** modes allow students to explore chain-of-thought reasoning and web-augmented generation across supported tiers. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, chain-of-thought reasoning, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+CRITICAL: All interactive elements must be clickable for touch device support (use `touch-manipulation` class).
+CRITICAL: DO NOT make changes without asking first.
 
 ## System Architecture
 
 ### UI/UX Decisions
 
-The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, Purple for reasoning, neutral grays). The layout is a full-screen grid presenting six model columns (3B, 7B, 14B, 70B, Frontier, Reasoning) with visual cues for model size, latency, and cost. The Reasoning column features DeepSeek R1 which always operates in chain-of-thought mode with a "Chain-of-Thought" badge. Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
+The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, Purple for reasoning, neutral grays). The layout is a full-screen grid presenting **five model columns** (3B, 7B, 14B, 70B, Frontier) with visual cues for model size, latency, and cost. Column styling: 3B/7B (blue accent), 14B/70B (green accent), Frontier (orange accent). Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
+
+### Global Mode Toggles
+
+*   **Reasoning Toggle** (purple): Activates chain-of-thought reasoning for supported tiers. Only 70B (DeepSeek R1) and Frontier (Claude with extended thinking) support reasoning mode. Smaller tiers show "Not Available" with educational guidance.
+*   **Search Toggle** (blue): Activates web search mode using Perplexity models. 7B uses Sonar ($1/M), 14B/70B/Frontier use Sonar Pro ($3/M). 3B shows "Not Available" with guidance.
+*   Only one mode can be active at a time (mutually exclusive).
 
 ### Technical Implementations
 
-The application allows users to select context window sizes (8K-1M) and set a cost cap slider ($0.00-$0.25). The dedicated Reasoning column always operates in chain-of-thought mode using DeepSeek R1 (no toggle required). An "Expert Mode" enables overriding cost and context limits for experimental learning. A "Benchmark Library" allows saving and rerunning prompts. Results can be shared to a public leaderboard. The system dynamically adjusts model availability and recommendations based on user-defined constraints.
+The application allows users to select context window sizes (8K-1M) and set a cost cap slider ($0.00-$0.25). Global Reasoning and Search toggles replace the dedicated Reasoning column, allowing students to explore these capabilities across multiple tiers. An "Expert Mode" enables overriding cost and context limits for experimental learning. A "Benchmark Library" allows saving and rerunning prompts. Results can be shared to a public leaderboard. The system dynamically adjusts model availability and recommendations based on user-defined constraints.
 
 ### Feature Specifications
 
@@ -73,6 +81,16 @@ The architecture is a client-server model with a React frontend and an Express.j
 *   70B: Primary = Qwen2.5-72B (Together AI), Secondary = Qwen2-72B (OpenRouter)
 *   Frontier: Primary = Claude Sonnet 4.5 (Anthropic), Secondary = Moonshot Kimi K2 (OpenRouter)
 *   Reasoning: DeepSeek R1 (Together AI) - Always uses chain-of-thought reasoning
+
+**Search Models** (when Search toggle is ON):
+*   7B: Perplexity Sonar ($1/M tokens)
+*   14B/70B/Frontier: Perplexity Sonar Pro ($3/M tokens)
+*   3B: Not available (too small for search)
+
+**Reasoning Models** (when Reasoning toggle is ON):
+*   70B: DeepSeek R1 (Together AI) with chain-of-thought
+*   Frontier: Claude Sonnet 4.5 with extended thinking
+*   3B/7B/14B: Not available (too small for reasoning)
 
 **Database Service**:
 *   Neon Serverless PostgreSQL (via Drizzle ORM).
