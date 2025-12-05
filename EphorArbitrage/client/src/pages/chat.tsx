@@ -1034,6 +1034,20 @@ export default function ChatPage() {
   };
 
   const selectedContextTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 128000;
+  
+  // Calculate percentages for each token source (for stacked bar)
+  const promptPercentage = Math.min((promptTokens / selectedContextTokens) * 100, 100);
+  const imagePercentage = Math.min((imageTokens / selectedContextTokens) * 100, 100);
+  const textFilePercentage = Math.min((textFileTokens / selectedContextTokens) * 100, 100);
+  const searchPercentage = Math.min((estimatedSearchTokens / selectedContextTokens) * 100, 100);
+  
+  // Cumulative positions for stacked bar segments
+  const imageStartPercent = promptPercentage;
+  const textFileStartPercent = promptPercentage + imagePercentage;
+  const searchStartPercent = promptPercentage + imagePercentage + textFilePercentage;
+  
+  // Total percentage (with search estimate when search mode is on)
+  const totalPercentage = Math.min((totalWithSearchEstimate / selectedContextTokens) * 100, 100);
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
   const getModelForColumn = (col: string): Model | null => {
@@ -2215,51 +2229,51 @@ export default function ChatPage() {
                 </div>
               </div>
               
-              {/* Multi-segment gauge bar */}
+              {/* Multi-segment gauge bar - uses cumulative positioning for proper stacking */}
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden relative">
-                {/* Prompt tokens bar (blue) */}
+                {/* Prompt tokens bar (blue) - always starts at 0 */}
                 {promptTokens > 0 && (
                   <div 
-                    className={`h-full transition-all absolute left-0 z-30 ${
+                    className={`h-full transition-all absolute left-0 ${
                       totalWithSearchEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-[#1a3a8f]'
                     }`}
-                    style={{ width: `${Math.min((promptTokens / selectedContextTokens) * 100, 100)}%` }}
+                    style={{ width: `${Math.min(promptPercentage, 100)}%` }}
                   />
                 )}
                 
-                {/* Image tokens bar (purple) */}
+                {/* Image tokens bar (purple) - starts after prompt */}
                 {imageTokens > 0 && (
                   <div 
-                    className={`h-full transition-all absolute z-25 ${
+                    className={`h-full transition-all absolute ${
                       totalWithSearchEstimate > selectedContextTokens ? 'bg-red-400' : 'bg-purple-500'
                     }`}
                     style={{ 
-                      left: `${Math.min((promptTokens / selectedContextTokens) * 100, 100)}%`,
-                      width: `${Math.min((imageTokens / selectedContextTokens) * 100, 100 - (promptTokens / selectedContextTokens) * 100)}%`
+                      left: `${Math.min(imageStartPercent, 100)}%`,
+                      width: `${Math.min(imagePercentage, 100 - imageStartPercent)}%`
                     }}
                   />
                 )}
                 
-                {/* Text file tokens bar (emerald) */}
+                {/* Text file tokens bar (emerald) - starts after prompt + images */}
                 {textFileTokens > 0 && (
                   <div 
-                    className={`h-full transition-all absolute z-24 ${
+                    className={`h-full transition-all absolute ${
                       totalWithSearchEstimate > selectedContextTokens ? 'bg-red-300' : 'bg-emerald-500'
                     }`}
                     style={{ 
-                      left: `${Math.min(((promptTokens + imageTokens) / selectedContextTokens) * 100, 100)}%`,
-                      width: `${Math.min((textFileTokens / selectedContextTokens) * 100, 100 - ((promptTokens + imageTokens) / selectedContextTokens) * 100)}%`
+                      left: `${Math.min(textFileStartPercent, 100)}%`,
+                      width: `${Math.min(textFilePercentage, 100 - textFileStartPercent)}%`
                     }}
                   />
                 )}
                 
-                {/* Search tokens bar (striped blue - estimated) */}
+                {/* Search tokens bar (striped blue - estimated) - starts after all input */}
                 {searchMode && estimatedSearchTokens > 0 && (
                   <div 
-                    className="h-full transition-all absolute z-20"
+                    className="h-full transition-all absolute"
                     style={{ 
-                      left: `${Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100)}%`,
-                      width: `${Math.min((estimatedSearchTokens / selectedContextTokens) * 100, 100 - (inputTokenEstimate / selectedContextTokens) * 100)}%`,
+                      left: `${Math.min(searchStartPercent, 100)}%`,
+                      width: `${Math.min(searchPercentage, 100 - searchStartPercent)}%`,
                       background: totalWithSearchEstimate > selectedContextTokens 
                         ? 'repeating-linear-gradient(45deg, #ef4444, #ef4444 3px, #fca5a5 3px, #fca5a5 6px)'
                         : 'repeating-linear-gradient(45deg, #3b82f6, #3b82f6 3px, #93c5fd 3px, #93c5fd 6px)'
@@ -2267,13 +2281,13 @@ export default function ChatPage() {
                   />
                 )}
                 
-                {/* Buffer bar (amber) - shown when buffer is active */}
+                {/* Buffer bar (amber) - starts after all tokens including search estimate */}
                 {expertMode && bufferTokens > 0 && totalWithSearchEstimate <= selectedContextTokens && (
                   <div 
-                    className="h-full transition-all absolute z-10 bg-amber-400"
+                    className="h-full transition-all absolute bg-amber-400"
                     style={{ 
-                      left: `${Math.min((totalWithSearchEstimate / selectedContextTokens) * 100, 100)}%`,
-                      width: `${Math.min((bufferTokens / selectedContextTokens) * 100, 100 - (totalWithSearchEstimate / selectedContextTokens) * 100)}%`
+                      left: `${Math.min(totalPercentage, 100)}%`,
+                      width: `${Math.min((bufferTokens / selectedContextTokens) * 100, 100 - totalPercentage)}%`
                     }}
                   />
                 )}
