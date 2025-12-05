@@ -3085,7 +3085,10 @@ export default function ChatPage() {
                       >
                         <div className="text-center mb-3">
                           <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
-                            {renderModel.name}
+                            {/* TEMP FIX: Strip "+ Search" from name when search is unavailable */}
+                            {isSearchUnavailable 
+                              ? renderModel.name.replace(" + Search", "").replace(" + Reasoning + Search", " + Reasoning")
+                              : renderModel.name}
                           </div>
                           {/* Search-only indicator - show when reasoning is ON but not available for this tier */}
                           {reasoningMode && !REASONING_MODELS[col] && (
