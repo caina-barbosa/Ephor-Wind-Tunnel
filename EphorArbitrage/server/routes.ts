@@ -1122,11 +1122,15 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
 
       const uploadedFiles: UploadedFileData[] = [];
 
+      // Track compression info for teaching purposes
+      const compressionInfo: { originalSize: number; compressedSize: number; fileName: string }[] = [];
+      
       for (const file of files) {
         const id = `upload_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         let buffer = file.buffer;
         let mimeType = file.mimetype;
         let wasCompressed = false;
+        const originalSize = file.size;
         
         // Compress large images to stay under Claude's 5MB API limit
         if (file.mimetype.startsWith('image/') && file.size > MAX_IMAGE_SIZE_FOR_API) {
@@ -1154,6 +1158,14 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
             
             mimeType = 'image/jpeg';
             wasCompressed = true;
+            
+            // Track compression for teaching
+            compressionInfo.push({
+              originalSize,
+              compressedSize: buffer.length,
+              fileName: file.originalname
+            });
+            
             console.log(`[Upload] Compressed to ${(buffer.length / 1024 / 1024).toFixed(2)}MB`);
           } catch (compressError) {
             console.error(`[Upload] Compression failed, using original:`, compressError);
@@ -1179,7 +1191,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         console.log(`[Upload] Stored file: ${file.originalname} (${(buffer.length / 1024 / 1024).toFixed(2)}MB${wasCompressed ? ', compressed' : ''}) as ${id}`);
       }
 
-      // Return file metadata (without the full dataUrl to keep response small)
+      // Return file metadata with compression info for teaching
       res.json({
         success: true,
         files: uploadedFiles.map(f => ({
@@ -1188,6 +1200,8 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
           mimeType: f.mimeType,
           size: f.size,
         })),
+        // Include compression info for educational purposes
+        compression: compressionInfo.length > 0 ? compressionInfo : undefined,
       });
     } catch (error: any) {
       console.error("[Upload] Error:", error);

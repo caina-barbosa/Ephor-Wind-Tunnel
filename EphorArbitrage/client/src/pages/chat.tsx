@@ -1522,6 +1522,32 @@ export default function ChatPage() {
         description: `~${totalNewTokens.toLocaleString()} tokens added to context`,
       });
       
+      // Show educational toast about compression if any images were compressed
+      if (uploadResult.compression && uploadResult.compression.length > 0) {
+        const comp = uploadResult.compression[0];
+        const originalMB = (comp.originalSize / 1024 / 1024).toFixed(1);
+        const compressedMB = (comp.compressedSize / 1024 / 1024).toFixed(1);
+        const savedPercent = Math.round((1 - comp.compressedSize / comp.originalSize) * 100);
+        
+        // Show teaching toast after a short delay so it doesn't overlap
+        setTimeout(() => {
+          toast({
+            title: "Image Compressed!",
+            description: `Your ${originalMB}MB image was shrunk to ${compressedMB}MB (${savedPercent}% smaller). Claude's brain can only handle images up to 5MB at a time!`,
+            duration: 8000,
+          });
+        }, 1500);
+        
+        // Show a second educational toast about how compression works
+        setTimeout(() => {
+          toast({
+            title: "How does compression work?",
+            description: "Like squeezing a sponge! We made your image smaller by reducing tiny details humans can't see. The AI can still understand it perfectly!",
+            duration: 10000,
+          });
+        }, 4000);
+      }
+      
     } catch (error: any) {
       console.error('File upload error:', error);
       toast({
