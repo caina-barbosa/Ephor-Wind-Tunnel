@@ -2089,35 +2089,83 @@ export default function ChatPage() {
             )}
             
             <div className={`mt-2 p-2.5 rounded-lg border ${
-              inputTokenEstimate > selectedContextTokens 
+              totalWithSearchEstimate > selectedContextTokens 
                 ? 'bg-red-50 border-red-300' 
                 : inputTokenEstimate > 1000000
                   ? 'bg-red-50 border-red-300'
                   : 'bg-gray-50 border-gray-200'
             }`}>
-              {/* GAP 1A: Token count and recommendation */}
+              {/* GAP 1A: Token count and recommendation with breakdown */}
               <div className="mb-2 text-sm">
                 <div className="font-medium text-gray-900">
-                  Your prompt uses <span className="font-bold text-[#1a3a8f]">{inputTokenEstimate.toLocaleString()}</span> tokens.
+                  {/* Show breakdown when we have multiple sources */}
+                  {(imageTokens > 0 || searchMode) ? (
+                    <>
+                      Your input uses <span className="font-bold text-[#1a3a8f]">{totalWithSearchEstimate.toLocaleString()}</span> tokens
+                      {searchMode && <span className="text-blue-500 text-xs ml-1">(includes search estimate)</span>}
+                    </>
+                  ) : (
+                    <>
+                      Your prompt uses <span className="font-bold text-[#1a3a8f]">{inputTokenEstimate.toLocaleString()}</span> tokens.
+                    </>
+                  )}
                   {expertMode && bufferTokens > 0 && (
                     <span className="text-amber-600 ml-1">
-                      (+{bufferTokens.toLocaleString()} buffer = {effectiveTokens.toLocaleString()} required)
+                      (+{bufferTokens.toLocaleString()} buffer = {(totalWithSearchEstimate + bufferTokens).toLocaleString()} required)
                     </span>
                   )}
                 </div>
+                
+                {/* Token source breakdown - educational */}
+                {(promptTokens > 0 && (imageTokens > 0 || textFileTokens > 0 || searchMode)) && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 bg-[#1a3a8f] rounded-sm" />
+                      <span className="text-gray-600">Text: {promptTokens.toLocaleString()}</span>
+                    </span>
+                    {imageTokens > 0 && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 bg-purple-500 rounded-sm" />
+                        <span className="text-purple-700">Images: {imageTokens.toLocaleString()}</span>
+                      </span>
+                    )}
+                    {textFileTokens > 0 && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 bg-emerald-500 rounded-sm" />
+                        <span className="text-emerald-700">Files: {textFileTokens.toLocaleString()}</span>
+                      </span>
+                    )}
+                    {searchMode && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-sm" style={{ background: 'repeating-linear-gradient(45deg, #3b82f6, #3b82f6 2px, #93c5fd 2px, #93c5fd 4px)' }} />
+                        <span className="text-blue-600">Search: ~{estimatedSearchTokens.toLocaleString()}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-3 h-3 text-blue-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs bg-white border-gray-200 text-gray-700">
+                            <p className="font-bold mb-1">Why so many tokens?</p>
+                            <p className="text-xs">Web search adds articles, snippets, and sources to help the AI answer. This can use 15,000-25,000 tokens!</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </span>
+                    )}
+                  </div>
+                )}
+                
                 {inputTokenEstimate > 1000000 ? (
                   <div className="text-red-600 font-bold mt-0.5">
                     Prompt exceeds max context (1M tokens). Please shorten.
                   </div>
                 ) : inputTokenEstimate > 0 && (
                   <div className={`mt-0.5 ${expertMode && bufferTokens > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> 
-                    {expertMode && bufferTokens > 0 ? ' (fits with buffer)' : ' (cheapest that fits)'}
+                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === getRecommendedContextTier(totalWithSearchEstimate))?.label}</span> 
+                    {expertMode && bufferTokens > 0 ? ' (fits with buffer)' : searchMode ? ' (includes search room)' : ' (cheapest that fits)'}
                   </div>
                 )}
-                {getContextTightFitWarning(expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate, selectedContextTokens) && (
+                {getContextTightFitWarning(expertMode && bufferTokens > 0 ? effectiveTokens : totalWithSearchEstimate, selectedContextTokens) && (
                   <div className="text-amber-600 font-medium mt-0.5">
-                    {contextSize.toUpperCase()} {getContextTightFitWarning(expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate, selectedContextTokens)}
+                    {contextSize.toUpperCase()} {getContextTightFitWarning(expertMode && bufferTokens > 0 ? effectiveTokens : totalWithSearchEstimate, selectedContextTokens)}
                     {expertMode && bufferTokens > 0 && " (with buffer)"}
                   </div>
                 )}
@@ -2126,9 +2174,19 @@ export default function ChatPage() {
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-xs text-gray-900">INPUT GAUGE</span>
-                  {inputTokenEstimate > selectedContextTokens && (
+                  {totalWithSearchEstimate > selectedContextTokens && (
                     <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded font-bold">
                       OVERFLOW
+                    </span>
+                  )}
+                  {searchMode && (
+                    <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded font-bold">
+                      +SEARCH
+                    </span>
+                  )}
+                  {imageTokens > 0 && (
+                    <span className="text-xs bg-purple-500 text-white px-2 py-0.5 rounded font-bold">
+                      +IMAGES
                     </span>
                   )}
                   {expertMode && bufferTokens > 0 && (
@@ -2138,72 +2196,127 @@ export default function ChatPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Show buffer breakdown when active */}
-                  {expertMode && bufferTokens > 0 ? (
-                    <>
-                      <span className="font-mono text-xs text-gray-600">
-                        {inputTokenEstimate.toLocaleString()} used
-                      </span>
-                      <span className="text-amber-500">+</span>
-                      <span className="font-mono text-xs text-amber-600 font-bold">
-                        {bufferTokens.toLocaleString()} buffer
-                      </span>
-                      <span className="text-gray-400">=</span>
-                      <span className={`font-mono text-sm font-bold ${
-                        effectiveTokens > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
-                      }`}>{effectiveTokens.toLocaleString()}</span>
-                    </>
-                  ) : (
-                    <span className={`font-mono text-sm font-bold ${
-                      inputTokenEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
-                    }`}>{inputTokenEstimate.toLocaleString()}</span>
-                  )}
+                  {/* Show total with search when active */}
+                  <span className={`font-mono text-sm font-bold ${
+                    totalWithSearchEstimate > selectedContextTokens ? 'text-red-600' : 'text-gray-900'
+                  }`}>{totalWithSearchEstimate.toLocaleString()}</span>
                   <span className="text-gray-400">/</span>
                   <span className="font-mono text-sm text-gray-600">{selectedContextTokens.toLocaleString()}</span>
                   <span className="text-xs text-gray-500">tokens</span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                    (expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) > selectedContextTokens 
+                    totalWithSearchEstimate > selectedContextTokens 
                       ? 'bg-red-500 text-white' 
                       : 'bg-gray-200 text-gray-700'
                   }`}>
-                    {(expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) > selectedContextTokens 
+                    {totalWithSearchEstimate > selectedContextTokens 
                       ? 'OVERFLOW!' 
-                      : `${((expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) / selectedContextTokens * 100).toFixed(1)}%`}
+                      : `${(totalWithSearchEstimate / selectedContextTokens * 100).toFixed(1)}%`}
                   </span>
                 </div>
               </div>
-              <div className="h-3 bg-gray-200 rounded-full overflow-hidden relative">
-                {/* Used tokens bar */}
-                <div 
-                  className={`h-full transition-all absolute left-0 z-20 ${
-                    inputTokenEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-[#1a3a8f]'
-                  }`}
-                  style={{ width: `${Math.min(Math.max(inputPercentage, inputTokenEstimate > 0 ? 2 : 0), 100)}%` }}
-                />
-                {/* Buffer bar (amber) - shown when buffer is active */}
-                {expertMode && bufferTokens > 0 && inputTokenEstimate <= selectedContextTokens && (
+              
+              {/* Multi-segment gauge bar */}
+              <div className="h-4 bg-gray-200 rounded-full overflow-hidden relative">
+                {/* Prompt tokens bar (blue) */}
+                {promptTokens > 0 && (
                   <div 
-                    className="h-full transition-all absolute z-10 bg-amber-400"
+                    className={`h-full transition-all absolute left-0 z-30 ${
+                      totalWithSearchEstimate > selectedContextTokens ? 'bg-red-500' : 'bg-[#1a3a8f]'
+                    }`}
+                    style={{ width: `${Math.min((promptTokens / selectedContextTokens) * 100, 100)}%` }}
+                  />
+                )}
+                
+                {/* Image tokens bar (purple) */}
+                {imageTokens > 0 && (
+                  <div 
+                    className={`h-full transition-all absolute z-25 ${
+                      totalWithSearchEstimate > selectedContextTokens ? 'bg-red-400' : 'bg-purple-500'
+                    }`}
                     style={{ 
-                      left: `${Math.min(inputPercentage, 100)}%`,
-                      width: `${Math.min((bufferTokens / selectedContextTokens) * 100, 100 - inputPercentage)}%`
+                      left: `${Math.min((promptTokens / selectedContextTokens) * 100, 100)}%`,
+                      width: `${Math.min((imageTokens / selectedContextTokens) * 100, 100 - (promptTokens / selectedContextTokens) * 100)}%`
                     }}
                   />
                 )}
-                {/* Unused/wasted tokens (diagonal stripes) */}
-                {contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && (
+                
+                {/* Text file tokens bar (emerald) */}
+                {textFileTokens > 0 && (
                   <div 
-                    className="h-full absolute bg-gray-300 opacity-60"
+                    className={`h-full transition-all absolute z-24 ${
+                      totalWithSearchEstimate > selectedContextTokens ? 'bg-red-300' : 'bg-emerald-500'
+                    }`}
                     style={{ 
-                      left: `${Math.min(Math.max((expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) / selectedContextTokens * 100, 2), 100)}%`,
-                      width: `${100 - Math.min(Math.max((expertMode && bufferTokens > 0 ? effectiveTokens : inputTokenEstimate) / selectedContextTokens * 100, 2), 100)}%`,
-                      backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)'
+                      left: `${Math.min(((promptTokens + imageTokens) / selectedContextTokens) * 100, 100)}%`,
+                      width: `${Math.min((textFileTokens / selectedContextTokens) * 100, 100 - ((promptTokens + imageTokens) / selectedContextTokens) * 100)}%`
+                    }}
+                  />
+                )}
+                
+                {/* Search tokens bar (striped blue - estimated) */}
+                {searchMode && estimatedSearchTokens > 0 && (
+                  <div 
+                    className="h-full transition-all absolute z-20"
+                    style={{ 
+                      left: `${Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100)}%`,
+                      width: `${Math.min((estimatedSearchTokens / selectedContextTokens) * 100, 100 - (inputTokenEstimate / selectedContextTokens) * 100)}%`,
+                      background: totalWithSearchEstimate > selectedContextTokens 
+                        ? 'repeating-linear-gradient(45deg, #ef4444, #ef4444 3px, #fca5a5 3px, #fca5a5 6px)'
+                        : 'repeating-linear-gradient(45deg, #3b82f6, #3b82f6 3px, #93c5fd 3px, #93c5fd 6px)'
+                    }}
+                  />
+                )}
+                
+                {/* Buffer bar (amber) - shown when buffer is active */}
+                {expertMode && bufferTokens > 0 && totalWithSearchEstimate <= selectedContextTokens && (
+                  <div 
+                    className="h-full transition-all absolute z-10 bg-amber-400"
+                    style={{ 
+                      left: `${Math.min((totalWithSearchEstimate / selectedContextTokens) * 100, 100)}%`,
+                      width: `${Math.min((bufferTokens / selectedContextTokens) * 100, 100 - (totalWithSearchEstimate / selectedContextTokens) * 100)}%`
                     }}
                   />
                 )}
               </div>
-              {/* Buffer legend when active */}
-              {expertMode && bufferTokens > 0 && inputTokenEstimate > 0 && (
+              
+              {/* Legend showing what each color means */}
+              {(imageTokens > 0 || textFileTokens > 0 || searchMode) && inputTokenEstimate > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px]">
+                  {promptTokens > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 bg-[#1a3a8f] rounded-sm" />
+                      <span className="text-gray-600">Prompt ({promptTokens.toLocaleString()})</span>
+                    </div>
+                  )}
+                  {imageTokens > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 bg-purple-500 rounded-sm" />
+                      <span className="text-purple-700 font-medium">Images ({imageTokens.toLocaleString()})</span>
+                    </div>
+                  )}
+                  {textFileTokens > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-sm" />
+                      <span className="text-emerald-700 font-medium">Files ({textFileTokens.toLocaleString()})</span>
+                    </div>
+                  )}
+                  {searchMode && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 rounded-sm" style={{ background: 'repeating-linear-gradient(45deg, #3b82f6, #3b82f6 2px, #93c5fd 2px, #93c5fd 4px)' }} />
+                      <span className="text-blue-600 font-medium">Search (~{estimatedSearchTokens.toLocaleString()})</span>
+                    </div>
+                  )}
+                  {expertMode && bufferTokens > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 bg-amber-400 rounded-sm" />
+                      <span className="text-amber-700 font-medium">Buffer ({bufferTokens.toLocaleString()})</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Simple legend for buffer only (no images/files/search) */}
+              {expertMode && bufferTokens > 0 && inputTokenEstimate > 0 && !(imageTokens > 0 || textFileTokens > 0 || searchMode) && (
                 <div className="mt-1.5 flex items-center gap-3 text-[10px]">
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-[#1a3a8f] rounded-sm" />
@@ -2215,7 +2328,8 @@ export default function ChatPage() {
                   </div>
                 </div>
               )}
-              {inputTokenEstimate > 0 && contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && !(expertMode && bufferTokens > 0) && (
+              
+              {inputTokenEstimate > 0 && !searchMode && contextSize !== recommendedContextTier && inputTokenEstimate <= selectedContextTokens && !(expertMode && bufferTokens > 0) && (
                 <div className="mt-2 text-xs text-amber-600 font-medium">
                   You're paying for {(selectedContextTokens - inputTokenEstimate).toLocaleString()} unused tokens
                 </div>
