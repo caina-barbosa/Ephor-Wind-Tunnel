@@ -352,9 +352,9 @@ function getActualModelId(modelId: string): string {
     "openrouter/qwen/qwen-2-72b-instruct": "qwen/qwen-2-72b-instruct",
     // OpenRouter :online models (web search enabled)
     "openrouter/qwen/qwen3-30b-a3b:online": "qwen/qwen3-30b-a3b:online",
-    "openrouter/qwen/qwen-2.5-7b-instruct:online": "qwen/qwen-2.5-7b-instruct:online",
+    "openrouter/qwen/qwen3-8b:online": "qwen/qwen3-8b:online",
     "openrouter/qwen/qwen3-14b:online": "qwen/qwen3-14b:online",
-    "openrouter/qwen/qwen-2.5-72b-instruct:online": "qwen/qwen-2.5-72b-instruct:online",
+    "openrouter/qwen/qwen3-32b:online": "qwen/qwen3-32b:online",
     "openrouter/anthropic/claude-sonnet-4:online": "anthropic/claude-sonnet-4:online",
     // Reasoning + Search combined models
     "openrouter/deepseek/deepseek-r1:online": "deepseek/deepseek-r1:online",

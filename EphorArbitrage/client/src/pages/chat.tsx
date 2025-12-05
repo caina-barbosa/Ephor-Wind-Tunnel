@@ -233,8 +233,8 @@ const SEARCH_MODELS: Record<string, Model> = {
     }
   },
   "7B": { 
-    id: "openrouter/qwen/qwen-2.5-7b-instruct:online", 
-    name: "Qwen2.5-7B + Search", 
+    id: "openrouter/qwen/qwen3-8b:online", 
+    name: "Qwen3-8B + Search", 
     costPer1k: 0.0003, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
@@ -242,11 +242,11 @@ const SEARCH_MODELS: Record<string, Model> = {
     benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7.6B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
-      finetuning: { method: "DPO", variants: ["Instruct", "Search-augmented"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
-      safety: { aligned: true, methods: ["RLHF", "Source verification"] }
+      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
   "14B": { 
@@ -267,8 +267,8 @@ const SEARCH_MODELS: Record<string, Model> = {
     }
   },
   "70B": { 
-    id: "openrouter/qwen/qwen-2.5-72b-instruct:online", 
-    name: "Qwen2.5-72B + Search", 
+    id: "openrouter/qwen/qwen3-32b:online", 
+    name: "Qwen3-32B + Search", 
     costPer1k: 0.0008, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
@@ -276,11 +276,11 @@ const SEARCH_MODELS: Record<string, Model> = {
     benchmarks: { mmlu: 85.3, humanEval: 86.8 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72.7B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
-      finetuning: { method: "DPO", variants: ["Instruct", "Search-augmented"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "32B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
-      safety: { aligned: true, methods: ["RLHF", "Source verification"] }
+      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
   "Frontier": { 
