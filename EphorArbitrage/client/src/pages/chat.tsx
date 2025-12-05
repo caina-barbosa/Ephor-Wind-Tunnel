@@ -2192,7 +2192,7 @@ export default function ChatPage() {
                       setReasoningMode(!reasoningMode);
                     }}
                     disabled={isRunning}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all touch-manipulation ${
+                    className={`flex items-center justify-center gap-2 w-[120px] py-2 rounded-lg font-medium transition-all touch-manipulation ${
                       reasoningMode 
                         ? 'bg-purple-600 text-white shadow-md' 
                         : 'bg-white text-gray-600 border border-gray-300 hover:bg-purple-50 hover:border-purple-300'
@@ -2217,7 +2217,7 @@ export default function ChatPage() {
                       setSearchMode(!searchMode);
                     }}
                     disabled={isRunning}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all touch-manipulation ${
+                    className={`flex items-center justify-center gap-2 w-[120px] py-2 rounded-lg font-medium transition-all touch-manipulation ${
                       searchMode 
                         ? 'bg-blue-600 text-white shadow-md' 
                         : 'bg-white text-gray-600 border border-gray-300 hover:bg-blue-50 hover:border-blue-300'
