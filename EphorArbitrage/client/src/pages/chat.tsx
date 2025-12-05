@@ -1415,53 +1415,70 @@ export default function ChatPage() {
     setContextAutoSelected(true);
   };
 
-  // Recommendation logic: find the BEST VALUE model (highest capability per dollar)
-  // Uses Pareto efficiency - picks from models where no other is both cheaper AND better
+  // Recommendation logic: PICK THE SMALLEST/CHEAPEST MODEL that completed successfully
+  // Philosophy: For simple queries, all models work - so prefer cheap & fast
+  // For hard queries, smaller models may fail - pick smallest that succeeded
   // ONLY shows after all models have completed
   const recommendedModel = useMemo(() => {
     // Don't show recommendation until all models have completed
     if (!allModelsComplete) return null;
     
-    // Get all columns that have successful responses
+    // Get all columns that have successful responses (with quality filters)
     const completedModels = COLUMNS.filter(col => {
       const resp = responses[col];
       const { disabled } = isModelDisabled(col);
       // Must not be disabled, must have a response, must not have error
-      return !disabled && resp && !resp.loading && resp.content && !resp.error;
+      if (disabled || !resp || resp.loading || !resp.content || resp.error) return false;
+      
+      // Quality checks: only filter out clear failures (empty or explicit refusals)
+      const content = resp.content.trim().toLowerCase();
+      // Check for explicit refusals that don't answer the question
+      const isExplicitRefusal = (content.startsWith("i cannot") || 
+                                 content.startsWith("i'm unable to") ||
+                                 content.startsWith("i'm sorry, but i cannot") ||
+                                 content.startsWith("i apologize, but i cannot")) &&
+                                content.length < 200; // Short refusals only
+      // Empty responses are failures
+      const isEmpty = resp.content.trim().length === 0;
+      
+      return !isExplicitRefusal && !isEmpty;
     });
     
     if (completedModels.length === 0) return null;
     
-    // Calculate value score for each model: MMLU points per $0.01 spent
-    // Higher score = better value (more capability per dollar)
+    // Score each model: prefer cheapest, use latency as tiebreaker
+    // Helper to convert expectedLatency string to ms
+    const latencyToMs = (latencyStr: "fast" | "medium" | "slow"): number => {
+      switch (latencyStr) {
+        case "fast": return 500;
+        case "medium": return 2000;
+        case "slow": return 5000;
+        default: return 2000;
+      }
+    };
+    
     const modelScores = completedModels.map(col => {
       const model = getModelForColumn(col);
       const resp = responses[col];
       const cost = resp?.cost ?? estimateCost(model!);
-      const mmlu = model?.benchmarks.mmlu || 70;
+      // Use actual latency if available, otherwise convert expectedLatency string to ms
+      const latency = resp?.latency ?? latencyToMs(model?.expectedLatency || "medium");
       
-      // Value = MMLU score / cost (higher is better)
-      // Use log scale for cost to not overly penalize expensive models
-      const valueScore = mmlu / (Math.log10(cost * 1000 + 1) + 1);
-      
-      return { col, cost, mmlu, valueScore };
+      return { col, cost, latency };
     });
     
-    // Find Pareto-optimal models (no model is both cheaper AND has higher MMLU)
-    const paretoOptimal = modelScores.filter(model => {
-      return !modelScores.some(other => 
-        other.col !== model.col && 
-        other.cost <= model.cost && 
-        other.mmlu >= model.mmlu &&
-        (other.cost < model.cost || other.mmlu > model.mmlu) // At least one must be strictly better
-      );
+    // Sort by cost first (cheapest wins), then by latency (faster wins)
+    // This ensures we pick the smallest/cheapest model that handled the task
+    modelScores.sort((a, b) => {
+      // Primary: cost (lower is better)
+      const costDiff = a.cost - b.cost;
+      if (Math.abs(costDiff) > 0.00001) return costDiff;
+      // Tiebreaker: latency (lower is better)
+      return a.latency - b.latency;
     });
     
-    // From Pareto-optimal models, pick the one with best value score
-    // This balances cost and capability rather than just picking cheapest
-    const best = paretoOptimal.sort((a, b) => b.valueScore - a.valueScore)[0];
-    
-    return best?.col || null;
+    // Pick the cheapest model that passed quality checks
+    return modelScores[0]?.col || null;
   }, [allModelsComplete, responses, costCap, contextSize, inputTokenEstimate]);
 
   // File upload handler - uses server endpoint for reliable large file handling
@@ -3623,107 +3640,150 @@ export default function ChatPage() {
                 <span className="text-xs text-gray-500">— The Pareto Frontier</span>
               </div>
               
-              <div className="relative h-[180px] border-l-2 border-b-2 border-gray-300 ml-8">
+              <div className="relative h-[200px] border-l-2 border-b-2 border-gray-300 ml-8">
                 {/* Y-axis label */}
                 <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-gray-500 font-medium whitespace-nowrap">
-                  Capability →
+                  Capability (MMLU) →
                 </div>
                 
                 {/* X-axis label */}
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-500 font-medium">
-                  Cost →
+                  Cost per query (log scale) →
                 </div>
                 
-                {/* Plot the 5 models using actual MMLU scores */}
-                {COLUMNS.map((col, colIndex) => {
-                  const model = getModelForColumn(col);
-                  if (!model) return null;
+                {/* Plot the 5 models - TRUE log-scale positions with label offsets for clarity */}
+                {(() => {
+                  // Calculate all model data with TRUE log-scale X positions
+                  const modelData = COLUMNS.map(col => {
+                    const model = getModelForColumn(col);
+                    if (!model) return null;
+                    const response = responses[col];
+                    const cost = response?.cost ?? estimateCost(model);
+                    const mmlu = model.benchmarks.mmlu || 70;
+                    const { disabled } = isModelDisabled(col);
+                    const isRecommended = showResults && col === recommendedModel;
+                    const hasResult = responses[col]?.content;
+                    
+                    // TRUE log-scale X position
+                    const minCost = 0.00001;
+                    const maxCost = 0.03;
+                    const logMin = Math.log(minCost);
+                    const logMax = Math.log(maxCost);
+                    const effectiveCost = Math.max(cost, minCost);
+                    const xPos = ((Math.log(effectiveCost) - logMin) / (logMax - logMin)) * 85 + 5;
+                    
+                    // MMLU Y position (60-95 range)
+                    const minMmlu = 60, maxMmlu = 95;
+                    const normalizedMmlu = (mmlu - minMmlu) / (maxMmlu - minMmlu);
+                    const yPos = 100 - (normalizedMmlu * 80 + 10);
+                    
+                    return { col, cost, mmlu, disabled, isRecommended, hasResult, xPos, yPos };
+                  }).filter(Boolean) as { col: string; cost: number; mmlu: number; disabled: boolean; isRecommended: boolean; hasResult: string | undefined; xPos: number; yPos: number }[];
                   
-                  const { disabled } = isModelDisabled(col);
-                  const isRecommended = showResults && col === recommendedModel;
-                  const hasResult = responses[col]?.content;
-                  const response = responses[col];
+                  // Sort by X position to detect overlapping labels
+                  const sortedByX = [...modelData].sort((a, b) => a.xPos - b.xPos);
                   
-                  // Use actual MMLU score for Y position (scale 60-95 MMLU to 0-100% chart)
-                  const mmluScore = model.benchmarks.mmlu || 70;
-                  const minMmlu = 60; // Lowest we'd expect
-                  const maxMmlu = 95; // Highest we'd expect
-                  const normalizedMmlu = (mmluScore - minMmlu) / (maxMmlu - minMmlu);
-                  const baseYPos = 100 - (normalizedMmlu * 85 + 5); // 5-90% range
+                  // Calculate label Y offsets to prevent overlap (stagger vertically when X is close)
+                  const labelOffsets: Record<string, number> = {};
+                  sortedByX.forEach((item, idx) => {
+                    let offset = 0;
+                    // Check distance from previous model
+                    if (idx > 0) {
+                      const prev = sortedByX[idx - 1];
+                      const xDist = item.xPos - prev.xPos;
+                      if (xDist < 12) { // Too close horizontally
+                        // Alternate label position up/down
+                        offset = (idx % 2 === 0) ? -20 : 20;
+                      }
+                    }
+                    labelOffsets[item.col] = offset;
+                  });
                   
-                  // Map cost to X position (logarithmic scale for better distribution)
-                  // Use actual response cost when available, otherwise estimated cost
-                  const cost = response?.cost ?? estimateCost(model);
-                  const minCost = 0.00001;
-                  const maxCost = 0.025;
-                  const logMin = Math.log(minCost);
-                  const logMax = Math.log(maxCost);
-                  // Clamp very low costs to minCost to avoid log(0) issues
-                  const effectiveCost = Math.max(cost, minCost);
-                  const baseXPos = ((Math.log(effectiveCost) - logMin) / (logMax - logMin)) * 80 + 5;
-                  
-                  const yPos = Math.max(5, Math.min(95, baseYPos));
-                  const xPos = Math.max(5, Math.min(90, baseXPos));
-                  
-                  return (
-                    <div
-                      key={col}
-                      className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-                      style={{ left: `${xPos}%`, top: `${yPos}%` }}
-                    >
-                      <div 
-                        className={`w-4 h-4 rounded-full border-2 transition-all ${
-                          isRecommended 
-                            ? 'bg-[#f5a623] border-[#f5a623] shadow-[0_0_8px_rgba(245,166,35,0.6)] scale-125' 
-                            : disabled
-                              ? 'bg-gray-200 border-gray-300'
-                              : hasResult
-                                ? 'bg-[#1a3a8f] border-[#1a3a8f]'
-                                : 'bg-gray-400 border-gray-500'
-                        }`}
-                      />
-                      <span className={`text-[10px] mt-1 font-bold ${
-                        isRecommended ? 'text-[#f5a623]' : disabled ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        {col}
-                      </span>
-                    </div>
-                  );
-                })}
+                  return modelData.map(item => {
+                    const labelOffset = labelOffsets[item.col] || 0;
+                    
+                    return (
+                      <div
+                        key={item.col}
+                        className="absolute transform -translate-x-1/2 flex flex-col items-center"
+                        style={{ 
+                          left: `${Math.max(5, Math.min(95, item.xPos))}%`, 
+                          top: `${Math.max(8, Math.min(92, item.yPos))}%`,
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                      >
+                        {/* Connector line if label is offset */}
+                        {labelOffset !== 0 && (
+                          <div 
+                            className="absolute w-px bg-gray-300"
+                            style={{
+                              height: `${Math.abs(labelOffset)}px`,
+                              top: labelOffset > 0 ? '8px' : 'auto',
+                              bottom: labelOffset < 0 ? '8px' : 'auto'
+                            }}
+                          />
+                        )}
+                        <div 
+                          className={`w-4 h-4 rounded-full border-2 transition-all z-10 ${
+                            item.isRecommended 
+                              ? 'bg-[#f5a623] border-[#f5a623] shadow-[0_0_8px_rgba(245,166,35,0.6)] scale-125' 
+                              : item.disabled
+                                ? 'bg-gray-200 border-gray-300'
+                                : item.hasResult
+                                  ? 'bg-[#1a3a8f] border-[#1a3a8f]'
+                                  : 'bg-gray-400 border-gray-500'
+                          }`}
+                        />
+                        <div 
+                          className="flex flex-col items-center whitespace-nowrap"
+                          style={{ marginTop: labelOffset > 0 ? `${labelOffset}px` : '2px' }}
+                        >
+                          <span className={`text-[10px] font-bold ${
+                            item.isRecommended ? 'text-[#f5a623]' : item.disabled ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            {item.col}
+                          </span>
+                          <span className="text-[8px] text-gray-400">
+                            ${item.cost < 0.0001 ? item.cost.toFixed(5) : item.cost.toFixed(4)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
                 
-                {/* Dynamic Pareto frontier line - connects optimal models */}
+                {/* Dynamic Pareto frontier line - uses TRUE log-scale positions */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
                   {(() => {
-                    // Calculate positions and find Pareto frontier
-                    const modelPositions = COLUMNS.map(col => {
+                    const modelData = COLUMNS.map(col => {
                       const model = getModelForColumn(col);
                       if (!model) return null;
                       const response = responses[col];
                       const cost = response?.cost ?? estimateCost(model);
                       const mmlu = model.benchmarks.mmlu || 70;
                       
-                      // Same positioning logic as dots
-                      const minMmlu = 60, maxMmlu = 95;
-                      const normalizedMmlu = (mmlu - minMmlu) / (maxMmlu - minMmlu);
-                      const yPos = 100 - (normalizedMmlu * 85 + 5);
-                      
-                      const minCost = 0.00001, maxCost = 0.025;
+                      // TRUE log-scale positions (same as dots)
+                      const minCost = 0.00001, maxCost = 0.03;
                       const logMin = Math.log(minCost), logMax = Math.log(maxCost);
                       const effectiveCost = Math.max(cost, minCost);
-                      const xPos = ((Math.log(effectiveCost) - logMin) / (logMax - logMin)) * 80 + 5;
+                      const xPos = ((Math.log(effectiveCost) - logMin) / (logMax - logMin)) * 85 + 5;
                       
-                      return { col, xPos: Math.max(5, Math.min(90, xPos)), yPos: Math.max(5, Math.min(95, yPos)), cost, mmlu };
+                      const minMmlu = 60, maxMmlu = 95;
+                      const normalizedMmlu = (mmlu - minMmlu) / (maxMmlu - minMmlu);
+                      const yPos = 100 - (normalizedMmlu * 80 + 10);
+                      
+                      return { col, xPos: Math.max(5, Math.min(95, xPos)), yPos: Math.max(8, Math.min(92, yPos)), cost, mmlu };
                     }).filter(Boolean) as { col: string; xPos: number; yPos: number; cost: number; mmlu: number }[];
                     
                     // Find Pareto-optimal points (no other point is both cheaper AND higher MMLU)
-                    const paretoPoints = modelPositions.filter(model => {
-                      return !modelPositions.some(other => 
+                    const paretoPoints = modelData.filter(model => {
+                      return !modelData.some(other => 
                         other.col !== model.col && 
                         other.cost <= model.cost && 
                         other.mmlu >= model.mmlu &&
                         (other.cost < model.cost || other.mmlu > model.mmlu)
                       );
-                    }).sort((a, b) => a.xPos - b.xPos); // Sort by X position (cost)
+                    }).sort((a, b) => a.xPos - b.xPos);
                     
                     if (paretoPoints.length < 2) return null;
                     
