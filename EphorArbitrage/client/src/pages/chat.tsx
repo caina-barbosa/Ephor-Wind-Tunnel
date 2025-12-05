@@ -2559,13 +2559,13 @@ export default function ChatPage() {
                       // When enabling search, show educational warning if context is small
                       // Do NOT auto-upgrade - let students see the overflow and learn to fix it
                       if (newSearchMode && (contextSize === "8k" || contextSize === "32k")) {
-                        const currentTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
-                        
-                        // Educational toast - prompts student to manually upgrade
+                        // Educational toast - explains why 128K is needed (not just 32K)
                         toast({
-                          title: "Watch your Input Gauge!",
-                          description: `Web search adds ~20,000 tokens of results. Your ${contextSize.toUpperCase()} window may overflow. Try upgrading to 128K using the Context Window dropdown above!`,
-                          duration: 10000,
+                          title: "Search needs 128K+ context!",
+                          description: contextSize === "8k" 
+                            ? "Search adds ~20K tokens, but results vary (15K-35K). Even 32K often overflows! Use 128K or higher for safe headroom."
+                            : "32K seems enough for ~20K search tokens, but results vary (15K-35K) and you need room for your prompt + response. Upgrade to 128K!",
+                          duration: 12000,
                         });
                       }
                     }}
@@ -2583,7 +2583,7 @@ export default function ChatPage() {
                 <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
                   <p className="font-bold mb-1">Web Search Mode</p>
                   <p className="text-xs">Add real-time web search to any model. Can be combined with Reasoning! Claude uses native search, others use Exa (~$0.02/request).</p>
-                  <p className="text-xs mt-1 text-blue-600 font-medium">Tip: Search works best with 128K+ context to fit web results.</p>
+                  <p className="text-xs mt-1 text-blue-600 font-medium">Why 128K minimum? Search results vary 15K-35K tokens. 32K seems enough but often overflows. Always leave headroom!</p>
                 </TooltipContent>
               </Tooltip>
             </div>

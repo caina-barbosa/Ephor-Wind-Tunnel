@@ -79,12 +79,13 @@ The application allows users to select context window sizes (8K-1M) and set a co
     - All overflow detection uses total including search estimate
     - Teaching point: visualize how different inputs consume context
 *   **Search Mode Context Overflow Learning**: Educational flow when enabling Search:
-    - Warning toast: "Watch your Input Gauge!" (explains 20,000+ token overhead)
+    - Warning toast: "Search needs 128K+ context!" with context-specific explanation
+    - Explains why 32K isn't enough: search results vary 15K-35K, plus you need prompt + response room
     - NO automatic upgrade - students must manually select larger context
     - Input Gauge shows striped blue search segment causing overflow
     - Overflow warning turns red prompting student to fix it
-    - Tooltip tip: "Search works best with 128K+ context"
-    - Teaching point: students learn by seeing overflow and choosing the fix themselves
+    - Tooltip explains the "headroom" concept - why you can't fill context to the brim
+    - Teaching point: students learn that estimates aren't guarantees, always leave buffer room
 
 ### System Design Choices
 
