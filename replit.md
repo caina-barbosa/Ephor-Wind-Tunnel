@@ -78,13 +78,13 @@ The application allows users to select context window sizes (8K-1M) and set a co
     - Cumulative positioning ensures segments stack sequentially without overlap
     - All overflow detection uses total including search estimate
     - Teaching point: visualize how different inputs consume context
-*   **Search Mode Context Auto-Upgrade**: Educational flow when enabling Search:
-    - Warning toast: "Search needs more memory!" (explains 20,000+ token overhead)
-    - Automatic context upgrade to 128K if using 8K or 32K
-    - Confirmation toast explaining the upgrade
+*   **Search Mode Context Overflow Learning**: Educational flow when enabling Search:
+    - Warning toast: "Watch your Input Gauge!" (explains 20,000+ token overhead)
+    - NO automatic upgrade - students must manually select larger context
+    - Input Gauge shows striped blue search segment causing overflow
+    - Overflow warning turns red prompting student to fix it
     - Tooltip tip: "Search works best with 128K+ context"
-    - Friendly error messages for context overflow instead of cryptic API errors
-    - Teaching point: understand why search requires larger context windows
+    - Teaching point: students learn by seeing overflow and choosing the fix themselves
 
 ### System Design Choices
 

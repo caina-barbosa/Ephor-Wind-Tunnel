@@ -2556,28 +2556,17 @@ export default function ChatPage() {
                       const newSearchMode = !searchMode;
                       setSearchMode(newSearchMode);
                       
-                      // When enabling search, check if context window is too small
+                      // When enabling search, show educational warning if context is small
+                      // Do NOT auto-upgrade - let students see the overflow and learn to fix it
                       if (newSearchMode && (contextSize === "8k" || contextSize === "32k")) {
                         const currentTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
                         
-                        // Show educational toast about search needing more context
+                        // Educational toast - prompts student to manually upgrade
                         toast({
-                          title: "Search needs more memory!",
-                          description: `Web search results can add 20,000+ tokens. Your ${contextSize.toUpperCase()} window (${currentTokens.toLocaleString()} tokens) might overflow. Consider upgrading to 128K or higher.`,
-                          duration: 8000,
+                          title: "Watch your Input Gauge!",
+                          description: `Web search adds ~20,000 tokens of results. Your ${contextSize.toUpperCase()} window may overflow. Try upgrading to 128K using the Context Window dropdown above!`,
+                          duration: 10000,
                         });
-                        
-                        // Auto-upgrade to 128K for search mode
-                        setTimeout(() => {
-                          if (contextSize === "8k" || contextSize === "32k") {
-                            setContextSize("128k");
-                            toast({
-                              title: "Context upgraded to 128K",
-                              description: "We increased your context window to fit search results. This gives the AI more room to include web information!",
-                              duration: 6000,
-                            });
-                          }
-                        }, 2000);
                       }
                     }}
                     disabled={isRunning}
