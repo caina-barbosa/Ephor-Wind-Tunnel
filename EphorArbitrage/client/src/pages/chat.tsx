@@ -1692,6 +1692,9 @@ export default function ChatPage() {
     setIsRunning(true);
     setShowResults(true);
 
+    // TEMP FIX: 3B and 70B search models are broken - mark them as unavailable
+    const SEARCH_UNAVAILABLE_TIERS = ["3B", "70B"];
+
     const modelsToRun: { col: string; model: Model }[] = [];
     COLUMNS.forEach(col => {
       const model = getModelForColumn(col);
@@ -1702,7 +1705,19 @@ export default function ChatPage() {
 
     const initialResponses: Record<string, ModelResponse> = {};
     modelsToRun.forEach(({ col }) => {
-      initialResponses[col] = { content: "", loading: true, error: null, latency: null, cost: null, progress: 0 };
+      // TEMP FIX: If search mode and tier is 3B or 70B, show unavailable immediately
+      if (searchEnabled && SEARCH_UNAVAILABLE_TIERS.includes(col)) {
+        initialResponses[col] = { 
+          content: "Search is temporarily unavailable for this model. Please try 8B, 14B, or Frontier tiers for search queries.", 
+          loading: false, 
+          error: "Search unavailable", 
+          latency: null, 
+          cost: null, 
+          progress: 100 
+        };
+      } else {
+        initialResponses[col] = { content: "", loading: true, error: null, latency: null, cost: null, progress: 0 };
+      }
     });
     setResponses(initialResponses);
 
@@ -1876,7 +1891,12 @@ export default function ChatPage() {
       }
     };
 
-    await Promise.all(modelsToRun.map(({ col, model }) => runModel(col, model)));
+    // TEMP FIX: Skip running 3B and 70B when search is enabled (already marked unavailable)
+    const modelsToActuallyRun = searchEnabled 
+      ? modelsToRun.filter(({ col }) => !SEARCH_UNAVAILABLE_TIERS.includes(col))
+      : modelsToRun;
+    
+    await Promise.all(modelsToActuallyRun.map(({ col, model }) => runModel(col, model)));
     setIsRunning(false);
     setTestRunCount(prev => prev + 1);
   };
