@@ -1459,10 +1459,15 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
           )
         : enhancedMessages;
       
+      // For :online (search) models, reduce max_tokens since web search results consume context
+      // OpenRouter's search can add 20-30K tokens of search results
+      const isSearchModel = modelId.endsWith(':online');
+      const maxTokens = isSearchModel ? 512 : 1024;
+      
       const stream = await client.chat.completions.create({
         model: actualModelId,
         messages: streamMessages,
-        max_tokens: 1024,
+        max_tokens: maxTokens,
         stream: true,
       });
 
@@ -1510,7 +1515,24 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       
     } catch (error: any) {
       console.error(`[Wind Tunnel Stream] Error:`, error);
-      res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+      
+      // Provide friendly error messages for common issues
+      let userMessage = error.message;
+      
+      // Context length exceeded (common with search mode)
+      if (error.message?.includes('context length') || error.message?.includes('tokens')) {
+        userMessage = "Search results too large for this model's context window. Try a shorter prompt or use a larger model like Frontier.";
+      }
+      // Provider errors (model temporarily unavailable)
+      else if (error.message?.includes('Provider returned error') || error.status === 400) {
+        userMessage = "This model is temporarily unavailable. Please try again in a moment.";
+      }
+      // Rate limiting
+      else if (error.status === 429) {
+        userMessage = "Too many requests. Please wait a moment and try again.";
+      }
+      
+      res.write(`data: ${JSON.stringify({ type: 'error', error: userMessage })}\n\n`);
       res.end();
     }
   });
