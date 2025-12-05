@@ -3745,58 +3745,62 @@ export default function ChatPage() {
                       <span>Expensive</span>
                     </div>
                     
-                    <svg className="absolute left-8 right-4 top-2 bottom-8 overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <rect x="0" y="0" width="100" height="100" fill="#fafafa" stroke="#d1d5db" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                      
+                    <div className="absolute left-8 right-4 top-2 bottom-8 bg-gray-50/50 border-l-2 border-b-2 border-gray-300">
                       {[0, 25, 50, 75, 100].map(pct => (
-                        <line key={pct} x1="0" y1={pct} x2="100" y2={pct} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="2 1" vectorEffect="non-scaling-stroke" />
+                        <div key={pct} className="absolute w-full border-t border-dashed border-gray-200" style={{ top: `${pct}%` }} />
                       ))}
                       
                       {paretoFrontier.length >= 2 && (
-                        <polyline
-                          points={paretoFrontier.map(m => `${getX(m.cost)},${getY(m.mmlu)}`).join(' ')}
-                          fill="none"
-                          stroke="#f5a623"
-                          strokeWidth="1.5"
-                          strokeDasharray="4 2"
-                          vectorEffect="non-scaling-stroke"
-                        />
+                        <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
+                          <polyline
+                            points={paretoFrontier.map(m => {
+                              const xPct = ((getX(m.cost) - 8) / 84) * 100;
+                              const yPct = ((getY(m.mmlu) - 8) / 84) * 100;
+                              return `${xPct}%,${yPct}%`;
+                            }).join(' ')}
+                            fill="none"
+                            stroke="#f5a623"
+                            strokeWidth="2"
+                            strokeDasharray="6 3"
+                          />
+                        </svg>
                       )}
                       
                       {chartModels.map((m, i) => {
-                        const x = getX(m.cost);
-                        const y = getY(m.mmlu);
+                        const xPct = ((getX(m.cost) - 8) / 84) * 100;
+                        const yPct = ((getY(m.mmlu) - 8) / 84) * 100;
                         const isOnFrontier = paretoFrontier.some(f => f.col === m.col);
-                        const labelOffsetY = i % 2 === 0 ? -4 : 6;
+                        const labelOffsetY = i % 2 === 0 ? -20 : 16;
                         const fillColor = m.isRec ? '#f5a623' : m.disabled ? '#d1d5db' : m.col === 'Frontier' ? '#f97316' : '#1a3a8f';
                         const textColor = m.isRec ? '#f5a623' : m.disabled ? '#9ca3af' : m.col === 'Frontier' ? '#ea580c' : '#1e40af';
+                        const size = m.isRec ? 16 : 12;
                         return (
-                          <g key={m.col}>
-                            <circle
-                              cx={x}
-                              cy={y}
-                              r={m.isRec ? 4 : 3}
-                              fill={fillColor}
-                              stroke={isOnFrontier ? '#f5a623' : 'white'}
-                              strokeWidth={isOnFrontier ? 2 : 1}
-                              vectorEffect="non-scaling-stroke"
+                          <div key={m.col} className="absolute" style={{ left: `${xPct}%`, top: `${yPct}%`, transform: 'translate(-50%, -50%)' }}>
+                            <div 
+                              className="rounded-full"
+                              style={{ 
+                                width: size, 
+                                height: size, 
+                                backgroundColor: fillColor,
+                                border: isOnFrontier ? '2px solid #f5a623' : '1px solid white',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                              }} 
                             />
-                            <text
-                              x={x}
-                              y={y + labelOffsetY}
-                              textAnchor="middle"
-                              fontSize="10"
-                              fontWeight="bold"
-                              fill={textColor}
-                              style={{ pointerEvents: 'none' }}
-                              vectorEffect="non-scaling-stroke"
+                            <div 
+                              className="absolute text-[10px] font-bold whitespace-nowrap"
+                              style={{ 
+                                left: '50%', 
+                                top: labelOffsetY, 
+                                transform: 'translateX(-50%)', 
+                                color: textColor 
+                              }}
                             >
                               {m.col}
-                            </text>
-                          </g>
+                            </div>
+                          </div>
                         );
                       })}
-                    </svg>
+                    </div>
                   </div>
                 );
               })()}
