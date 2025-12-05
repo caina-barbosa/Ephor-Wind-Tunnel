@@ -216,19 +216,19 @@ const REASONING_MODELS: Record<string, Model | null> = {
 // Exa search costs ~$0.02/request (5 results), Claude uses native search
 const SEARCH_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "openrouter/qwen/qwen3-30b-a3b:online", 
-    name: "Qwen3-30B-A3B + Search", 
-    costPer1k: 0.0001, // Base cost + search overhead
+    id: "openrouter/qwen/qwen3-8b:online", 
+    name: "Qwen3-8B + Search", 
+    costPer1k: 0.00018, // Uses 8B for search due to context requirements
     expectedLatency: "medium", 
-    reasoningDepth: "none", 
+    reasoningDepth: "shallow", 
     expectedAccuracy: "good", 
-    benchmarks: { mmlu: 65.2, humanEval: 61.4 }, 
+    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Sparse MoE", attention: "MHA", parameters: "30B total / 3B active" },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B (131K context)" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
-      inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
+      inference: { precision: "BF16", optimizations: ["Extended context", "Exa web grounding"] },
       safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
@@ -3701,18 +3701,20 @@ export default function ChatPage() {
                         const model = getModelForColumn(col);
                         if (!model) return null;
                         const response = responses[col];
-                        const cost = response?.cost ?? estimateCost(model);
+                        // Ensure cost is always a valid positive number
+                        const rawCost = response?.cost ?? estimateCost(model);
+                        const cost = (typeof rawCost === 'number' && !isNaN(rawCost) && rawCost > 0) ? rawCost : estimateCost(model);
                         const mmlu = model.benchmarks.mmlu || 70;
                         const { disabled } = isModelDisabled(col);
                         const isRecommended = showResults && col === recommendedModel;
                         const hasResult = responses[col]?.content;
                         
-                        // X: linear scale based on actual cost range
-                        // Typical costs: 3B=$0.00001, 7B=$0.0002, 14B=$0.0005, 70B=$0.002, Frontier=$0.01
-                        // Use log10 scale: -5 (cheap) to -2 (expensive)
-                        const logCost = Math.log10(Math.max(cost, 0.000001));
-                        // Map log range [-6, -1.5] to [5%, 95%]
-                        const x = ((logCost + 6) / 4.5) * 90 + 5;
+                        // X: log10 scale for cost positioning
+                        // Low cost (0.00001) -> left, High cost (0.1) -> right
+                        const safeCost = Math.max(cost, 0.000001);
+                        const logCost = Math.log10(safeCost);
+                        // Map log range [-6, -1] to [5%, 95%] - cheaper on LEFT, expensive on RIGHT
+                        const x = ((logCost + 6) / 5) * 90 + 5;
                         // Y: MMLU 60-90 mapped to 100-0 (higher capability = higher on chart)
                         const y = 100 - ((mmlu - 60) / 30) * 100;
                         
@@ -3761,14 +3763,17 @@ export default function ChatPage() {
                       const model = getModelForColumn(col);
                       if (!model) return null;
                       const response = responses[col];
-                      const cost = response?.cost ?? estimateCost(model);
+                      // Ensure cost is always a valid positive number
+                      const rawCost = response?.cost ?? estimateCost(model);
+                      const cost = (typeof rawCost === 'number' && !isNaN(rawCost) && rawCost > 0) ? rawCost : estimateCost(model);
                       const mmlu = model.benchmarks.mmlu || 70;
                       const { disabled } = isModelDisabled(col);
                       const isRecommended = showResults && col === recommendedModel;
                       
-                      // Same log scale as SVG points
-                      const logCost = Math.log10(Math.max(cost, 0.000001));
-                      const x = ((logCost + 6) / 4.5) * 90 + 5;
+                      // Same log scale as SVG points - cheap LEFT, expensive RIGHT
+                      const safeCost = Math.max(cost, 0.000001);
+                      const logCost = Math.log10(safeCost);
+                      const x = ((logCost + 6) / 5) * 90 + 5;
                       const y = 100 - ((mmlu - 60) / 30) * 100;
                       
                       return { col, x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)), cost, isRecommended, disabled };
