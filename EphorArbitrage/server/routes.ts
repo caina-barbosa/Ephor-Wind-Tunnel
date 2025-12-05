@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
+import sharp from "sharp";
 import { storage } from "./storage";
 import type { ChatMessage, ChatCompletionResult } from "./types";
 
@@ -1109,6 +1110,9 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
   });
 
   // Wind Tunnel: File upload endpoint
+  // Claude's API has a 5MB limit for base64 images, so we compress images larger than 3.5MB
+  const MAX_IMAGE_SIZE_FOR_API = 3.5 * 1024 * 1024; // 3.5MB (leaves room for base64 overhead)
+  
   app.post("/api/wind-tunnel/upload", upload.array("files", 10), (async (req: any, res: any) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -1120,14 +1124,51 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
 
       for (const file of files) {
         const id = `upload_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-        const base64 = file.buffer.toString("base64");
-        const dataUrl = `data:${file.mimetype};base64,${base64}`;
+        let buffer = file.buffer;
+        let mimeType = file.mimetype;
+        let wasCompressed = false;
+        
+        // Compress large images to stay under Claude's 5MB API limit
+        if (file.mimetype.startsWith('image/') && file.size > MAX_IMAGE_SIZE_FOR_API) {
+          try {
+            console.log(`[Upload] Compressing large image: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+            
+            // Get image metadata to determine optimal resize
+            const metadata = await sharp(buffer).metadata();
+            const maxDim = 1920; // Resize to max 1920px on longest side
+            
+            let resizeOptions: sharp.ResizeOptions = {};
+            if (metadata.width && metadata.height) {
+              if (metadata.width > metadata.height) {
+                resizeOptions = { width: Math.min(metadata.width, maxDim), withoutEnlargement: true };
+              } else {
+                resizeOptions = { height: Math.min(metadata.height, maxDim), withoutEnlargement: true };
+              }
+            }
+            
+            // Compress as JPEG with quality 85 (good balance of quality/size)
+            buffer = await sharp(buffer)
+              .resize(resizeOptions)
+              .jpeg({ quality: 85 })
+              .toBuffer();
+            
+            mimeType = 'image/jpeg';
+            wasCompressed = true;
+            console.log(`[Upload] Compressed to ${(buffer.length / 1024 / 1024).toFixed(2)}MB`);
+          } catch (compressError) {
+            console.error(`[Upload] Compression failed, using original:`, compressError);
+            // Fall back to original if compression fails
+          }
+        }
+        
+        const base64 = buffer.toString("base64");
+        const dataUrl = `data:${mimeType};base64,${base64}`;
 
         const fileData: UploadedFileData = {
           id,
           name: file.originalname,
-          mimeType: file.mimetype,
-          size: file.size,
+          mimeType: mimeType,
+          size: buffer.length,
           dataUrl,
           uploadedAt: Date.now(),
         };
@@ -1135,7 +1176,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         uploadedFilesStore.set(id, fileData);
         uploadedFiles.push(fileData);
         
-        console.log(`[Upload] Stored file: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB) as ${id}`);
+        console.log(`[Upload] Stored file: ${file.originalname} (${(buffer.length / 1024 / 1024).toFixed(2)}MB${wasCompressed ? ', compressed' : ''}) as ${id}`);
       }
 
       // Return file metadata (without the full dataUrl to keep response small)
