@@ -1459,88 +1459,118 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
           )
         : enhancedMessages;
       
-      // For :online (search) models, reduce max_tokens since web search results consume context
-      // OpenRouter's search can add 20-30K tokens of search results
+      // Check if this is a search model
       const isSearchModel = modelId.endsWith(':online');
       const maxTokens = isSearchModel ? 512 : 1024;
       
-      const stream = await client.chat.completions.create({
-        model: actualModelId,
-        messages: streamMessages,
-        max_tokens: maxTokens,
-        stream: true,
-      });
-
       let content = "";
-      let tokenCount = 0;
-      let firstTokenTime = 0;
-      let toolCallContent = ""; // Capture tool call outputs for :online search models
+      let latency = 0;
+      let inputTokens = 0;
+      let outputTokens = 0;
       
-      for await (const chunk of stream) {
-        if (firstTokenTime === 0) {
-          firstTokenTime = Date.now() - startTime;
-        }
+      // For search models, use non-streaming to properly capture the final response
+      // Streaming with :online models can miss content that comes via tool call results
+      if (isSearchModel) {
+        // Send initial progress indicator
+        res.write(`data: ${JSON.stringify({ 
+          type: 'token', 
+          content: '🔍 Searching the web...',
+          tokenCount: 0,
+          elapsed: Date.now() - startTime
+        })}\n\n`);
         
-        const delta = chunk.choices[0]?.delta?.content || "";
-        if (delta) {
-          content += delta;
-          tokenCount += 1;
+        try {
+          const completion = await client.chat.completions.create({
+            model: actualModelId,
+            messages: streamMessages,
+            max_tokens: maxTokens,
+            stream: false,
+          });
           
-          // Send progress update
-          res.write(`data: ${JSON.stringify({ 
-            type: 'token', 
-            content: delta,
-            tokenCount,
-            elapsed: Date.now() - startTime
-          })}\n\n`);
-        }
-        
-        // For :online search models, also capture tool call outputs
-        // Some models (like Qwen) return search results via tool_calls instead of content
-        if (isSearchModel && chunk.choices[0]?.delta) {
-          const deltaAny = chunk.choices[0].delta as any;
+          latency = Date.now() - startTime;
           
-          // Check for tool call output text
-          if (deltaAny.tool_calls) {
-            for (const tc of deltaAny.tool_calls) {
-              if (tc.output_text) {
-                toolCallContent += tc.output_text;
-              }
-              // Also check function arguments
-              if (tc.function?.arguments) {
-                try {
-                  const args = JSON.parse(tc.function.arguments);
-                  if (args.response) toolCallContent += args.response;
-                  if (args.content) toolCallContent += args.content;
-                } catch {}
+          // Get content from the response
+          content = completion.choices[0]?.message?.content || "";
+          
+          // If content is empty, check for tool call results
+          if (!content.trim()) {
+            const message = completion.choices[0]?.message as any;
+            if (message?.tool_calls) {
+              for (const tc of message.tool_calls) {
+                if (tc.function?.arguments) {
+                  try {
+                    const args = JSON.parse(tc.function.arguments);
+                    if (args.response) content += args.response;
+                    if (args.content) content += args.content;
+                    if (args.answer) content += args.answer;
+                  } catch {}
+                }
               }
             }
           }
           
-          // Check message-level content as fallback
-          if (deltaAny.message?.content) {
-            toolCallContent += deltaAny.message.content;
+          // Use usage data if available
+          inputTokens = completion.usage?.prompt_tokens || Math.ceil(prompt.length / 4);
+          outputTokens = completion.usage?.completion_tokens || Math.ceil(content.length / 4);
+          
+          // Send the content
+          if (content.trim()) {
+            res.write(`data: ${JSON.stringify({ 
+              type: 'token', 
+              content: content,
+              tokenCount: outputTokens,
+              elapsed: latency
+            })}\n\n`);
+          }
+          
+          console.log(`[Wind Tunnel Stream] ${modelId} search completed in ${latency}ms, ${content.length} chars`);
+          
+        } catch (searchError: any) {
+          console.error(`[Wind Tunnel Stream] Search error for ${modelId}:`, searchError.message);
+          
+          // Check for context length errors
+          if (searchError.message?.includes('tokens') || searchError.message?.includes('context')) {
+            throw new Error(`Context overflow: Search results + prompt exceed this model's limit. Use 128K+ context or try a shorter prompt.`);
+          }
+          throw searchError;
+        }
+      } else {
+        // Regular streaming for non-search models
+        const stream = await client.chat.completions.create({
+          model: actualModelId,
+          messages: streamMessages,
+          max_tokens: maxTokens,
+          stream: true,
+        });
+
+        let tokenCount = 0;
+        let firstTokenTime = 0;
+        
+        for await (const chunk of stream) {
+          if (firstTokenTime === 0) {
+            firstTokenTime = Date.now() - startTime;
+          }
+          
+          const delta = chunk.choices[0]?.delta?.content || "";
+          if (delta) {
+            content += delta;
+            tokenCount += 1;
+            
+            // Send progress update
+            res.write(`data: ${JSON.stringify({ 
+              type: 'token', 
+              content: delta,
+              tokenCount,
+              elapsed: Date.now() - startTime
+            })}\n\n`);
           }
         }
+        
+        latency = Date.now() - startTime;
+        inputTokens = Math.ceil(prompt.length / 4);
+        outputTokens = Math.ceil(content.length / 4);
       }
       
-      // For :online models, use tool call content if main content is empty
-      if (isSearchModel && !content.trim() && toolCallContent.trim()) {
-        console.log(`[Wind Tunnel Stream] ${modelId}: Using tool call content (${toolCallContent.length} chars)`);
-        content = toolCallContent;
-        
-        // Send the content we recovered from tool calls
-        res.write(`data: ${JSON.stringify({ 
-          type: 'token', 
-          content: toolCallContent,
-          tokenCount: Math.ceil(toolCallContent.length / 4),
-          elapsed: Date.now() - startTime
-        })}\n\n`);
-      }
-
-      const latency = Date.now() - startTime;
-      const inputTokens = Math.ceil(prompt.length / 4);
-      const outputTokens = Math.ceil(content.length / 4);
       const cost = calculateCost(modelId, inputTokens, outputTokens);
 
       // Send final complete message

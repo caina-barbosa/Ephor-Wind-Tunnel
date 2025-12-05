@@ -2613,18 +2613,6 @@ export default function ChatPage() {
                       const newSearchMode = !searchMode;
                       setSearchMode(newSearchMode);
                       
-                      // When enabling search, show educational warning if context is small
-                      // Do NOT auto-upgrade - let students see the overflow and learn to fix it
-                      if (newSearchMode && (contextSize === "8k" || contextSize === "32k")) {
-                        // Educational toast - explains why 128K is needed (not just 32K)
-                        toast({
-                          title: "Search needs 128K+ context!",
-                          description: contextSize === "8k" 
-                            ? "Search adds ~20K tokens, but results vary (15K-35K). Even 32K often overflows! Use 128K or higher for safe headroom."
-                            : "32K seems enough for ~20K search tokens, but results vary (15K-35K) and you need room for your prompt + response. Upgrade to 128K!",
-                          duration: 12000,
-                        });
-                      }
                     }}
                     disabled={isRunning}
                     className={`flex items-center justify-center gap-2 w-[120px] py-2 rounded-lg font-medium transition-all touch-manipulation ${
@@ -3664,160 +3652,168 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Inline Pareto Chart - shows after running tests */}
+          {/* Inline Pareto Chart - Scatter Plot showing Cost vs Capability */}
           {COLUMNS.some(col => responses[col]?.content) && (
             <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4 text-gray-500" />
                 <span className="font-bold text-sm text-gray-900">Cost vs Capability</span>
-                <span className="text-xs text-gray-500">— Model Comparison</span>
+                <span className="text-xs text-gray-500">— The Pareto Frontier</span>
               </div>
               
-              {/* Two-tier layout: Open Source models (left) | Frontier (right) */}
-              <div className="flex gap-4">
-                {/* Left section: Open Source Models (3B, 7B, 14B, 70B) - sorted by cost */}
-                <div className="flex-1 border border-gray-200 rounded-lg p-3 bg-gray-50">
-                  <div className="text-xs font-semibold text-gray-600 mb-2 text-center">
-                    Open Source Models
+              {/* Scatter plot with log-scale X axis */}
+              <div className="relative h-[220px] ml-12 mr-4 mb-8">
+                {/* Y-axis label */}
+                <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-gray-500 font-medium whitespace-nowrap">
+                  Capability (MMLU %) →
+                </div>
+                
+                {/* Y-axis ticks */}
+                <div className="absolute -left-8 top-0 bottom-0 flex flex-col justify-between text-[9px] text-gray-400 py-2">
+                  <span>90%</span>
+                  <span>80%</span>
+                  <span>70%</span>
+                  <span>60%</span>
+                </div>
+                
+                {/* Chart area with axes */}
+                <div className="absolute inset-0 border-l-2 border-b-2 border-gray-300">
+                  {/* Grid lines */}
+                  <div className="absolute inset-0">
+                    {[25, 50, 75].map(pct => (
+                      <div key={pct} className="absolute w-full border-t border-gray-100" style={{ top: `${pct}%` }} />
+                    ))}
                   </div>
-                  {/* Horizontal bar chart showing cost progression */}
-                  <div className="space-y-2">
-                    {(() => {
-                      const openSourceCols = ["3B", "7B", "14B", "70B"] as const;
-                      // Get all costs to calculate relative widths
-                      const modelData = openSourceCols.map(col => {
-                        const model = getModelForColumn(col);
-                        const response = responses[col];
-                        const cost = response?.cost ?? estimateCost(model!);
-                        const mmlu = model?.benchmarks.mmlu || 70;
-                        const { disabled } = isModelDisabled(col);
-                        const isRecommended = showResults && col === recommendedModel;
-                        const hasResult = responses[col]?.content;
-                        return { col, cost, mmlu, disabled, isRecommended, hasResult };
-                      });
-                      const maxCost = Math.max(...modelData.map(m => m.cost));
+                  
+                  {/* Plot all 5 models as scatter points */}
+                  {(() => {
+                    const modelData = COLUMNS.map(col => {
+                      const model = getModelForColumn(col);
+                      if (!model) return null;
+                      const response = responses[col];
+                      const cost = response?.cost ?? estimateCost(model);
+                      const mmlu = model.benchmarks.mmlu || 70;
+                      const { disabled } = isModelDisabled(col);
+                      const isRecommended = showResults && col === recommendedModel;
+                      const hasResult = responses[col]?.content;
                       
-                      return modelData.map(item => {
-                        // Width based on relative cost (min 20%, max 100%)
-                        const costRatio = item.cost / maxCost;
-                        const barWidth = 20 + (costRatio * 80);
+                      // Log-scale X position (cost range: $0.00001 to $0.05)
+                      const minCost = 0.00001, maxCost = 0.05;
+                      const logMin = Math.log10(minCost), logMax = Math.log10(maxCost);
+                      const effectiveCost = Math.max(cost, minCost);
+                      const xPos = ((Math.log10(effectiveCost) - logMin) / (logMax - logMin)) * 100;
+                      
+                      // Y position based on MMLU (60-95 range)
+                      const minMmlu = 60, maxMmlu = 95;
+                      const yPos = 100 - ((mmlu - minMmlu) / (maxMmlu - minMmlu)) * 100;
+                      
+                      return { col, cost, mmlu, disabled, isRecommended, hasResult, xPos, yPos };
+                    }).filter(Boolean) as { col: string; cost: number; mmlu: number; disabled: boolean; isRecommended: boolean; hasResult: string | undefined; xPos: number; yPos: number }[];
+                    
+                    // Calculate Pareto frontier
+                    const paretoPoints = modelData
+                      .filter(m => !m.disabled && m.hasResult)
+                      .filter(model => {
+                        return !modelData.some(other => 
+                          other.col !== model.col && 
+                          !other.disabled &&
+                          other.hasResult &&
+                          other.cost <= model.cost && 
+                          other.mmlu >= model.mmlu &&
+                          (other.cost < model.cost || other.mmlu > model.mmlu)
+                        );
+                      })
+                      .sort((a, b) => a.cost - b.cost);
+                    
+                    return (
+                      <>
+                        {/* Pareto frontier line */}
+                        {paretoPoints.length >= 2 && (
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                            <path
+                              d={paretoPoints.map((p, i) => 
+                                `${i === 0 ? 'M' : 'L'} ${p.xPos}% ${p.yPos}%`
+                              ).join(' ')}
+                              fill="none"
+                              stroke="#f5a623"
+                              strokeWidth="2"
+                              strokeDasharray="6 4"
+                              opacity="0.7"
+                            />
+                          </svg>
+                        )}
                         
-                        return (
-                          <div key={item.col} className="flex items-center gap-2">
-                            {/* Model name */}
-                            <div className={`w-8 text-[11px] font-bold ${
-                              item.isRecommended ? 'text-[#f5a623]' : item.disabled ? 'text-gray-400' : 'text-gray-700'
-                            }`}>
-                              {item.col}
-                            </div>
-                            {/* Cost bar */}
-                            <div className="flex-1 h-6 bg-gray-200 rounded relative overflow-hidden">
+                        {/* Model points with labels */}
+                        {modelData.map((item, idx) => {
+                          // Offset labels to avoid overlap
+                          const labelOffsetY = idx % 2 === 0 ? -28 : 20;
+                          
+                          return (
+                            <div
+                              key={item.col}
+                              className="absolute transform -translate-x-1/2 -translate-y-1/2 group"
+                              style={{ 
+                                left: `${Math.max(5, Math.min(95, item.xPos))}%`, 
+                                top: `${Math.max(5, Math.min(95, item.yPos))}%`
+                              }}
+                            >
+                              {/* Point */}
+                              <div className={`w-4 h-4 rounded-full border-2 transition-all cursor-pointer ${
+                                item.isRecommended 
+                                  ? 'bg-[#f5a623] border-[#f5a623] shadow-[0_0_10px_rgba(245,166,35,0.7)] scale-125 z-20' 
+                                  : item.disabled
+                                    ? 'bg-gray-200 border-gray-300'
+                                    : item.hasResult
+                                      ? item.col === 'Frontier' 
+                                        ? 'bg-orange-500 border-orange-500'
+                                        : 'bg-[#1a3a8f] border-[#1a3a8f]'
+                                      : 'bg-gray-400 border-gray-500'
+                              }`} />
+                              
+                              {/* Label */}
                               <div 
-                                className={`h-full rounded transition-all ${
-                                  item.isRecommended 
-                                    ? 'bg-[#f5a623]' 
-                                    : item.disabled
-                                      ? 'bg-gray-300'
-                                      : item.hasResult
-                                        ? 'bg-[#1a3a8f]'
-                                        : 'bg-gray-400'
-                                }`}
-                                style={{ width: `${barWidth}%` }}
-                              />
-                              {/* Cost label inside bar */}
-                              <div className="absolute inset-0 flex items-center px-2">
-                                <span className="text-[9px] text-white font-medium drop-shadow">
-                                  ${item.cost < 0.0001 ? item.cost.toFixed(5) : item.cost.toFixed(4)}
+                                className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap z-10"
+                                style={{ top: labelOffsetY > 0 ? '20px' : 'auto', bottom: labelOffsetY < 0 ? '20px' : 'auto' }}
+                              >
+                                <span className={`text-[10px] font-bold ${
+                                  item.isRecommended ? 'text-[#f5a623]' : item.disabled ? 'text-gray-400' : 'text-gray-700'
+                                }`}>{item.col}</span>
+                                <span className="text-[8px] text-gray-400">
+                                  ${item.cost < 0.001 ? item.cost.toFixed(5) : item.cost.toFixed(4)}
                                 </span>
                               </div>
                             </div>
-                            {/* MMLU score */}
-                            <div className="w-10 text-[9px] text-gray-500 text-right">
-                              {item.mmlu}%
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                  <div className="mt-2 text-[9px] text-gray-400 text-center">
-                    Cost per query → | MMLU %
-                  </div>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
                 </div>
                 
-                {/* Divider with cost jump indicator */}
-                <div className="flex flex-col items-center justify-center px-2">
-                  <div className="text-[10px] text-gray-400 -rotate-90 whitespace-nowrap">
-                    ~50x cost
-                  </div>
-                  <div className="h-12 w-px bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300" />
-                  <div className="text-lg text-gray-300">→</div>
-                </div>
-                
-                {/* Right section: Frontier (Claude) */}
-                <div className="w-32 border border-orange-200 rounded-lg p-3 bg-orange-50">
-                  <div className="text-xs font-semibold text-orange-600 mb-3 text-center">
-                    Frontier
-                    <span className="block text-[10px] font-normal text-orange-400">$0.005 - $0.02 per query</span>
-                  </div>
-                  <div className="relative h-[140px] flex flex-col items-center justify-center">
-                    {(() => {
-                      const model = getModelForColumn("Frontier");
-                      if (!model) return null;
-                      const response = responses["Frontier"];
-                      const cost = response?.cost ?? estimateCost(model);
-                      const mmlu = model.benchmarks.mmlu || 88;
-                      const { disabled } = isModelDisabled("Frontier");
-                      const isRecommended = showResults && recommendedModel === "Frontier";
-                      const hasResult = responses["Frontier"]?.content;
-                      
-                      return (
-                        <div className="flex flex-col items-center">
-                          <div className={`w-8 h-8 rounded-full border-2 transition-all ${
-                            isRecommended 
-                              ? 'bg-[#f5a623] border-[#f5a623] shadow-[0_0_12px_rgba(245,166,35,0.6)] scale-110' 
-                              : disabled
-                                ? 'bg-gray-200 border-gray-300'
-                                : hasResult
-                                  ? 'bg-orange-500 border-orange-500'
-                                  : 'bg-gray-400 border-gray-500'
-                          }`} />
-                          <span className={`text-sm font-bold mt-2 ${
-                            isRecommended ? 'text-[#f5a623]' : 'text-orange-600'
-                          }`}>Claude</span>
-                          <span className="text-xs text-orange-500 font-medium">{mmlu}% MMLU</span>
-                          <span className="text-[10px] text-gray-500 mt-1">
-                            ${cost.toFixed(4)}
-                          </span>
-                          <div className="mt-2 text-[9px] text-orange-400 text-center">
-                            Vision • Reasoning
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+                {/* X-axis label */}
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-gray-500 font-medium">
+                  Cost per query (log scale) →
                 </div>
               </div>
               
               {/* Legend */}
-              <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-500">
+              <div className="flex items-center justify-center gap-6 text-xs text-gray-500">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-[#f5a623] border border-[#f5a623]"></div>
                   <span>Recommended</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#1a3a8f] border border-[#1a3a8f]"></div>
-                  <span>Tested</span>
+                  <div className="w-3 h-0.5 bg-[#f5a623] opacity-70" style={{ borderTop: '2px dashed #f5a623' }}></div>
+                  <span>Pareto Frontier</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300"></div>
-                  <span>Disabled</span>
+                  <div className="w-3 h-3 rounded-full bg-[#1a3a8f] border border-[#1a3a8f]"></div>
+                  <span>Open Source</span>
                 </div>
-              </div>
-              
-              {/* Teaching note */}
-              <div className="mt-3 text-[10px] text-gray-400 text-center">
-                Open source models are 50x cheaper but Frontier has highest capability and can see images
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-orange-500 border border-orange-500"></div>
+                  <span>Frontier</span>
+                </div>
               </div>
             </div>
           )}
