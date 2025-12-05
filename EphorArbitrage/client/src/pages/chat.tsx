@@ -3701,22 +3701,23 @@ export default function ChatPage() {
                   return { col, cost, mmlu, hasResult, disabled, isRec };
                 }).filter(Boolean) as { col: string; cost: number; mmlu: number; hasResult: boolean; disabled: boolean; isRec: boolean }[];
                 
-                const costs = chartModels.map(m => m.cost);
-                const minCost = Math.min(...costs);
-                const maxCost = Math.max(...costs);
                 const minMmlu = 60;
                 const maxMmlu = 95;
                 
-                const getX = (cost: number) => {
-                  if (maxCost === minCost) return 50;
-                  const logMin = Math.log10(minCost);
-                  const logMax = Math.log10(maxCost);
-                  const logCost = Math.log10(cost);
-                  return 8 + ((logCost - logMin) / (logMax - logMin)) * 84;
+                const FIXED_X_POSITIONS: Record<string, number> = {
+                  "3B": 5,
+                  "8B": 20,
+                  "14B": 35,
+                  "70B": 55,
+                  "Frontier": 95
+                };
+                
+                const getX = (col: string) => {
+                  return FIXED_X_POSITIONS[col] || 50;
                 };
                 
                 const getY = (mmlu: number) => {
-                  return 92 - ((mmlu - minMmlu) / (maxMmlu - minMmlu)) * 84;
+                  return 100 - ((mmlu - minMmlu) / (maxMmlu - minMmlu)) * 100;
                 };
                 
                 const paretoFrontier = chartModels
@@ -3729,7 +3730,7 @@ export default function ChatPage() {
                     o.mmlu >= m.mmlu && 
                     (o.cost < m.cost || o.mmlu > m.mmlu)
                   ))
-                  .sort((a, b) => a.cost - b.cost);
+                  .sort((a, b) => getX(a.col) - getX(b.col));
                 
                 return (
                   <div className="relative h-[200px]">
@@ -3754,8 +3755,8 @@ export default function ChatPage() {
                         <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
                           <polyline
                             points={paretoFrontier.map(m => {
-                              const xPct = ((getX(m.cost) - 8) / 84) * 100;
-                              const yPct = ((getY(m.mmlu) - 8) / 84) * 100;
+                              const xPct = getX(m.col);
+                              const yPct = getY(m.mmlu);
                               return `${xPct}%,${yPct}%`;
                             }).join(' ')}
                             fill="none"
@@ -3767,8 +3768,8 @@ export default function ChatPage() {
                       )}
                       
                       {chartModels.map((m, i) => {
-                        const xPct = ((getX(m.cost) - 8) / 84) * 100;
-                        const yPct = ((getY(m.mmlu) - 8) / 84) * 100;
+                        const xPct = getX(m.col);
+                        const yPct = getY(m.mmlu);
                         const isOnFrontier = paretoFrontier.some(f => f.col === m.col);
                         const labelOffsetY = i % 2 === 0 ? -20 : 16;
                         const fillColor = m.isRec ? '#f5a623' : m.disabled ? '#d1d5db' : m.col === 'Frontier' ? '#f97316' : '#1a3a8f';
