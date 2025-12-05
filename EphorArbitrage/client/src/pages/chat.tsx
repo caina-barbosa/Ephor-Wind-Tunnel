@@ -101,19 +101,19 @@ const NON_REASONING_MODELS: Record<string, Model> = {
     }
   },
   "8B": { 
-    id: "together/qwen-2.5-7b-instruct-turbo", 
-    name: "Qwen2.5-7B", 
+    id: "openrouter/qwen/qwen3-8b", 
+    name: "Qwen3-8B", 
     costPer1k: 0.00015, 
     expectedLatency: "fast", 
-    reasoningDepth: "none", 
+    reasoningDepth: "shallow", 
     expectedAccuracy: "good", 
     benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "7B" },
-      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Multilingual"] },
-      finetuning: { method: "DPO", variants: ["Instruct", "Turbo"] },
-      inference: { precision: "FP16", optimizations: ["Turbo optimized"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Multilingual (119 langs)"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Thinking/Non-thinking dual mode"] },
+      inference: { precision: "FP16", optimizations: ["Dual-mode architecture"] },
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
