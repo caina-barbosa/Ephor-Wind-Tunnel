@@ -29,6 +29,17 @@ The application allows users to select context window sizes (8K-1M) and set a co
 ### Feature Specifications
 
 *   **LLM Engineering Dimensions**: Displays 10 key dimensions including Architecture, Parameters & Scaling, Training Data, Context Window, Benchmarks (MMLU%, HumanEval%), Fine-tuning Methods, Inference Optimization, Multimodality, Safety & Alignment, and Deployment Economics (Est. Cost, Speed).
+*   **Cost vs Capability Pareto Chart**: Interactive visualization showing the cost/performance tradeoff with:
+    - Y-axis uses actual MMLU benchmark scores (60-95% range normalized)
+    - X-axis uses logarithmic cost scale for proper distribution across price points
+    - Dynamic Pareto frontier line (orange dashed) connects optimal models
+    - Highlights recommended model and shows which models are dominated
+    - Updates live based on actual response costs after running tests
+*   **Smart Model Recommendation**: Picks the best value model using Pareto efficiency:
+    - Calculates "value score" = capability (MMLU) per dollar spent
+    - Finds Pareto-optimal models (where no other is both cheaper AND better)
+    - Recommends highest value from the efficient frontier
+    - Considers both cost AND capability, not just cheapest
 *   **Context Window Management**: Auto-selects the smallest appropriate context, visually indicates token usage (used/unused), and provides cost-related feedback.
 *   **Budget Cap with Educational "Over Budget" UI**: Filters out models exceeding a user-defined cost cap. When a band is over budget, it shows a comprehensive educational panel with:
     - Faded header (40% opacity) to indicate the band is locked
