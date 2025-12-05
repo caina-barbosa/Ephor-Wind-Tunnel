@@ -837,10 +837,39 @@ export default function ChatPage() {
     return uploadedFiles.reduce((sum, file) => sum + file.estimatedTokens, 0);
   }, [uploadedFiles]);
 
+  // Separate token calculations for visual breakdown
+  const promptTokens = useMemo(() => {
+    return Math.ceil(prompt.length / 4);
+  }, [prompt]);
+
+  // Image tokens (subset of file tokens)
+  const imageTokens = useMemo(() => {
+    return uploadedFiles
+      .filter(file => file.type === 'image')
+      .reduce((sum, file) => sum + file.estimatedTokens, 0);
+  }, [uploadedFiles]);
+
+  // Text file tokens (non-image files)
+  const textFileTokens = useMemo(() => {
+    return uploadedFiles
+      .filter(file => file.type !== 'image')
+      .reduce((sum, file) => sum + file.estimatedTokens, 0);
+  }, [uploadedFiles]);
+
+  // Estimated search tokens (when search mode is on)
+  // Web search typically adds 15,000-25,000 tokens of results
+  const estimatedSearchTokens = useMemo(() => {
+    return searchMode ? 20000 : 0;
+  }, [searchMode]);
+
   const inputTokenEstimate = useMemo(() => {
-    const promptTokens = Math.ceil(prompt.length / 4);
     return promptTokens + fileTokens;
-  }, [prompt, fileTokens]);
+  }, [promptTokens, fileTokens]);
+
+  // Total including search estimate (for context planning)
+  const totalWithSearchEstimate = useMemo(() => {
+    return inputTokenEstimate + estimatedSearchTokens;
+  }, [inputTokenEstimate, estimatedSearchTokens]);
 
   // Buffer multiplier calculation (Expert Mode only)
   const bufferMultiplier = useMemo(() => {
