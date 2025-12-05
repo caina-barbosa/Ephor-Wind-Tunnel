@@ -6,6 +6,8 @@
     "start": "cd EphorArbitrage && npm run start"
   },
   "dependencies": {
+    "@types/multer": "^2.0.0",
+    "multer": "^2.0.2",
     "openai": "^6.9.1"
   }
 }
