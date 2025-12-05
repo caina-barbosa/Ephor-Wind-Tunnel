@@ -1060,7 +1060,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
 
   // Wind Tunnel: Run a single model with streaming
   app.post("/api/wind-tunnel/stream", async (req, res) => {
-    const { modelId, prompt } = req.body;
+    const { modelId, prompt, files } = req.body;
 
     if (!modelId || typeof modelId !== "string") {
       return res.status(400).json({ error: "Model ID is required" });
@@ -1076,7 +1076,7 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    console.log(`[Wind Tunnel Stream] Running model: ${modelId}`);
+    console.log(`[Wind Tunnel Stream] Running model: ${modelId}, files: ${files?.length || 0}`);
 
     try {
       const messages: ChatMessage[] = [{ role: "user", content: prompt }];
@@ -1090,10 +1090,52 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
           throw new Error("ANTHROPIC_API_KEY not configured");
         }
         
-        const anthropicMessages = messages.map(msg => ({
-          role: msg.role === "assistant" ? "assistant" : "user",
-          content: msg.content,
-        }));
+        // Build multimodal content for Claude if there are files
+        let messageContent: any = prompt;
+        
+        if (files && Array.isArray(files) && files.length > 0) {
+          const contentParts: any[] = [];
+          
+          // Add images first
+          for (const file of files) {
+            if (file.type === 'image' && file.dataUrl) {
+              // Extract base64 data from data URL (format: data:image/png;base64,XXXXX)
+              const matches = file.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+              if (matches) {
+                const mediaType = matches[1];
+                const base64Data = matches[2];
+                contentParts.push({
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: mediaType,
+                    data: base64Data
+                  }
+                });
+                console.log(`[Wind Tunnel] Added image to Claude request: ${file.name} (${mediaType})`);
+              }
+            } else if (file.type === 'text' && file.textContent) {
+              // Add text file content as text block
+              contentParts.push({
+                type: "text",
+                text: `[File: ${file.name}]\n${file.textContent}`
+              });
+            }
+          }
+          
+          // Add the prompt text last
+          contentParts.push({
+            type: "text",
+            text: prompt
+          });
+          
+          messageContent = contentParts;
+        }
+        
+        const anthropicMessages = [{
+          role: "user" as const,
+          content: messageContent,
+        }];
 
         const response = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -1190,16 +1232,44 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
       const client = getStreamingClient(modelId);
       const actualModelId = getActualModelId(modelId);
       
+      // Build prompt with text files included (non-Claude models mostly don't support vision)
+      let enhancedPrompt = prompt;
+      let hasImages = false;
+      
+      if (files && Array.isArray(files) && files.length > 0) {
+        const textParts: string[] = [];
+        
+        for (const file of files) {
+          if (file.type === 'text' && file.textContent) {
+            textParts.push(`[File: ${file.name}]\n${file.textContent}\n`);
+          } else if (file.type === 'image') {
+            hasImages = true;
+          }
+        }
+        
+        if (textParts.length > 0) {
+          enhancedPrompt = textParts.join('\n') + '\n' + prompt;
+        }
+        
+        if (hasImages) {
+          console.log(`[Wind Tunnel] Warning: ${modelId} does not support vision - images will be ignored`);
+          enhancedPrompt = `[Note: ${files.filter(f => f.type === 'image').length} image(s) were uploaded but this model does not support vision]\n\n` + enhancedPrompt;
+        }
+      }
+      
+      // Update messages with enhanced prompt
+      const enhancedMessages: ChatMessage[] = [{ role: "user", content: enhancedPrompt }];
+      
       // For Qwen3 models, disable thinking mode by appending /no_think to prompt
       // Qwen3 in thinking mode returns empty content and puts response in reasoning field
       const isQwen3 = actualModelId.includes('qwen3');
       const streamMessages = isQwen3 
-        ? messages.map((m, i) => 
-            i === messages.length - 1 && m.role === 'user'
+        ? enhancedMessages.map((m, i) => 
+            i === enhancedMessages.length - 1 && m.role === 'user'
               ? { ...m, content: m.content + ' /no_think' }
               : m
           )
-        : messages;
+        : enhancedMessages;
       
       const stream = await client.chat.completions.create({
         model: actualModelId,

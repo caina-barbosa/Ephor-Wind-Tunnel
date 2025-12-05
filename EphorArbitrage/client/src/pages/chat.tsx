@@ -534,42 +534,44 @@ interface UploadedFile {
   id: string;
   name: string;
   type: 'image' | 'text' | 'pdf';
+  mimeType: string; // Full MIME type like 'image/png', 'text/plain'
   size: number;
   estimatedTokens: number;
   preview?: string; // For images: data URL, for text: first 100 chars
+  dataUrl?: string; // Full base64 data URL for sending to API (images)
+  textContent?: string; // Full text content for text files
 }
 
 // Token estimation for different file types
-const estimateFileTokens = (file: File): Promise<{ tokens: number; preview?: string }> => {
+const estimateFileTokens = (file: File): Promise<{ tokens: number; preview?: string; dataUrl?: string; textContent?: string }> => {
   return new Promise((resolve) => {
     const fileType = file.type;
     
     // Image files: estimate based on dimensions/size
     // OpenAI's vision pricing: ~85 tokens for low-res, ~170 tokens per 512x512 tile for high-res
     if (fileType.startsWith('image/')) {
-      const img = document.createElement('img');
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const width = img.width;
-        const height = img.height;
-        // Simplified token estimation for images
-        // ~765 tokens for a typical 1024x1024 image, scaled by actual dimensions
-        const baseTokens = 765;
-        const scaleFactor = (width * height) / (1024 * 1024);
-        const tokens = Math.ceil(Math.max(85, baseTokens * Math.min(scaleFactor, 4)));
-        URL.revokeObjectURL(url);
-        resolve({ tokens, preview: url });
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        // Fallback: estimate based on file size (~1 token per 50 bytes for images)
-        resolve({ tokens: Math.ceil(file.size / 50) });
-      };
-      // Read as data URL for preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        img.src = e.target?.result as string;
-        resolve({ tokens: Math.ceil(file.size / 50), preview: e.target?.result as string });
+        const dataUrl = e.target?.result as string;
+        const img = document.createElement('img');
+        img.onload = () => {
+          const width = img.width;
+          const height = img.height;
+          // Simplified token estimation for images
+          // ~765 tokens for a typical 1024x1024 image, scaled by actual dimensions
+          const baseTokens = 765;
+          const scaleFactor = (width * height) / (1024 * 1024);
+          const tokens = Math.ceil(Math.max(85, baseTokens * Math.min(scaleFactor, 4)));
+          resolve({ tokens, preview: dataUrl, dataUrl });
+        };
+        img.onerror = () => {
+          // Fallback: estimate based on file size (~1 token per 50 bytes for images)
+          resolve({ tokens: Math.ceil(file.size / 50), dataUrl });
+        };
+        img.src = dataUrl;
+      };
+      reader.onerror = () => {
+        resolve({ tokens: Math.ceil(file.size / 50) });
       };
       reader.readAsDataURL(file);
       return;
@@ -582,7 +584,7 @@ const estimateFileTokens = (file: File): Promise<{ tokens: number; preview?: str
         const text = e.target?.result as string;
         const tokens = Math.ceil(text.length / 4); // ~4 chars per token
         const preview = text.substring(0, 100) + (text.length > 100 ? '...' : '');
-        resolve({ tokens, preview });
+        resolve({ tokens, preview, textContent: text });
       };
       reader.onerror = () => {
         // Fallback: estimate based on file size
@@ -1219,16 +1221,19 @@ export default function ChatPage() {
         type = 'text';
       }
       
-      // Estimate tokens
-      const { tokens, preview } = await estimateFileTokens(file);
+      // Estimate tokens and get file data
+      const { tokens, preview, dataUrl, textContent } = await estimateFileTokens(file);
       
       newFiles.push({
         id: `${Date.now()}-${i}`,
         name: file.name,
         type,
+        mimeType: fileType || 'application/octet-stream',
         size: file.size,
         estimatedTokens: tokens,
-        preview
+        preview,
+        dataUrl,
+        textContent
       });
     }
     
@@ -1271,10 +1276,23 @@ export default function ChatPage() {
 
     const runModel = async (col: string, model: Model) => {
       try {
+        // Prepare files for API request (only include data for vision-capable models)
+        const filesToSend = uploadedFiles.map(f => ({
+          type: f.type,
+          mimeType: f.mimeType,
+          name: f.name,
+          dataUrl: f.dataUrl,
+          textContent: f.textContent
+        }));
+        
         const response = await fetch("/api/wind-tunnel/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ modelId: model.id, prompt: prompt }),
+          body: JSON.stringify({ 
+            modelId: model.id, 
+            prompt: prompt,
+            files: filesToSend.length > 0 ? filesToSend : undefined
+          }),
         });
 
         if (!response.ok) {
