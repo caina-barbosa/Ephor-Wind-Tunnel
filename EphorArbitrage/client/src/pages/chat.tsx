@@ -216,19 +216,19 @@ const REASONING_MODELS: Record<string, Model | null> = {
 // Exa search costs ~$0.02/request (5 results), Claude uses native search
 const SEARCH_MODELS: Record<string, Model> = {
   "3B": { 
-    id: "openrouter/qwen/qwen3-8b:online", 
-    name: "Qwen3-8B + Search", 
-    costPer1k: 0.00018, // Uses 8B for search due to context requirements
+    id: "openrouter/qwen/qwen3-30b-a3b:online", 
+    name: "Qwen3-30B-A3B + Search", 
+    costPer1k: 0.00018,
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "good", 
     benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B (131K context)" },
+      architecture: { type: "Sparse MoE", attention: "GQA", parameters: "30B total / 3B active" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
-      inference: { precision: "BF16", optimizations: ["Extended context", "Exa web grounding"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
       safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
@@ -250,16 +250,16 @@ const SEARCH_MODELS: Record<string, Model> = {
     }
   },
   "14B": { 
-    id: "openrouter/qwen/qwen3-8b:online", 
-    name: "Qwen3-8B + Search", 
+    id: "openrouter/qwen/qwen3-14b:online", 
+    name: "Qwen3-14B + Search", 
     costPer1k: 0.0003, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
+    benchmarks: { mmlu: 79.3, humanEval: 72.1 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B (131K context required for search)" },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
