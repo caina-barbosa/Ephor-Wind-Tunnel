@@ -244,6 +244,7 @@ export const MODEL_PRICING: Record<string, { input: number; output: number }> = 
   "openrouter/qwen/qwen3-30b-a3b": { input: 0.06, output: 0.22 },
   "openrouter/qwen/qwen3-8b": { input: 0.04, output: 0.12 },
   "openrouter/qwen/qwen3-32b": { input: 0.20, output: 0.40 },
+  "openrouter/qwen/qwen2.5-72b-instruct": { input: 0.27, output: 0.27 },
   "openrouter/anthropic/claude-sonnet-4": { input: 3.00, output: 15.00 },
 };
 

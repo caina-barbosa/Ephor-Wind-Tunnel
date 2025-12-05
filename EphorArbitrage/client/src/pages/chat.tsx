@@ -250,16 +250,16 @@ const SEARCH_MODELS: Record<string, Model> = {
     }
   },
   "14B": { 
-    id: "openrouter/qwen/qwen3-14b:online", 
-    name: "Qwen3-14B + Search", 
+    id: "openrouter/qwen/qwen3-8b:online", 
+    name: "Qwen3-8B + Search", 
     costPer1k: 0.0003, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
     expectedAccuracy: "strong", 
-    benchmarks: { mmlu: 79.3, humanEval: 72.1 }, 
+    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8B (131K context required for search)" },
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
@@ -267,8 +267,8 @@ const SEARCH_MODELS: Record<string, Model> = {
     }
   },
   "70B": { 
-    id: "openrouter/qwen/qwen3-32b:online", 
-    name: "Qwen3-32B + Search", 
+    id: "openrouter/qwen/qwen2.5-72b-instruct:online", 
+    name: "Qwen2.5-72B + Search", 
     costPer1k: 0.0008, 
     expectedLatency: "medium", 
     reasoningDepth: "shallow", 
@@ -276,8 +276,8 @@ const SEARCH_MODELS: Record<string, Model> = {
     benchmarks: { mmlu: 85.3, humanEval: 86.8 }, 
     modality: "text",
     technical: {
-      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "32B" },
-      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "72B (128K context)" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
       finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
       safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
@@ -3733,12 +3733,6 @@ export default function ChatPage() {
                 
                 return (
                   <div className="relative h-[200px]">
-                    <div className="absolute left-8 right-4 top-2 bottom-8 border-l-2 border-b-2 border-gray-300 bg-gray-50/30">
-                      {[0, 25, 50, 75, 100].map(pct => (
-                        <div key={pct} className="absolute w-full border-t border-dashed border-gray-200" style={{ top: `${pct}%` }} />
-                      ))}
-                    </div>
-                    
                     <div className="absolute left-0 top-2 bottom-8 w-8 flex flex-col justify-between text-[10px] text-gray-400 pr-1">
                       <span className="text-right">{maxMmlu}%</span>
                       <span className="text-right">{Math.round((maxMmlu + minMmlu) / 2)}%</span>
@@ -3751,7 +3745,13 @@ export default function ChatPage() {
                       <span>Expensive</span>
                     </div>
                     
-                    <svg className="absolute left-8 right-4 top-2 bottom-8" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <svg className="absolute left-8 right-4 top-2 bottom-8 overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+                      <rect x="0" y="0" width="100" height="100" fill="#fafafa" stroke="#d1d5db" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                      
+                      {[0, 25, 50, 75, 100].map(pct => (
+                        <line key={pct} x1="0" y1={pct} x2="100" y2={pct} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="2 1" vectorEffect="non-scaling-stroke" />
+                      ))}
+                      
                       {paretoFrontier.length >= 2 && (
                         <polyline
                           points={paretoFrontier.map(m => `${getX(m.cost)},${getY(m.mmlu)}`).join(' ')}
@@ -3763,44 +3763,40 @@ export default function ChatPage() {
                         />
                       )}
                       
-                      {chartModels.map(m => {
+                      {chartModels.map((m, i) => {
                         const x = getX(m.cost);
                         const y = getY(m.mmlu);
                         const isOnFrontier = paretoFrontier.some(f => f.col === m.col);
+                        const labelOffsetY = i % 2 === 0 ? -4 : 6;
+                        const fillColor = m.isRec ? '#f5a623' : m.disabled ? '#d1d5db' : m.col === 'Frontier' ? '#f97316' : '#1a3a8f';
+                        const textColor = m.isRec ? '#f5a623' : m.disabled ? '#9ca3af' : m.col === 'Frontier' ? '#ea580c' : '#1e40af';
                         return (
-                          <circle
-                            key={m.col}
-                            cx={x}
-                            cy={y}
-                            r={m.isRec ? 4 : 3}
-                            fill={m.isRec ? '#f5a623' : m.disabled ? '#d1d5db' : m.col === 'Frontier' ? '#f97316' : '#1a3a8f'}
-                            stroke={isOnFrontier ? '#f5a623' : 'white'}
-                            strokeWidth={isOnFrontier ? 2 : 1}
-                            vectorEffect="non-scaling-stroke"
-                          />
+                          <g key={m.col}>
+                            <circle
+                              cx={x}
+                              cy={y}
+                              r={m.isRec ? 4 : 3}
+                              fill={fillColor}
+                              stroke={isOnFrontier ? '#f5a623' : 'white'}
+                              strokeWidth={isOnFrontier ? 2 : 1}
+                              vectorEffect="non-scaling-stroke"
+                            />
+                            <text
+                              x={x}
+                              y={y + labelOffsetY}
+                              textAnchor="middle"
+                              fontSize="10"
+                              fontWeight="bold"
+                              fill={textColor}
+                              style={{ pointerEvents: 'none' }}
+                              vectorEffect="non-scaling-stroke"
+                            >
+                              {m.col}
+                            </text>
+                          </g>
                         );
                       })}
                     </svg>
-                    
-                    {chartModels.map((m, i) => {
-                      const x = getX(m.cost);
-                      const y = getY(m.mmlu);
-                      const labelOffset = i % 2 === 0 ? -16 : 12;
-                      return (
-                        <div
-                          key={m.col}
-                          className="absolute text-[10px] font-bold whitespace-nowrap pointer-events-none"
-                          style={{
-                            left: `calc(8% + ${x * 0.84}%)`,
-                            top: `calc(2% + ${y * 0.84}% + ${labelOffset}px)`,
-                            transform: 'translateX(-50%)',
-                            color: m.isRec ? '#f5a623' : m.disabled ? '#9ca3af' : m.col === 'Frontier' ? '#ea580c' : '#1e40af'
-                          }}
-                        >
-                          {m.col}
-                        </div>
-                      );
-                    })}
                   </div>
                 );
               })()}
