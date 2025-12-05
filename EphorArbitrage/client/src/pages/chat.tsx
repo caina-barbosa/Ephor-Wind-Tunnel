@@ -1444,6 +1444,9 @@ export default function ChatPage() {
       // Must not be disabled, must have a response, must not have error
       if (disabled || !resp || resp.loading || !resp.content || resp.error) return false;
       
+      // TEMP FIX: Exclude models marked as search unavailable
+      if (resp.content === "__SEARCH_UNAVAILABLE__") return false;
+      
       // Quality checks: filter out failures
       const content = resp.content.trim().toLowerCase();
       
