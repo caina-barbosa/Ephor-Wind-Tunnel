@@ -35,11 +35,12 @@ The application allows users to select context window sizes (8K-1M) and set a co
     - Dynamic Pareto frontier line (orange dashed) connects optimal models
     - Highlights recommended model and shows which models are dominated
     - Updates live based on actual response costs after running tests
-*   **Smart Model Recommendation**: Picks the best value model using Pareto efficiency:
-    - Calculates "value score" = capability (MMLU) per dollar spent
-    - Finds Pareto-optimal models (where no other is both cheaper AND better)
-    - Recommends highest value from the efficient frontier
-    - Considers both cost AND capability, not just cheapest
+*   **Smart Model Recommendation**: Picks the smallest/cheapest model that completed successfully:
+    - Filters out empty responses and explicit refusals
+    - Sorts by cost (cheapest wins), uses latency as tiebreaker
+    - For simple queries where all models succeed → picks cheapest (e.g., 3B)
+    - For hard queries where smaller models fail → picks smallest that succeeded
+    - Latency strings (fast/medium/slow) converted to ms for proper comparison
 *   **Context Window Management**: Auto-selects the smallest appropriate context, visually indicates token usage (used/unused), and provides cost-related feedback.
 *   **Budget Cap with Educational "Over Budget" UI**: Filters out models exceeding a user-defined cost cap. When a band is over budget, it shows a comprehensive educational panel with:
     - Faded header (40% opacity) to indicate the band is locked
