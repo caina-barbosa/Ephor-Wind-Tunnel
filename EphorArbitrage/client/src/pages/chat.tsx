@@ -889,10 +889,19 @@ export default function ChatPage() {
     return effectiveTokens - inputTokenEstimate;
   }, [effectiveTokens, inputTokenEstimate]);
 
-  // Recommended context considers buffer when in Expert Mode
+  // Recommended context considers buffer when in Expert Mode AND search mode
   const recommendedContextTier = useMemo(() => {
+    // When search mode is on, minimum recommendation is 128K
+    if (searchMode) {
+      const baseRec = getRecommendedContextTier(effectiveTokens);
+      const minForSearch = "128k";
+      // Return whichever is larger
+      const baseTokens = CONTEXT_SIZES.find(c => c.value === baseRec)?.tokens || 8000;
+      const searchTokens = CONTEXT_SIZES.find(c => c.value === minForSearch)?.tokens || 128000;
+      return baseTokens >= searchTokens ? baseRec : minForSearch;
+    }
     return getRecommendedContextTier(effectiveTokens);
-  }, [effectiveTokens]);
+  }, [effectiveTokens, searchMode]);
 
   // SPEC-EXACT: Stop auto-switching - instead show mismatch card when prompt exceeds current window
   // Use effectiveTokens (includes buffer) when buffer is active in Expert Mode
