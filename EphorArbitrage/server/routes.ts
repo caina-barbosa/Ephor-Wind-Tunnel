@@ -1489,6 +1489,12 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
           
           latency = Date.now() - startTime;
           
+          // Validate response structure
+          if (!completion.choices || completion.choices.length === 0) {
+            console.error(`[Search Debug] ${modelId} - No choices in response:`, JSON.stringify(completion, null, 2));
+            throw new Error('No response from search model');
+          }
+          
           // Get content from the response
           content = completion.choices[0]?.message?.content || "";
           

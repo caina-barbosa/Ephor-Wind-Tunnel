@@ -237,15 +237,21 @@ export const MODEL_PRICING: Record<string, { input: number; output: number }> = 
   "together/deepseek-r1-distill-llama-70b": { input: 2.00, output: 2.00 },
   "together/deepseek-r1": { input: 3.00, output: 7.00 },
   "together/qwq-32b": { input: 1.20, output: 1.20 },
+  "together/Qwen/Qwen3-Next-80B-A3B-Instruct": { input: 0.15, output: 0.15 },
+  "together/Qwen/Qwen2.5-72B-Instruct-Turbo": { input: 0.30, output: 0.30 },
   "openrouter/qwen/qwen3-14b": { input: 0.10, output: 0.20 },
   "openrouter/qwen/qwen3-4b:free": { input: 0.00, output: 0.00 },
   "openrouter/qwen/qwen3-30b-a3b": { input: 0.06, output: 0.22 },
   "openrouter/qwen/qwen3-8b": { input: 0.04, output: 0.12 },
+  "openrouter/qwen/qwen3-32b": { input: 0.20, output: 0.40 },
+  "openrouter/anthropic/claude-sonnet-4": { input: 3.00, output: 15.00 },
 };
 
 // Helper to calculate cost from token counts
 export function calculateCost(modelId: string, inputTokens: number, outputTokens: number): number {
-  const pricing = MODEL_PRICING[modelId];
+  // Strip :online suffix for search models to use base model pricing
+  const baseModelId = modelId.replace(/:online$/, '');
+  const pricing = MODEL_PRICING[modelId] || MODEL_PRICING[baseModelId];
   if (!pricing) return 0;
   return (inputTokens * pricing.input / 1_000_000) + (outputTokens * pricing.output / 1_000_000);
 }
