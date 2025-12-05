@@ -2239,7 +2239,7 @@ export default function ChatPage() {
                   </div>
                 ) : inputTokenEstimate > 0 && (
                   <div className={`mt-0.5 ${expertMode && bufferTokens > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === getRecommendedContextTier(totalWithSearchEstimate))?.label}</span> 
+                    Recommended context: <span className="font-bold">{CONTEXT_SIZES.find(s => s.value === recommendedContextTier)?.label}</span> 
                     {expertMode && bufferTokens > 0 ? ' (fits with buffer)' : searchMode ? ' (includes search room)' : ' (cheapest that fits)'}
                   </div>
                 )}
