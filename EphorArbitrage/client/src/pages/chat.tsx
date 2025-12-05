@@ -2395,7 +2395,34 @@ export default function ChatPage() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => setSearchMode(!searchMode)}
+                    onClick={() => {
+                      const newSearchMode = !searchMode;
+                      setSearchMode(newSearchMode);
+                      
+                      // When enabling search, check if context window is too small
+                      if (newSearchMode && (contextSize === "8k" || contextSize === "32k")) {
+                        const currentTokens = CONTEXT_SIZES.find(c => c.value === contextSize)?.tokens || 8000;
+                        
+                        // Show educational toast about search needing more context
+                        toast({
+                          title: "Search needs more memory!",
+                          description: `Web search results can add 20,000+ tokens. Your ${contextSize.toUpperCase()} window (${currentTokens.toLocaleString()} tokens) might overflow. Consider upgrading to 128K or higher.`,
+                          duration: 8000,
+                        });
+                        
+                        // Auto-upgrade to 128K for search mode
+                        setTimeout(() => {
+                          if (contextSize === "8k" || contextSize === "32k") {
+                            setContextSize("128k");
+                            toast({
+                              title: "Context upgraded to 128K",
+                              description: "We increased your context window to fit search results. This gives the AI more room to include web information!",
+                              duration: 6000,
+                            });
+                          }
+                        }, 2000);
+                      }
+                    }}
                     disabled={isRunning}
                     className={`flex items-center justify-center gap-2 w-[120px] py-2 rounded-lg font-medium transition-all touch-manipulation ${
                       searchMode 
@@ -2410,6 +2437,7 @@ export default function ChatPage() {
                 <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
                   <p className="font-bold mb-1">Web Search Mode</p>
                   <p className="text-xs">Add real-time web search to any model. Can be combined with Reasoning! Claude uses native search, others use Exa (~$0.02/request).</p>
+                  <p className="text-xs mt-1 text-blue-600 font-medium">Tip: Search works best with 128K+ context to fit web results.</p>
                 </TooltipContent>
               </Tooltip>
             </div>
