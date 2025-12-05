@@ -302,6 +302,49 @@ const SEARCH_MODELS: Record<string, Model> = {
   },
 };
 
+// REASONING + SEARCH MODELS - Used when BOTH toggles are ON
+// Combines chain-of-thought reasoning with web search capabilities
+// Only 70B and Frontier truly support both; smaller tiers use search-only
+const REASONING_SEARCH_MODELS: Record<string, Model | null> = {
+  "3B": null, // Reasoning not available - will fall back to search-only
+  "7B": null, // Reasoning not available - will fall back to search-only
+  "14B": null, // Reasoning not available - will fall back to search-only
+  "70B": { 
+    id: "openrouter/deepseek/deepseek-r1:online", 
+    name: "DeepSeek R1 + Search", 
+    costPer1k: 0.0028, // R1 + search overhead
+    expectedLatency: "slow", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 90.8, humanEval: 92.8 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "MLA", parameters: "671B total / 37B active" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Reasoning", "Real-time Search"] },
+      finetuning: { method: "RLHF", variants: ["RL reasoning", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["RLHF", "Constitutional AI", "Source verification"] }
+    }
+  },
+  "Frontier": { 
+    id: "openrouter/anthropic/claude-sonnet-4:online", 
+    name: "Claude Sonnet 4 + Reasoning + Search", 
+    costPer1k: 0.022, // Claude + native search
+    expectedLatency: "medium", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 88.5, humanEval: 94.2 }, 
+    modality: "text+image",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "MHA", parameters: "Undisclosed" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Native Search"] },
+      finetuning: { method: "RLHF", variants: ["Constitutional AI", "Native web search"] },
+      inference: { precision: "BF16", optimizations: ["Native Anthropic search"] },
+      safety: { aligned: true, methods: ["Constitutional AI", "RLHF", "Source verification"] }
+    }
+  },
+};
+
 // MODEL ALTERNATIVES - Multiple models per band for comparison in Expert Mode
 const MODEL_ALTERNATIVES: Record<string, Model[]> = {
   "3B": [
@@ -964,12 +1007,20 @@ export default function ChatPage() {
   const inputPercentage = Math.min((inputTokenEstimate / selectedContextTokens) * 100, 100);
 
   const getModelForColumn = (col: string): Model | null => {
-    // Search mode - use same models with :online suffix via OpenRouter
-    if (searchMode) {
-      return SEARCH_MODELS[col]; // All tiers now support search
+    // Both Search AND Reasoning mode - use combined models
+    if (searchMode && reasoningMode) {
+      const combinedModel = REASONING_SEARCH_MODELS[col];
+      if (combinedModel) return combinedModel;
+      // If reasoning not available for this tier, fall back to search-only
+      return SEARCH_MODELS[col];
     }
     
-    // Reasoning mode - swap to reasoning-capable models
+    // Search mode only - use same models with :online suffix via OpenRouter
+    if (searchMode) {
+      return SEARCH_MODELS[col]; // All tiers support search
+    }
+    
+    // Reasoning mode only - swap to reasoning-capable models
     if (reasoningMode) {
       const reasoningModel = REASONING_MODELS[col];
       if (reasoningModel) return reasoningModel;
@@ -991,12 +1042,20 @@ export default function ChatPage() {
 
   // Always returns a model for display purposes (for showing what would run)
   const getModelForDisplay = (col: string): Model | null => {
-    // Search mode - all tiers supported
+    // Both Search AND Reasoning mode
+    if (searchMode && reasoningMode) {
+      const combinedModel = REASONING_SEARCH_MODELS[col];
+      if (combinedModel) return combinedModel;
+      // Fall back to search model for display
+      return SEARCH_MODELS[col];
+    }
+    
+    // Search mode only - all tiers supported
     if (searchMode) {
       return SEARCH_MODELS[col];
     }
     
-    // Reasoning mode
+    // Reasoning mode only
     if (reasoningMode) {
       return REASONING_MODELS[col] || NON_REASONING_MODELS[col];
     }
@@ -1013,9 +1072,22 @@ export default function ChatPage() {
     return NON_REASONING_MODELS[col];
   };
   
-  // Check if a mode is not available for a column
+  // Check which modes are not available for a column
+  // Returns an object with separate availability status for each mode
+  const getModeAvailability = (col: string): { reasoning: boolean; search: boolean; reasoningReason?: string } => {
+    const reasoningAvailable = !!REASONING_MODELS[col];
+    const searchAvailable = true; // All tiers support search via :online suffix
+    
+    return {
+      reasoning: reasoningAvailable,
+      search: searchAvailable,
+      reasoningReason: reasoningAvailable ? undefined : "Reasoning requires 70B+ models"
+    };
+  };
+  
+  // Legacy function for backward compatibility
   const getModeUnavailableReason = (col: string): string | null => {
-    // Search is now available for all tiers via :online suffix
+    // Only show unavailable message when reasoning is ON but not available
     if (reasoningMode && !REASONING_MODELS[col]) {
       return "Reasoning not available for this size";
     }
@@ -2187,10 +2259,7 @@ export default function ChatPage() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => {
-                      if (!reasoningMode) setSearchMode(false); // Can only have one mode active
-                      setReasoningMode(!reasoningMode);
-                    }}
+                    onClick={() => setReasoningMode(!reasoningMode)}
                     disabled={isRunning}
                     className={`flex items-center justify-center gap-2 w-[120px] py-2 rounded-lg font-medium transition-all touch-manipulation ${
                       reasoningMode 
@@ -2204,7 +2273,7 @@ export default function ChatPage() {
                 </TooltipTrigger>
                 <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
                   <p className="font-bold mb-1">Chain-of-Thought Reasoning</p>
-                  <p className="text-xs">Switch models to reasoning-capable versions (DeepSeek R1 for 70B, Claude with extended thinking for Frontier). Smaller models will show as unavailable.</p>
+                  <p className="text-xs">Enable reasoning for 70B (DeepSeek R1) and Frontier (Claude extended thinking). Can be combined with Search! Smaller models will show as unavailable.</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -2212,10 +2281,7 @@ export default function ChatPage() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => {
-                      if (!searchMode) setReasoningMode(false); // Can only have one mode active
-                      setSearchMode(!searchMode);
-                    }}
+                    onClick={() => setSearchMode(!searchMode)}
                     disabled={isRunning}
                     className={`flex items-center justify-center gap-2 w-[120px] py-2 rounded-lg font-medium transition-all touch-manipulation ${
                       searchMode 
@@ -2229,7 +2295,7 @@ export default function ChatPage() {
                 </TooltipTrigger>
                 <TooltipContent className="bg-white border-gray-200 text-gray-700 max-w-xs">
                   <p className="font-bold mb-1">Web Search Mode</p>
-                  <p className="text-xs">Add real-time web search to any model via OpenRouter. Claude uses native Anthropic search, others use Exa (~$0.02/request). Compare how different model sizes handle search-augmented responses!</p>
+                  <p className="text-xs">Add real-time web search to any model. Can be combined with Reasoning! Claude uses native search, others use Exa (~$0.02/request).</p>
                 </TooltipContent>
               </Tooltip>
             </div>
