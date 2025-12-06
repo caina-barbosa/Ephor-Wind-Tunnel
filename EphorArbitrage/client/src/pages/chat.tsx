@@ -575,42 +575,42 @@ const COLUMN_VISUALS: Record<string, {
   accentBorder: string;
 }> = {
   "8B": {
-    headerSize: "text-xl font-bold text-blue-700",
+    headerSize: "text-2xl font-bold text-blue-700",
     headerBg: "bg-blue-50",
     cardStyle: "bg-white",
     prominence: "small",
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "14B": {
-    headerSize: "text-xl font-bold text-blue-700",
+    headerSize: "text-2xl font-bold text-blue-700",
     headerBg: "bg-blue-50",
     cardStyle: "bg-white",
     prominence: "small",
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "32B": {
-    headerSize: "text-2xl font-extrabold text-emerald-700",
+    headerSize: "text-2xl font-bold text-emerald-700",
     headerBg: "bg-emerald-50",
     cardStyle: "bg-white",
     prominence: "medium",
     accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "72B": {
-    headerSize: "text-2xl font-extrabold text-emerald-700",
+    headerSize: "text-2xl font-bold text-emerald-700",
     headerBg: "bg-emerald-50",
     cardStyle: "bg-white",
     prominence: "medium",
     accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "685B": {
-    headerSize: "text-2xl font-extrabold text-violet-700",
+    headerSize: "text-2xl font-bold text-violet-700",
     headerBg: "bg-violet-50",
     cardStyle: "bg-white",
     prominence: "medium",
     accentBorder: "border-t-[6px] border-t-[#7C3AED]"
   },
   "Frontier": {
-    headerSize: "text-3xl font-black text-[#EA580C]",
+    headerSize: "text-2xl font-bold text-[#EA580C]",
     headerBg: "bg-orange-50",
     cardStyle: "bg-white",
     prominence: "large",
@@ -2951,7 +2951,7 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '72B' || col === '32B' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '685B' ? 'text-violet-600' : col === '72B' || col === '32B' ? 'text-emerald-600' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
