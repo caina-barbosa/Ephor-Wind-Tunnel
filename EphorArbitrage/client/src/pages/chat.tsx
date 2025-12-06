@@ -582,11 +582,11 @@ const COLUMN_VISUALS: Record<string, {
     accentBorder: "border-t-[6px] border-t-[#2563EB]"
   },
   "14B": {
-    headerSize: "text-2xl font-bold text-blue-700",
-    headerBg: "bg-blue-50",
+    headerSize: "text-2xl font-bold text-emerald-700",
+    headerBg: "bg-emerald-50",
     cardStyle: "bg-white",
     prominence: "small",
-    accentBorder: "border-t-[6px] border-t-[#2563EB]"
+    accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "32B": {
     headerSize: "text-2xl font-bold text-emerald-700",
@@ -596,11 +596,11 @@ const COLUMN_VISUALS: Record<string, {
     accentBorder: "border-t-[6px] border-t-[#16A34A]"
   },
   "72B": {
-    headerSize: "text-2xl font-bold text-emerald-700",
-    headerBg: "bg-emerald-50",
+    headerSize: "text-2xl font-bold text-violet-700",
+    headerBg: "bg-violet-50",
     cardStyle: "bg-white",
     prominence: "medium",
-    accentBorder: "border-t-[6px] border-t-[#16A34A]"
+    accentBorder: "border-t-[6px] border-t-[#7C3AED]"
   },
   "685B": {
     headerSize: "text-2xl font-bold text-violet-700",
@@ -636,12 +636,17 @@ const getCostVisuals = (_cost: number) => {
   return { size: "text-xs", color: "text-gray-500", style: "font-mono" };
 };
 
-const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent") => {
+const getCapabilityVisuals = (accuracy: "basic" | "good" | "strong" | "excellent", col?: string) => {
   switch (accuracy) {
     case "basic": return { bars: 1, color: "bg-[#A3316F]", textColor: "text-[#A3316F]", label: "Basic" };
     case "good": return { bars: 2, color: "bg-blue-400", textColor: "text-blue-600", label: "Good" };
     case "strong": return { bars: 3, color: "bg-emerald-500", textColor: "text-emerald-600", label: "Strong" };
-    case "excellent": return { bars: 4, color: "bg-[#f5a623]", textColor: "text-[#f5a623]", label: "Excellent" };
+    case "excellent": 
+      // Purple for 72B/685B, orange for Frontier
+      if (col === "72B" || col === "685B") {
+        return { bars: 4, color: "bg-violet-500", textColor: "text-violet-600", label: "Excellent" };
+      }
+      return { bars: 4, color: "bg-[#f5a623]", textColor: "text-[#f5a623]", label: "Excellent" };
   }
 };
 
@@ -1268,7 +1273,7 @@ export default function ChatPage() {
     const resp = responses[col];
     const actualCost = resp?.cost ?? 0;
     const actualLatency = resp?.latency ?? 0;
-    const capability = getCapabilityVisuals(model.expectedAccuracy).label;
+    const capability = getCapabilityVisuals(model.expectedAccuracy, col).label;
     
     // Get all completed models' costs rounded to display precision
     const completedModels = COLUMNS.filter(c => {
@@ -2951,7 +2956,7 @@ export default function ChatPage() {
                         className={`p-3 sm:p-4 text-center transition-opacity duration-150 ${visuals.accentBorder} ${isRecommended ? 'bg-[#fff8eb]' : visuals.headerBg} ${col !== 'Frontier' ? 'border-r border-gray-200' : ''} ${isOverBudget ? 'opacity-40' : ''}`}
                       >
                         <div className={`${visuals.headerSize} tracking-tight`}>{col}</div>
-                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '685B' ? 'text-violet-600' : col === '72B' || col === '32B' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                        <div className={`text-xs font-semibold mt-0.5 ${col === 'Frontier' ? 'text-[#EA580C]' : col === '72B' || col === '685B' ? 'text-violet-600' : col === '14B' || col === '32B' ? 'text-emerald-600' : 'text-blue-600'}`}>
                           {col === "Frontier" ? "Closed Source" : "Open Source"}
                         </div>
                         {isRecommended && (
@@ -3123,7 +3128,7 @@ export default function ChatPage() {
                     // Use displayModel for rendering (always exists), fallback to model for constraint checks
                     const renderModel = displayModel!;
                     const latencyConfig = getLatencyBarConfig(renderModel.expectedLatency);
-                    const capabilityConfig = getCapabilityVisuals(renderModel.expectedAccuracy);
+                    const capabilityConfig = getCapabilityVisuals(renderModel.expectedAccuracy, col);
                     const estimatedCost = estimateCost(renderModel);
                     const costConfig = getCostVisuals(estimatedCost);
                     
