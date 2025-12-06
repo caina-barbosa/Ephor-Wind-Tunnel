@@ -248,10 +248,41 @@ const REASONING_MODELS: Record<string, Model | null> = {
 // SEARCH MODELS - Used when Search toggle is ON
 // Uses OpenRouter's :online suffix for web search on the same models
 // Exa search costs ~$0.02/request (5 results), Claude uses native search
-// Note: 8B and 14B are disabled because their 40K context limit can't handle Exa search results (70K-140K tokens)
-const SEARCH_MODELS: Record<string, Model | null> = {
-  "8B": null, // 40K context too small for search results
-  "14B": null, // 40K context too small for search results
+const SEARCH_MODELS: Record<string, Model> = {
+  "8B": { 
+    id: "openrouter/qwen/qwen3-8b:online", 
+    name: "Qwen3-8B + Search", 
+    costPer1k: 0.00015, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "good", 
+    benchmarks: { mmlu: 74.2, humanEval: 75.6 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "8.2B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Books", "Real-time Search"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
+    }
+  },
+  "14B": { 
+    id: "openrouter/qwen/qwen3-14b:online", 
+    name: "Qwen3-14B + Search", 
+    costPer1k: 0.00018, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "strong", 
+    benchmarks: { mmlu: 79.8, humanEval: 78.5 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Dense Transformer", attention: "GQA", parameters: "14B" },
+      training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
+      finetuning: { method: "SFT", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["GQA", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
+    }
+  },
   "32B": { 
     id: "openrouter/qwen/qwen3-32b:online", 
     name: "Qwen3-32B + Search", 
@@ -1118,19 +1149,13 @@ export default function ChatPage() {
     if (searchMode && reasoningMode) {
       const combinedModel = REASONING_SEARCH_MODELS[col];
       if (combinedModel) return combinedModel;
-      // If reasoning not available for this tier, fall back to search-only
-      const searchModel = SEARCH_MODELS[col];
-      if (searchModel) return searchModel;
-      // If no search model either (8B/14B), return null
+      // If combined not available, return null (will show "Not available")
       return null;
     }
     
     // Search mode only - use same models with :online suffix via OpenRouter
     if (searchMode) {
-      const searchModel = SEARCH_MODELS[col];
-      if (searchModel) return searchModel;
-      // 8B and 14B don't support search (40K context too small)
-      return null;
+      return SEARCH_MODELS[col]; // All tiers support search
     }
     
     // Reasoning mode only - swap to reasoning-capable models
@@ -1159,19 +1184,13 @@ export default function ChatPage() {
     if (searchMode && reasoningMode) {
       const combinedModel = REASONING_SEARCH_MODELS[col];
       if (combinedModel) return combinedModel;
-      // Fall back to search model for display
-      const searchModel = SEARCH_MODELS[col];
-      if (searchModel) return searchModel;
-      // If no search model either (8B/14B), show non-reasoning model
+      // Fall back to non-reasoning model for display
       return NON_REASONING_MODELS[col];
     }
     
-    // Search mode only
+    // Search mode only - all tiers supported
     if (searchMode) {
-      const searchModel = SEARCH_MODELS[col];
-      if (searchModel) return searchModel;
-      // 8B/14B don't support search - show base model for display
-      return NON_REASONING_MODELS[col];
+      return SEARCH_MODELS[col];
     }
     
     // Reasoning mode only
@@ -1193,28 +1212,24 @@ export default function ChatPage() {
   
   // Check which modes are not available for a column
   // Returns an object with separate availability status for each mode
-  const getModeAvailability = (col: string): { reasoning: boolean; search: boolean; reasoningReason?: string; searchReason?: string } => {
+  const getModeAvailability = (col: string): { reasoning: boolean; search: boolean; reasoningReason?: string } => {
     const reasoningAvailable = !!REASONING_MODELS[col];
-    const searchAvailable = !!SEARCH_MODELS[col]; // 8B and 14B don't support search (40K context too small)
+    const searchAvailable = true; // All tiers support search via :online suffix
     
     return {
       reasoning: reasoningAvailable,
       search: searchAvailable,
-      reasoningReason: reasoningAvailable ? undefined : "Reasoning requires 70B+ models",
-      searchReason: searchAvailable ? undefined : "Search requires 128K+ context"
+      reasoningReason: reasoningAvailable ? undefined : "Reasoning requires 70B+ models"
     };
   };
   
   // Legacy function for backward compatibility
   const getModeUnavailableReason = (col: string): string | null => {
-    // Show unavailable message when reasoning is ON but not available
+    // Only show unavailable message when reasoning is ON but not available for this tier
     if (reasoningMode && !REASONING_MODELS[col]) {
       return "Reasoning not available for this size";
     }
-    // Show unavailable message when search is ON but not available (8B/14B)
-    if (searchMode && !SEARCH_MODELS[col]) {
-      return "Search not available - context too small";
-    }
+    // Search is available for all tiers, so no search-specific unavailable message
     return null;
   };
 
