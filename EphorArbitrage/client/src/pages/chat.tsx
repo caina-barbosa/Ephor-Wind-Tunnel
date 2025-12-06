@@ -3150,10 +3150,26 @@ export default function ChatPage() {
                       >
                         <div className="text-center mb-3">
                           <div className={`font-bold text-gray-900 text-base ${cardVisuals.prominence === 'large' ? 'text-[#1a3a8f]' : ''}`}>
-                            {/* TEMP FIX: Strip "+ Search" from name when search is unavailable */}
-                            {isSearchUnavailable 
-                              ? renderModel.name.replace(" + Search", "").replace(" + Reasoning + Search", " + Reasoning")
-                              : renderModel.name}
+                            {/* Split model name and mode suffix onto separate lines for alignment */}
+                            {(() => {
+                              let displayName = isSearchUnavailable 
+                                ? renderModel.name.replace(" + Search", "").replace(" + Reasoning + Search", " + Reasoning")
+                                : renderModel.name;
+                              
+                              // Extract mode suffix if present
+                              const suffixMatch = displayName.match(/( \+ Reasoning \+ Search| \+ Reasoning| \+ Search)$/);
+                              if (suffixMatch) {
+                                const baseName = displayName.replace(suffixMatch[0], "");
+                                const suffix = suffixMatch[0].trim();
+                                return (
+                                  <div className="flex flex-col items-center">
+                                    <span>{baseName}</span>
+                                    <span className="text-xs font-semibold text-gray-500">{suffix}</span>
+                                  </div>
+                                );
+                              }
+                              return displayName;
+                            })()}
                           </div>
                           {/* Search-only indicator - show when reasoning is ON but not available for this tier */}
                           {reasoningMode && !REASONING_MODELS[col] && (
