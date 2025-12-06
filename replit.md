@@ -19,7 +19,7 @@ The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS a
 ### Global Mode Toggles
 
 *   **Reasoning Toggle** (purple): Activates chain-of-thought reasoning for supported tiers. 72B (DeepSeek R1), 685B (DeepSeek V3.2 with reasoning_enabled), and Frontier (Claude with extended thinking) support reasoning mode. Smaller tiers show "Not Available" with educational guidance.
-*   **Search Toggle** (blue): Activates web search mode using OpenRouter's `:online` suffix powered by Exa.ai (~$0.02/request). All tiers support search mode.
+*   **Search Toggle** (blue): Activates web search mode using OpenRouter's `:online` suffix powered by Exa.ai (~$0.02/request). **Only 72B, 685B, and Frontier support search mode** - smaller tiers (8B/14B/32B) are disabled because OpenRouter's search variants have a 40K context limit but Exa returns 70K-140K tokens, causing guaranteed overflow.
 *   Only one mode can be active at a time (mutually exclusive).
 
 ### Technical Implementations
@@ -121,10 +121,10 @@ The architecture is a client-server model with a React frontend and an Express.j
 
 **Search Models** (when Search toggle is ON):
 *   Uses OpenRouter's `:online` suffix for web search powered by Exa.ai (~$0.02/request)
-*   All tiers support search mode
-*   8B: Qwen3-8B + Search
-*   14B: Qwen3-14B + Search
-*   32B: Qwen3-32B + Search
+*   **Only 72B+ tiers support search mode** - smaller tiers disabled due to 40K context limit vs 70K-140K search results
+*   8B: Not available (context too small)
+*   14B: Not available (context too small)
+*   32B: Not available (context too small)
 *   72B: Qwen2.5-72B + Search
 *   685B: DeepSeek V3.2 + Search
 *   Frontier: Claude Sonnet 4 + Search (via OpenRouter)
