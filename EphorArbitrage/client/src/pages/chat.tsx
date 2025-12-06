@@ -1851,24 +1851,62 @@ export default function ChatPage() {
             const line = part.trim();
             if (!line.startsWith("data: ")) continue;
             
+            let data;
             try {
-              const data = JSON.parse(line.slice(6));
+              data = JSON.parse(line.slice(6));
+            } catch (parseErr) {
+              console.warn(`[${col}] Parse error for SSE chunk:`, line.slice(0, 100));
+              continue;
+            }
+            
+            if (data.type === "token") {
+              accumulatedContent += data.content;
+              tokenCount = data.tokenCount;
               
-              if (data.type === "token") {
-                accumulatedContent += data.content;
-                tokenCount = data.tokenCount;
-                
-                const estimatedProgress = Math.min((tokenCount / 100) * 100, 95);
-                
-                setResponses((prev) => ({
-                  ...prev,
-                  [col]: {
-                    ...prev[col],
-                    content: accumulatedContent,
-                    progress: estimatedProgress,
-                  },
-                }));
-              } else if (data.type === "complete") {
+              const estimatedProgress = Math.min((tokenCount / 100) * 100, 95);
+              
+              setResponses((prev) => ({
+                ...prev,
+                [col]: {
+                  ...prev[col],
+                  content: accumulatedContent,
+                  progress: estimatedProgress,
+                },
+              }));
+            } else if (data.type === "complete") {
+              receivedComplete = true;
+              finalLatency = data.latency;
+              finalCost = data.cost;
+              setResponses((prev) => ({
+                ...prev,
+                [col]: {
+                  content: data.content || accumulatedContent,
+                  loading: false,
+                  error: null,
+                  latency: data.latency,
+                  cost: data.cost,
+                  progress: 100,
+                },
+              }));
+            } else if (data.type === "error") {
+              throw new Error(data.error);
+            }
+          }
+        }
+        
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          const line = buffer.trim();
+          if (line.startsWith("data: ")) {
+            let data;
+            try {
+              data = JSON.parse(line.slice(6));
+            } catch (parseErr) {
+              console.warn(`[${col}] Parse error for final buffer:`, line.slice(0, 100));
+            }
+            
+            if (data) {
+              if (data.type === "complete") {
                 receivedComplete = true;
                 finalLatency = data.latency;
                 finalCost = data.cost;
@@ -1886,36 +1924,6 @@ export default function ChatPage() {
               } else if (data.type === "error") {
                 throw new Error(data.error);
               }
-            } catch (parseErr) {
-              console.warn(`[${col}] Parse error for SSE chunk:`, line.slice(0, 100));
-            }
-          }
-        }
-        
-        // Process any remaining buffer
-        if (buffer.trim()) {
-          const line = buffer.trim();
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === "complete") {
-                receivedComplete = true;
-                finalLatency = data.latency;
-                finalCost = data.cost;
-                setResponses((prev) => ({
-                  ...prev,
-                  [col]: {
-                    content: data.content || accumulatedContent,
-                    loading: false,
-                    error: null,
-                    latency: data.latency,
-                    cost: data.cost,
-                    progress: 100,
-                  },
-                }));
-              }
-            } catch (parseErr) {
-              console.warn(`[${col}] Parse error for final buffer:`, line.slice(0, 100));
             }
           }
         }
