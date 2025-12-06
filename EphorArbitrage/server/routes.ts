@@ -353,6 +353,9 @@ function getActualModelId(modelId: string): string {
     // OpenRouter - DeepSeek distilled models
     "openrouter/deepseek/deepseek-r1-distill-qwen-7b": "deepseek/deepseek-r1-distill-qwen-7b",
     "openrouter/deepseek/deepseek-r1-distill-qwen-14b": "deepseek/deepseek-r1-distill-qwen-14b",
+    // OpenRouter - DeepSeek V3.2 (685B)
+    "openrouter/deepseek/deepseek-v3.2": "deepseek/deepseek-v3-0324",
+    "openrouter/deepseek/deepseek-v3.2:online": "deepseek/deepseek-v3-0324:online",
     // OpenRouter - Other providers
     "openrouter/moonshotai/kimi-k2-instruct": "moonshotai/kimi-k2-instruct",
     // OpenRouter :online models (web search enabled via Exa)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to five different AI model size bands (8B, 14B, 32B, 72B, Frontier) simultaneously and compare their responses in real-time. All open-source models are from the Qwen family (Alibaba Cloud) for stability and consistency. Global toggles for **Reasoning** and **Search** modes allow students to explore chain-of-thought reasoning and web-augmented generation across supported tiers. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, chain-of-thought reasoning, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
+Ephor Wind Tunnel is an educational AI comparison tool designed to teach students about LLM engineering dimensions. It allows users to send a single prompt to six different AI model size bands (8B, 14B, 32B, 72B, 685B, Frontier) simultaneously and compare their responses in real-time. Open-source models include the Qwen family (Alibaba Cloud) and DeepSeek V3.2 for stability and consistency. Global toggles for **Reasoning** and **Search** modes allow students to explore chain-of-thought reasoning and web-augmented generation across supported tiers. The project aims to illustrate key engineering concepts such as model size vs. capability tradeoffs, cost vs. performance optimization, chain-of-thought reasoning, context window economics, and latency vs. accuracy tradeoffs. The business vision is to provide an intuitive platform for learning complex LLM concepts, fostering a deeper understanding of AI engineering.
 
 ## User Preferences
 
@@ -14,11 +14,11 @@ CRITICAL: DO NOT make changes without asking first.
 
 ### UI/UX Decisions
 
-The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, Purple for reasoning, neutral grays). The layout is a full-screen grid presenting **five model columns** (8B, 14B, 32B, 72B, Frontier) with visual cues for model size, latency, and cost. Column styling: 8B/14B (blue accent), 32B/72B (green accent), Frontier (orange accent). Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
+The frontend uses React 18+ with TypeScript and Vite, styled with Tailwind CSS and shadcn/ui components. It features a minimal Apple-inspired design with a clean color palette (Deep Royal Blue for primary actions, Orange for recommendations, Purple for reasoning, neutral grays). The layout is a full-screen grid presenting **six model columns** (8B, 14B, 32B, 72B, 685B, Frontier) with visual cues for model size, latency, and cost. Column styling: 8B/14B (blue accent), 32B/72B (green accent), 685B (violet accent), Frontier (orange accent). Educational elements include a context window auto-teaching mechanism, budget cap visual feedback, and prompt difficulty nudges. Key features like the Cost vs Capability Pareto chart, detailed technical accordions per model, and a "Why This Model?" explanation are integrated to enhance learning.
 
 ### Global Mode Toggles
 
-*   **Reasoning Toggle** (purple): Activates chain-of-thought reasoning for supported tiers. Only 72B (DeepSeek R1) and Frontier (Claude with extended thinking) support reasoning mode. Smaller tiers show "Not Available" with educational guidance.
+*   **Reasoning Toggle** (purple): Activates chain-of-thought reasoning for supported tiers. 72B (DeepSeek R1), 685B (DeepSeek V3.2 with reasoning_enabled), and Frontier (Claude with extended thinking) support reasoning mode. Smaller tiers show "Not Available" with educational guidance.
 *   **Search Toggle** (blue): Activates web search mode using OpenRouter's `:online` suffix powered by Exa.ai (~$0.02/request). All tiers support search mode.
 *   Only one mode can be active at a time (mutually exclusive).
 
@@ -110,13 +110,14 @@ The architecture is a client-server model with a React frontend and an Express.j
 *   Together AI API (`api.together.xyz`) for DeepSeek R1 (reasoning mode).
 *   Replit AI Integration for OpenRouter for all Qwen models and Kimi K2, billed through Replit credits.
 
-**Model Configuration by Band** (all using stable Qwen family models via OpenRouter):
+**Model Configuration by Band** (using stable Chinese open-source models via OpenRouter):
 *   8B: Primary = Qwen3-8B (8.2B dense), Secondary = DeepSeek-R1-Distill-Qwen-7B
 *   14B: Primary = Qwen3-14B (14B dense), Secondary = DeepSeek-R1-Distill-Qwen-14B
 *   32B: Primary = Qwen3-32B (32B dense), Secondary = QwQ-32B (reasoning-focused)
 *   72B: Primary = Qwen2.5-72B (72B dense), Secondary = Qwen2-72B
+*   685B: Primary = DeepSeek V3.2 (685B MoE, 37B active) - Largest Chinese open-source model
 *   Frontier: Primary = Claude Sonnet 4.5 (Anthropic), Secondary = Kimi K2 (Moonshot, 1T+ params)
-*   Reasoning: DeepSeek R1 (Together AI) for 72B tier - Always uses chain-of-thought
+*   Reasoning: DeepSeek R1 (Together AI) for 72B tier, DeepSeek V3.2 for 685B tier
 
 **Search Models** (when Search toggle is ON):
 *   Uses OpenRouter's `:online` suffix for web search powered by Exa.ai (~$0.02/request)
@@ -125,10 +126,12 @@ The architecture is a client-server model with a React frontend and an Express.j
 *   14B: Qwen3-14B + Search
 *   32B: Qwen3-32B + Search
 *   72B: Qwen2.5-72B + Search
+*   685B: DeepSeek V3.2 + Search
 *   Frontier: Claude Sonnet 4 + Search (via OpenRouter)
 
 **Reasoning Models** (when Reasoning toggle is ON):
 *   72B: DeepSeek R1 (Together AI) with chain-of-thought
+*   685B: DeepSeek V3.2 with reasoning_enabled parameter
 *   Frontier: Claude Sonnet 4.5 with extended thinking
 *   8B/14B/32B: Not available (too small for deep reasoning)
 

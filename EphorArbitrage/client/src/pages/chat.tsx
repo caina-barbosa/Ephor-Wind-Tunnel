@@ -80,7 +80,7 @@ interface ModelResponse {
   progress: number;
 }
 
-const COLUMNS = ["8B", "14B", "32B", "72B", "Frontier"] as const;
+const COLUMNS = ["8B", "14B", "32B", "72B", "685B", "Frontier"] as const;
 
 const NON_REASONING_MODELS: Record<string, Model> = {
   "8B": { 
@@ -151,6 +151,23 @@ const NON_REASONING_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["DPO", "Safety filtering"] }
     }
   },
+  "685B": { 
+    id: "openrouter/deepseek/deepseek-v3.2", 
+    name: "DeepSeek V3.2", 
+    costPer1k: 0.00035, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 88.5, humanEval: 89.2 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "DSA (Sparse)", parameters: "685B total / 37B active" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Scientific", "Multilingual"] },
+      finetuning: { method: "RLHF", variants: ["Instruct", "Agentic"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "DeepSeek Sparse Attention"] },
+      safety: { aligned: true, methods: ["RLHF", "Safety filtering"] }
+    }
+  },
   "Frontier": { 
     id: "anthropic/claude-sonnet-4.5", 
     name: "Claude Sonnet 4.5", 
@@ -189,6 +206,23 @@ const REASONING_MODELS: Record<string, Model | null> = {
       training: { dataDate: "2025", dataSources: ["Web", "Code", "Math", "Scientific", "Reasoning"] },
       finetuning: { method: "RLHF", variants: ["RL reasoning", "GRPO"] },
       inference: { precision: "BF16", optimizations: ["MoE routing", "Long CoT"] },
+      safety: { aligned: true, methods: ["RLHF", "Reasoning safety"] }
+    }
+  },
+  "685B": { 
+    id: "openrouter/deepseek/deepseek-v3.2", 
+    name: "DeepSeek V3.2 + Reasoning", 
+    costPer1k: 0.0004, 
+    expectedLatency: "slow", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 90.5, humanEval: 92.0 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "DSA (Sparse)", parameters: "685B total / 37B active" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Scientific", "Reasoning"] },
+      finetuning: { method: "RLHF", variants: ["Instruct", "Reasoning-enabled"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "DeepSeek Sparse Attention", "reasoning_enabled"] },
       safety: { aligned: true, methods: ["RLHF", "Reasoning safety"] }
     }
   },
@@ -283,6 +317,23 @@ const SEARCH_MODELS: Record<string, Model> = {
       safety: { aligned: true, methods: ["SFT alignment", "Source verification"] }
     }
   },
+  "685B": { 
+    id: "openrouter/deepseek/deepseek-v3.2:online", 
+    name: "DeepSeek V3.2 + Search", 
+    costPer1k: 0.0006, 
+    expectedLatency: "medium", 
+    reasoningDepth: "shallow", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 88.5, humanEval: 89.2 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "DSA (Sparse)", parameters: "685B total / 37B active" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Real-time Search"] },
+      finetuning: { method: "RLHF", variants: ["Instruct", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
+      safety: { aligned: true, methods: ["RLHF", "Source verification"] }
+    }
+  },
   "Frontier": { 
     id: "openrouter/anthropic/claude-sonnet-4:online", 
     name: "Claude Sonnet 4 + Search", 
@@ -324,6 +375,23 @@ const REASONING_SEARCH_MODELS: Record<string, Model | null> = {
       finetuning: { method: "RLHF", variants: ["RL reasoning", "Search-augmented"] },
       inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding"] },
       safety: { aligned: true, methods: ["RLHF", "Constitutional AI", "Source verification"] }
+    }
+  },
+  "685B": { 
+    id: "openrouter/deepseek/deepseek-v3.2:online", 
+    name: "DeepSeek V3.2 + Reasoning + Search", 
+    costPer1k: 0.0007, 
+    expectedLatency: "slow", 
+    reasoningDepth: "deep", 
+    expectedAccuracy: "excellent", 
+    benchmarks: { mmlu: 90.5, humanEval: 92.0 }, 
+    modality: "text",
+    technical: {
+      architecture: { type: "Sparse MoE", attention: "DSA (Sparse)", parameters: "685B total / 37B active" },
+      training: { dataDate: "2024", dataSources: ["Web", "Code", "Math", "Reasoning", "Real-time Search"] },
+      finetuning: { method: "RLHF", variants: ["Reasoning-enabled", "Search-augmented"] },
+      inference: { precision: "BF16", optimizations: ["MoE routing", "Exa web grounding", "reasoning_enabled"] },
+      safety: { aligned: true, methods: ["RLHF", "Source verification"] }
     }
   },
   "Frontier": { 
@@ -427,6 +495,9 @@ const MODEL_ALTERNATIVES: Record<string, Model[]> = {
       }
     },
   ],
+  "685B": [
+    NON_REASONING_MODELS["685B"],
+  ],
   "Frontier": [
     NON_REASONING_MODELS["Frontier"],
     { 
@@ -461,6 +532,8 @@ const getReasoningDepthForBand = (col: string): { depth: "none" | "shallow" | "d
       return { depth: "none", label: "None", color: "text-gray-400" };
     case "72B": 
       return { depth: "shallow", label: "Shallow", color: "text-amber-600" };
+    case "685B":
+      return { depth: "deep", label: "Deep", color: "text-emerald-600" };
     case "Frontier": 
       return { depth: "deep", label: "Deep", color: "text-emerald-600" };
     default: 
@@ -528,6 +601,13 @@ const COLUMN_VISUALS: Record<string, {
     cardStyle: "bg-white",
     prominence: "medium",
     accentBorder: "border-t-[6px] border-t-[#16A34A]"
+  },
+  "685B": {
+    headerSize: "text-2xl font-extrabold text-violet-700",
+    headerBg: "bg-violet-50",
+    cardStyle: "bg-white",
+    prominence: "medium",
+    accentBorder: "border-t-[6px] border-t-[#7C3AED]"
   },
   "Frontier": {
     headerSize: "text-3xl font-black text-[#EA580C]",
@@ -2858,7 +2938,7 @@ export default function ChatPage() {
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <div className="min-w-[900px] sm:min-w-0">
-                <div className="grid grid-cols-5 border-b border-gray-200" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+                <div className="grid grid-cols-6 border-b border-gray-200" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const isRecommended = showResults && col === recommendedModel;
@@ -2893,7 +2973,7 @@ export default function ChatPage() {
                   })}
                 </div>
 
-                <div className="grid grid-cols-5" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+                <div className="grid grid-cols-6" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                   {COLUMNS.map(col => {
                     const model = getModelForColumn(col);
                     const displayModel = getModelForDisplay(col); // Always returns a model for display
