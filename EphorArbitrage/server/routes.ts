@@ -1572,9 +1572,15 @@ Format: Natural flowing answer with inline citations like [Cerebras: Llama 3.3 7
         } catch (searchError: any) {
           console.error(`[Wind Tunnel Stream] Search error for ${modelId}:`, searchError.message);
           
-          // Check for context length errors
+          // Check for context length errors - provide accurate, educational message
           if (searchError.message?.includes('tokens') || searchError.message?.includes('context')) {
-            throw new Error(`Context overflow: Search results + prompt exceed this model's limit. Use 128K+ context or try a shorter prompt.`);
+            // Extract the model's actual limit from the error if available
+            const limitMatch = searchError.message.match(/maximum context length is (\d+)/);
+            const requestedMatch = searchError.message.match(/requested about (\d+)/);
+            const modelLimit = limitMatch ? parseInt(limitMatch[1]).toLocaleString() : "40K";
+            const requestedTokens = requestedMatch ? parseInt(requestedMatch[1]).toLocaleString() : "unknown";
+            
+            throw new Error(`Search context overflow: This search model's limit is ${modelLimit} tokens, but search results needed ${requestedTokens}. Search results can be very large (70K-140K tokens). Try a more specific prompt, or use 72B+ tiers which have larger search limits.`);
           }
           throw searchError;
         }
