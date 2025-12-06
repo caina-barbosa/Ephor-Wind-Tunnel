@@ -3301,11 +3301,7 @@ export default function ChatPage() {
                                 )}
                                 Input
                               </span>
-                              <span className={`text-sm font-medium text-right ${
-                                model!.modality === "text" 
-                                  ? "text-gray-500" 
-                                  : "text-purple-600"
-                              }`}>
+                              <span className="text-sm font-medium text-right text-gray-500">
                                 {model!.modality === "text" ? "Text" : "Vision"}
                               </span>
                             </div>
@@ -3668,11 +3664,7 @@ export default function ChatPage() {
                                   )}
                                   Input
                                 </span>
-                                <span className={`text-xs font-medium text-right ${
-                                  renderModel.modality === "text" 
-                                    ? "text-gray-500" 
-                                    : "text-purple-600"
-                                }`}>
+                                <span className="text-xs font-medium text-right text-gray-500">
                                   {renderModel.modality === "text" ? "Text" : "Vision"}
                                 </span>
                               </div>
