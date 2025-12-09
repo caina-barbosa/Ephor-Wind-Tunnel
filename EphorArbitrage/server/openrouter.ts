@@ -11,12 +11,11 @@ export interface OpenRouterChatCompletionRequest {
 export async function createOpenRouterChatCompletion(
   request: OpenRouterChatCompletionRequest
 ): Promise<ChatCompletionResult> {
-  // Using Replit's AI Integrations service for OpenRouter access
-  const baseURL = process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL;
-  const apiKey = process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY;
-  
-  if (!baseURL || !apiKey) {
-    throw new Error("Replit AI Integration for OpenRouter not configured");
+  const baseURL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+  const apiKey = process.env.OPENROUTER_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY environment variable not configured");
   }
 
   try {
